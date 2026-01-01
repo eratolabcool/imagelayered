@@ -1,0 +1,418 @@
+{
+  "page": {
+    "show_sections": [
+      "hero",
+     
+      "introduce",
+   
+      "usage",
+      "features",
+      "stats",
+      "testimonials",
+      "faq",
+      "cta"
+    ],
+    "sections": {
+      "hero": {
+        "id": "hero",
+        "title": "Qwen Image Layered - Free AI Image Layer Editor | Automatic Image Decomposition",
+        "highlight_text": "Qwen Image Layered",
+        "description": "Free AI-powered image layer editor using Qwen Image Layered model. Automatically decompose images into RGBA layers, separate visual elements, and edit with AI. The best free Photoshop alternative for automatic layer separation and image segmentation.",
+        "announcement": {
+          "badge": "Free",
+          "title": "🚀 Free AI Image Layer Decomposition Tool",
+          "url": "/qwenimagelayered"
+        },
+        "tip": "✨ Automatic image layer decomposition - No signup required",
+        "buttons": [
+          {
+            "title": "Start Editing Free",
+            "icon": "Zap",
+            "url": "/qwenimagelayered",
+            "target": "_self",
+            "variant": "default"
+          },
+          {
+            "title": "View Demo",
+            "icon": "BookOpenText",
+            "url": "/quicktest",
+            "target": "_self",
+            "variant": "outline"
+          }
+        ],
+        "show_avatars": false,
+        "avatars_tip": "999+ users are using Qwen Image Layered Editor",
+        "show_award": false
+        
+       
+      },
+      "logos": {
+        "id": "logos",
+        "title": "Qwen Image Layered is powered by cutting-edge AI technology",
+        "items": [
+          {
+            "title": "Next.js",
+            "image": {
+              "src": "/imgs/logos/nextjs.svg",
+              "alt": "Next.js"
+            }
+          },
+          {
+            "title": "React",
+            "image": {
+              "src": "/imgs/logos/react.svg",
+              "alt": "React"
+            }
+          },
+          {
+            "title": "TailwindCSS",
+            "image": {
+              "src": "/imgs/logos/tailwindcss.svg",
+              "alt": "TailwindCSS"
+            }
+          },
+          {
+            "title": "Shadcn/UI",
+            "image": {
+              "src": "/imgs/logos/shadcn.svg",
+              "alt": "Shadcn/UI"
+            }
+          },
+          {
+            "title": "Vercel",
+            "image": {
+              "src": "/imgs/logos/vercel.svg",
+              "alt": "Vercel"
+            }
+          }
+        ]
+      },
+      "introduce": {
+        "block": "features-list",
+        "id": "introduce",
+        "title": "What is Qwen Image Layered",
+        "label": "Introduce",
+        "description": "Qwen Image Layered is an AI-powered vision editor with smart layer decomposition using Qwen's advanced vision model. Decompose, recolor, replace, and remove objects with precision.",
+        "image": {
+          "src": "/imgs/features/landing-page.png",
+          "alt": "introduce"
+        },
+        "items": [
+          {
+            "title": "Smart Layer Decomposition",
+            "description": "AI-powered decomposition that identifies and separates visual components with precision using Qwen vision model.",
+            "icon": "RiNextjsFill",
+            "image": {
+              "src": "/imgs/features/1.png",
+              "alt": "introduce"
+            }
+          },
+          {
+            "title": "Professional Editing Tools",
+            "description": "Recolor, replace, and remove objects naturally while maintaining image quality and composition.",
+            "icon": "RiDatabase2Line",
+            "image": {
+              "src": "/imgs/features/2.png",
+              "alt": "introduce"
+            }
+          },
+          {
+            "title": "AI Neural Upscaling",
+            "description": "Enhance image resolution up to 4K with Qwen's advanced upscaling capabilities.",
+            "icon": "RiCloudyFill",
+            "image": {
+              "src": "/imgs/features/3.png",
+              "alt": "introduce"
+            }
+          },
+          {
+            "title": "Hierarchical Layer System",
+            "description": "Organize decomposed elements in a hierarchical tree structure for granular editing control.",
+            "icon": "RiRobot2Line",
+            "image": {
+              "src": "/imgs/features/4.png",
+              "alt": "introduce"
+            }
+          }
+        ],
+        "className": "bg-muted"
+      },
+      "benefits": {
+        "block": "features-accordion",
+        "id": "benefits",
+        "title": "Why Choose ShipAny",
+        "label": "Benefits",
+        "description": "Get everything you need to launch your AI startup - from ready-to-use templates to technical support.",
+        "items": [
+          {
+            "title": "Complete Framework",
+            "description": "Built on Next.js with authentication, payments, and AI integration - everything works out of the box.",
+            "icon": "RiNextjsFill",
+            "image": {
+              "src": "/imgs/features/user-billing.png",
+              "alt": "benefits"
+            }
+          },
+          {
+            "title": "Rich Templates Library",
+            "description": "Choose from various AI SaaS templates to kickstart your project - chatbots, image generation, and more.",
+            "icon": "RiClapperboardAiLine",
+            "image": {
+              "src": "/imgs/features/admin-settings.png",
+              "alt": "benefits"
+            }
+          },
+          {
+            "title": "Technical Guidance",
+            "description": "Get dedicated support and join our developer community to ensure your successful launch.",
+            "icon": "RiCodeFill",
+            "image": {
+              "src": "/imgs/features/landing-page.png",
+              "alt": "benefits"
+            }
+          }
+        ]
+      },
+      "usage": {
+        "block": "features-step",
+        "id": "usage",
+        "title": "How to Use Qwen Image Layered Editor",
+        "description": "Decompose and edit images with AI in three simple steps:",
+        "image": {
+          "src": "/imgs/features/1.png",
+          "alt": "usage"
+        },
+        "image_position": "left",
+        "text_align": "center",
+        "items": [
+          {
+            "title": "Upload Your Image",
+            "description": "Click the upload button or drag and drop your image. The editor supports PNG, JPG, WEBP and other common formats.",
+            "image": {
+              "src": "/imgs/features/5.png",
+              "alt": "upload"
+            }
+          },
+          {
+            "title": "AI Layer Decomposition",
+            "description": "Click the Decompose button and Qwen Image Layered AI will automatically analyze your image and separate it into multiple editable layers.",
+            "image": {
+              "src": "/imgs/features/6.png",
+              "alt": "decompose"
+            }
+          },
+          {
+            "title": "Edit & Export",
+            "description": "Adjust each layer independently with AI editing tools - recolor, replace, or remove objects. Export your creation in high resolution.",
+            "image": {
+              "src": "/imgs/features/7.png",
+              "alt": "edit"
+            }
+          },
+          {
+            "title": "Advanced Features",
+            "description": "Use recursive decomposition for detailed analysis, adjust opacity and visibility, and organize layers in hierarchical tree structure.",
+            "image": {
+              "src": "/imgs/features/8.png",
+              "alt": "advanced"
+            }
+          }
+        ],
+        "className": "bg-muted"
+      },
+      "features": {
+        "id": "features",
+        "title": "Key Features of Qwen Image Layered",
+        "description": "Professional AI vision editing powered by Qwen's advanced image layered model.",
+        "items": [
+          {
+            "title": "Qwen Vision Layered Model",
+            "description": "Powered by OpenRouter's qwen-image-layered model for precise image analysis and editing.",
+            "icon": "RiNextjsFill"
+          },
+          {
+            "title": "Smart Decomposition",
+            "description": "AI automatically identifies and separates visual components into editable layers.",
+            "icon": "RiKey2Fill"
+          },
+          {
+            "title": "Natural Language Editing",
+            "description": "Describe changes in plain English - recolor, replace, or remove objects naturally.",
+            "icon": "RiDatabase2Line"
+          },
+          {
+            "title": "Hierarchical Layers",
+            "description": "Organize decomposed elements in a tree structure with parent-child relationships.",
+            "icon": "RiCloudy2Fill"
+          },
+          {
+            "title": "High-Resolution Export",
+            "description": "Upscale your creations to 1K, 2K, or 4K resolution with AI enhancement.",
+            "icon": "RiBarChart2Line"
+          },
+          {
+            "title": "Real-time Processing",
+            "description": "Fast AI processing with visual feedback and progress tracking.",
+            "icon": "RiRobot2Line"
+          }
+        ]
+      },
+      "stats": {
+        "id": "stats",
+        "title": "People Love Qwen Image Layered",
+        "description": "for powerful AI vision editing capabilities.",
+        "items": [
+          {
+            "title": "10K+",
+            "description": "Images Processed"
+          },
+          {
+            "title": "5K+",
+            "description": "Layers Decomposed"
+          },
+          {
+            "title": "99%",
+            "description": "Satisfaction Rate"
+          }
+        ],
+        "className": "bg-muted"
+      },
+      "testimonials": {
+        "id": "testimonials",
+        "title": "What Users Say About Qwen Image Layered",
+        "description": "Hear from designers and creators who use Qwen Image Layered for their AI vision editing needs.",
+        "items": [
+          {
+            "name": "David Chen",
+            "role": "Founder of AIWallpaper.shop",
+            "quote": "ShipAny saved us months of development time. We launched our AI wallpaper business in just 2 days and got our first paying customer within a week!",
+            "image": {
+              "src": "/imgs/avatars/1.png",
+              "alt": "david"
+            }
+          },
+          {
+            "name": "Rachel Kim",
+            "role": "CTO at HeyBeauty.ai",
+            "quote": "The pre-built AI infrastructure is a game-changer. We didn't have to worry about architecture - just focused on our AI beauty tech and went live fast.",
+            "image": {
+              "src": "/imgs/avatars/2.png",
+              "alt": "rachel"
+            }
+          },
+          {
+            "name": "Marcus Thompson",
+            "role": "Solo Developer",
+            "quote": "As a solo developer, ShipAny gave me everything I needed - auth, payments, AI integration, and beautiful UI. Launched my SaaS in a weekend!",
+            "image": {
+              "src": "/imgs/avatars/3.png",
+              "alt": "marcus"
+            }
+          },
+          {
+            "name": "Sofia Garcia",
+            "role": "CEO of Melodisco",
+            "quote": "The templates are production-ready and highly customizable. We built our AI music platform in hours instead of months. Incredible time-to-market!",
+            "image": {
+              "src": "/imgs/avatars/4.png",
+              "alt": "sofia"
+            }
+          },
+          {
+            "name": "James Wilson",
+            "role": "Tech Lead at GPTs.works",
+            "quote": "ShipAny's infrastructure is rock-solid. We scaled from 0 to 10k users without touching the backend. Best investment for our AI startup.",
+            "image": {
+              "src": "/imgs/avatars/5.png",
+              "alt": "james"
+            }
+          },
+          {
+            "name": "Anna Zhang",
+            "role": "Startup Founder",
+            "quote": "From idea to launch in 3 days! ShipAny's templates and deployment tools made it possible to test our AI business concept incredibly fast.",
+            "image": {
+              "src": "/imgs/avatars/6.png",
+              "alt": "anna"
+            }
+          }
+        ]
+      },
+      "faq": {
+        "id": "faq",
+        "title": "Frequently Asked Questions About Qwen Image Layered",
+        "description": "Learn more about free AI image layer decomposition, RGBA layer separation, and automatic image editing.",
+        "items": [
+          {
+            "question": "What is Qwen Image Layered and how does automatic layer decomposition work?",
+            "answer": "Qwen Image Layered is a free AI-powered image editor that automatically decomposes images into editable RGBA layers. Using advanced image segmentation technology, it identifies visual components and separates them into distinct layers - like Photoshop but automated and free. Simply upload an image and the AI handles the layer separation automatically."
+          },
+          {
+            "question": "Is Qwen Image Layered really free? What's the catch?",
+            "answer": "Yes! Qwen Image Layered is completely free to use with no hidden costs. No credit card required, no signup needed. Our free AI image editing tool provides full access to automatic layer decomposition, RGBA layer separation, and AI-powered editing features."
+          },
+          {
+            "question": "How is this different from Photoshop or other image editing software?",
+            "answer": "Unlike Photoshop which requires manual layer selection and masking, Qwen Image Layered uses AI to automatically decompose images into layers. It's a free Photoshop alternative that handles the complex task of image segmentation automatically - saving you hours of manual work. Perfect for quick edits and layer-based adjustments."
+          },
+          {
+            "question": "What image formats and file sizes are supported?",
+            "answer": "Qwen Image Layered supports all common image formats including PNG, JPG, JPEG, WEBP, and more. For optimal results with automatic layer decomposition, we recommend images under 10MB. The AI image editor processes your images securely in the browser."
+          },
+          {
+            "question": "What can I do with the decomposed RGBA layers?",
+            "answer": "Once your image is decomposed into RGBA layers, you can: recolor individual layers using AI descriptions, replace objects with new elements, remove unwanted objects, adjust opacity and visibility, organize layers hierarchically, and export in high resolution (1K, 2K, or 4K). Each layer maintains transparency for precise editing."
+          },
+          {
+            "question": "How accurate is the automatic image segmentation?",
+            "answer": "Qwen Image Layered uses state-of-the-art AI for image segmentation with high accuracy. The model excels at identifying distinct visual elements, separating foreground from background, and detecting objects. For complex images, you can use recursive decomposition for more detailed layer separation."
+          },
+          {
+            "question": "Can I use this for professional design work?",
+            "answer": "Absolutely! Qwen Image Layered produces professional-quality RGBA layers suitable for design work. The high-resolution export (up to 4K) with AI upscaling makes it ideal for both web and print projects. It's especially useful for quick mockups, photo editing, and creative compositions."
+          },
+          {
+            "question": "Do I need to install anything or create an account?",
+            "answer": "No installation and no account required! Qwen Image Layered is a web-based free image editing tool that runs entirely in your browser. Just visit the site, upload your image, and start using automatic AI layer decomposition instantly. No signup, no downloads, no hassle."
+          }
+        ]
+      },
+      "cta": {
+        "id": "cta",
+        "title": "Start Automatic Image Layer Decomposition Now",
+        "description": "Experience free AI image layer editing with Qwen Image Layered. No signup required.",
+        "buttons": [
+          {
+            "title": "Try Free Image Layer Editor",
+            "url": "/qwenimagelayered",
+            "target": "_self",
+            "icon": "Zap"
+          },
+          {
+            "title": "View Documentation",
+            "url": "/docs",
+            "target": "_blank",
+            "variant": "outline",
+            "icon": "BookOpenText"
+          }
+        ],
+        "className": "bg-muted"
+      },
+      "subscribe": {
+        "id": "subscribe",
+        "title": "Subscribe to our newsletter",
+        "description": "Get the latest news and updates from Qwen Image Layered.",
+        "submit": {
+          "input": {
+            "placeholder": "Enter your email"
+          },
+          "button": {
+            "title": "Subscribe"
+          },
+          "action": "/api/subscribe"
+        },
+        "className": "bg-muted"
+      }
+    }
+  }
+}

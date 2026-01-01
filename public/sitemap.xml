@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes'?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Homepage - Qwen Image Layered AI Editor -->
+  <url>
+    <loc>https://your-domain.com/</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Qwen Image Layered Editor - Main Tool -->
+  <url>
+    <loc>https://your-domain.com/qwenimagelayered</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Quick Test - Hugging Face Integration -->
+  <url>
+    <loc>https://your-domain.com/quicktest</loc>
+    <lastmod>2025-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- AI Image Generator -->
+  <url>
+    <loc>https://your-domain.com/ai-image-generator</loc>
+    <lastmod>2025-11-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Blog -->
+  <url>
+    <loc>https://your-domain.com/blog</loc>
+    <lastmod>2025-11-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Showcases -->
+  <url>
+    <loc>https://your-domain.com/showcases</loc>
+    <lastmod>2025-11-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Pricing -->
+  <url>
+    <loc>https://your-domain.com/pricing</loc>
+    <lastmod>2025-11-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
