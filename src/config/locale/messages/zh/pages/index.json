@@ -15,53 +15,38 @@
     "sections": {
       "hero": {
         "id": "hero",
-        "title": "一小时快速上线你的 AI 创业项目",
-        "highlight_text": "一小时",
-        "description": "ShipAny 是用于构建 AI SaaS 创业项目的 NextJS 项目模板。<br/>集成常用功能，快速上线你的产品。",
+        "title": "Qwen Image Layered - 免费 AI 图像分层编辑器 | 自动图像分解",
+        "highlight_text": "Qwen Image Layered",
+        "description": "基于 Qwen Image Layered 模型的免费 AI 图像分层编辑器。自动将图像分解为 RGBA 图层，分离视觉元素，并利用 AI 进行编辑。最佳的免费 Photoshop 替代方案，用于自动图层分离和图像分割。",
         "announcement": {
-          "badge": "全新",
-          "title": "🎉 ShipAny 模板二已发布",
-          "url": "/pricing"
+          "badge": "免费",
+          "title": "🚀 免费 AI 图像分层分解工具",
+          "url": "/qwenimagelayered"
         },
-        "tip": "🎁 前 1000 名用户特价优惠",
+        "tip": "✨ 自动图像分层分解 - 无需注册",
         "buttons": [
           {
-            "title": "立即开始",
+            "title": "免费开始编辑",
             "icon": "Zap",
-            "url": "/pricing",
+            "url": "/qwenimagelayered",
             "target": "_self",
             "variant": "default"
           },
           {
-            "title": "阅读文档",
+            "title": "查看演示",
             "icon": "BookOpenText",
-            "url": "/docs",
-            "target": "_blank",
+            "url": "/quicktest",
+            "target": "_self",
             "variant": "outline"
           }
         ],
-        "show_avatars": true,
-        "avatars_tip": "999+ 用户在使用 ShipAny 上站",
-        "show_award": false,
-        "image": {
-          "src": "/imgs/features/admin.png",
-          "alt": "hero",
-          "width": 1200,
-          "height": 800
-        },
-        "image_invert": {
-          "src": "/imgs/features/admin-dark.png",
-          "alt": "hero",
-          "width": 1200,
-          "height": 800
-        },
-        "background_image": {
-          "src": "/imgs/bg/tree.jpg",
-          "alt": "hero"
-        }
+        "show_avatars": false,
+        "avatars_tip": "999+ 用户正在使用 Qwen Image Layered 编辑器",
+        "show_award": false
       },
       "logos": {
-        "title": "ShipAny 使用以下技术栈构建",
+        "id": "logos",
+        "title": "Qwen Image Layered 由前沿 AI 技术驱动",
         "items": [
           {
             "title": "Next.js",
@@ -103,17 +88,17 @@
       "introduce": {
         "block": "features-list",
         "id": "introduce",
-        "title": "ShipAny 是什么？",
-        "label": "产品简介",
-        "description": "ShipAny 是专为 AI SaaS 创业项目打造的 NextJS 脚手架，包括丰富模板、组件及文档。",
+        "title": "什么是 Qwen Image Layered",
+        "label": "介绍",
+        "description": "Qwen Image Layered 是一款 AI 驱动的视觉编辑器，利用 Qwen 先进的视觉模型进行智能图层分解。精准地分解、重新着色、替换和移除对象。",
         "image": {
-          "src": "/imgs/features/landing-page.png",
+          "src": "/imgs/features/001.jpeg",
           "alt": "introduce"
         },
         "items": [
           {
-            "title": "开箱即用的模板",
-            "description": "从数十款生产级 AI SaaS 模板中选择，快速开启你的项目。",
+            "title": "智能图层分解",
+            "description": "利用 Qwen 视觉模型，AI 驱动的分解技术能够精准识别并分离视觉组件。",
             "icon": "RiNextjsFill",
             "image": {
               "src": "/imgs/features/1.png",
@@ -121,8 +106,8 @@
             }
           },
           {
-            "title": "基础设施搭建",
-            "description": "内置最佳实践，即刻拥有可扩展的基础设施。",
+            "title": "专业编辑工具",
+            "description": "自然地重新着色、替换和移除对象，同时保持图像质量和构图。",
             "icon": "RiDatabase2Line",
             "image": {
               "src": "/imgs/features/2.png",
@@ -130,8 +115,8 @@
             }
           },
           {
-            "title": "极速部署",
-            "description": "AI SaaS 产品快速上线，助力小时级交付。",
+            "title": "AI 神经放大",
+            "description": "利用 Qwen 先进的放大能力，将图像分辨率提升至 4K。",
             "icon": "RiCloudyFill",
             "image": {
               "src": "/imgs/features/3.png",
@@ -139,8 +124,8 @@
             }
           },
           {
-            "title": "AI 集成",
-            "description": "通过内置的 AI SDK，轻松为你的项目集成 AI 能力。",
+            "title": "层级图层系统",
+            "description": "以层级树状结构组织分解的元素，实现精细的编辑控制。",
             "icon": "RiRobot2Line",
             "image": {
               "src": "/imgs/features/4.png",
@@ -154,12 +139,12 @@
         "block": "features-accordion",
         "id": "benefits",
         "title": "为何选择 ShipAny",
-        "label": "产品优势",
-        "description": "你获得一切 AI 创业所需——从开箱即用的模板到专业技术支持。",
+        "label": "优势",
+        "description": "获取你启动 AI 创业所需的一切——从现成的模板到技术支持。",
         "items": [
           {
-            "title": "全栈解决方案",
-            "description": "基于 Next.js，集成认证、支付、AI，一站式开箱即用。",
+            "title": "完整框架",
+            "description": "基于 Next.js 构建，集成认证、支付和 AI——一切开箱即用。",
             "icon": "RiNextjsFill",
             "image": {
               "src": "/imgs/features/user-billing.png",
@@ -168,16 +153,16 @@
           },
           {
             "title": "丰富模板库",
-            "description": "多样的 AI SaaS 模板，点击即用，涵盖聊天、图像生成等多场景。",
+            "description": "选择各种 AI SaaS 模板来启动你的项目——聊天机器人、图像生成等。",
             "icon": "RiClapperboardAiLine",
             "image": {
-              "src": "/imgs/features/admin-settings.png",
+              "src": "/imgs/features/admin.png",
               "alt": "benefits"
             }
           },
           {
-            "title": "专属技术指导",
-            "description": "享受专属技术支持与开发者社区，为你的成功保驾护航。",
+            "title": "技术指导",
+            "description": "获得专属支持并加入我们的开发者社区，确保你的成功发布。",
             "icon": "RiCodeFill",
             "image": {
               "src": "/imgs/features/landing-page.png",
@@ -189,8 +174,8 @@
       "usage": {
         "block": "features-step",
         "id": "usage",
-        "title": "三步使用 ShipAny 极速上线",
-        "description": "只需三步，快速开启你的 AI SaaS 创业之路：",
+        "title": "如何使用 Qwen Image Layered 编辑器",
+        "description": "只需简单三步，利用 AI 分解和编辑图像：",
         "image": {
           "src": "/imgs/features/1.png",
           "alt": "usage"
@@ -199,35 +184,35 @@
         "text_align": "center",
         "items": [
           {
-            "title": "获取 ShipAny",
-            "description": "一次性购买 ShipAny，查收邮件获取代码与文档。",
+            "title": "上传图像",
+            "description": "点击上传按钮或拖拽图像。编辑器支持 PNG, JPG, WEBP 等常见格式。",
             "image": {
               "src": "/imgs/features/5.png",
-              "alt": "usage"
+              "alt": "upload"
             }
           },
           {
-            "title": "启动你的项目",
-            "description": "阅读说明文档，克隆 ShipAny 代码，开始开发你的 AI SaaS 项目。",
+            "title": "AI 图层分解",
+            "description": "点击分解按钮，Qwen Image Layered AI 将自动分析图像并将其分离为多个可编辑图层。",
             "image": {
               "src": "/imgs/features/6.png",
-              "alt": "usage"
+              "alt": "decompose"
             }
           },
           {
-            "title": "个性化定制",
-            "description": "根据需求修改模板内容和数据，配置专属 AI 能力。",
+            "title": "编辑与导出",
+            "description": "使用 AI 编辑工具独立调整每个图层 - 重新着色、替换或移除对象。导出高分辨率作品。",
             "image": {
               "src": "/imgs/features/7.png",
-              "alt": "usage"
+              "alt": "edit"
             }
           },
           {
-            "title": "部署上线",
-            "description": "简单几步将你的项目推向生产环境，立刻为客户提供服务。",
+            "title": "高级功能",
+            "description": "使用递归分解进行详细分析，调整透明度和可见性，并在层级树状结构中组织图层。",
             "image": {
               "src": "/imgs/features/8.png",
-              "alt": "usage"
+              "alt": "advanced"
             }
           }
         ],
@@ -235,65 +220,65 @@
       },
       "features": {
         "id": "features",
-        "title": "ShipAny 核心功能",
-        "description": "一切你需要的工具，助力 AI SaaS 项目高效上线。",
+        "title": "Qwen Image Layered 核心功能",
+        "description": "由 Qwen 先进的图像分层模型驱动的专业 AI 视觉编辑。",
         "items": [
           {
-            "title": "Next.js 项目模板",
-            "description": "生产就绪、支持 SEO 与多语言的 Next.js 脚手架。",
+            "title": "Qwen 视觉分层模型",
+            "description": "由 OpenRouter 的 qwen-image-layered 模型驱动，实现精准的图像分析和编辑。",
             "icon": "RiNextjsFill"
           },
           {
-            "title": "身份认证与支付",
-            "description": "集成谷歌 OAuth、一键登录，以及 Stripe 支付。",
+            "title": "智能分解",
+            "description": "AI 自动识别并将视觉组件分离为可编辑图层。",
             "icon": "RiKey2Fill"
           },
           {
-            "title": "数据基础设施",
-            "description": "内置 Supabase，稳定可靠的数据存储。",
+            "title": "自然语言编辑",
+            "description": "用简单的语言描述更改 - 自然地重新着色、替换或移除对象。",
             "icon": "RiDatabase2Line"
           },
           {
-            "title": "一键部署",
-            "description": "自动化部署到 Vercel 或 Cloudflare，极速上线。",
+            "title": "层级图层",
+            "description": "以父子关系的树状结构组织分解的元素。",
             "icon": "RiCloudy2Fill"
           },
           {
-            "title": "商业分析",
-            "description": "集成 Google Analytics、Search Console，助力业务增长。",
+            "title": "高分辨率导出",
+            "description": "利用 AI 增强将作品放大至 1K, 2K 或 4K 分辨率。",
             "icon": "RiBarChart2Line"
           },
           {
-            "title": "AI 原生基础设施",
-            "description": "预置 AI 集成、积分系统和 API 售卖能力。",
+            "title": "实时处理",
+            "description": "快速 AI 处理，提供视觉反馈和进度跟踪。",
             "icon": "RiRobot2Line"
           }
         ]
       },
       "stats": {
         "id": "stats",
-        "title": "用户喜爱 ShipAny",
-        "description": "因其易用且上线飞快。",
+        "title": "大家喜爱 Qwen Image Layered",
+        "description": "因其强大的 AI 视觉编辑能力。",
         "items": [
           {
-            "title": "999+",
-            "description": "位用户"
+            "title": "10K+",
+            "description": "处理图像"
           },
           {
-            "title": "200+",
-            "description": "组件块"
+            "title": "5K+",
+            "description": "分解图层"
           },
           {
-            "title": "50+",
-            "description": "专业模板"
+            "title": "99%",
+            "description": "满意率"
           }
         ],
         "className": "bg-muted"
       },
       "testimonials": {
         "id": "testimonials",
-        "title": "用户对 ShipAny 的评价",
-        "description": "听听开发者与创始人用 ShipAny 快速上线 AI 创业项目的故事。",
+        "title": "用户对 Qwen Image Layered 的评价",
+        "description": "听听设计师和创作者如何使用 Qwen Image Layered 满足他们的 AI 视觉编辑需求。",
         "items": [
           {
             "name": "David Chen",
@@ -353,48 +338,56 @@
       },
       "faq": {
         "id": "faq",
-        "title": "关于 ShipAny 的常见问题",
-        "description": "还有其他问题？欢迎加入 Discord 或发邮件联系我们。",
+        "title": "关于 Qwen Image Layered 的常见问题",
+        "description": "了解更多关于免费 AI 图像分层分解、RGBA 图层分离和自动图像编辑的信息。",
         "items": [
           {
-            "question": "ShipAny 是什么？怎么帮到我？",
-            "answer": "ShipAny 是专为 AI SaaS 创业设计的 NextJS 全套脚手架，内含开箱即用的模板、基础设施搭建和部署工具，让你数小时内上线 AI 产品。"
+            "question": "什么是 Qwen Image Layered，自动图层分解是如何工作的？",
+            "answer": "Qwen Image Layered 是一款免费的 AI 驱动图像编辑器，可自动将图像分解为可编辑的 RGBA 图层。利用先进的图像分割技术，它识别视觉组件并将其分离为不同的图层——就像 Photoshop 一样，但完全自动化且免费。只需上传图像，AI 就会自动处理图层分离。"
           },
           {
-            "question": "使用 ShipAny 需要很高的技术水平吗？",
-            "answer": "有基础编程知识即可上手。ShipAny 面向开发者友好，详细文档和模板让初学者也能轻松起步，不需深厚 AI 或云计算背景。"
+            "question": "Qwen Image Layered 真的免费吗？有什么限制吗？",
+            "answer": "是的！Qwen Image Layered 完全免费使用，没有隐形费用。无需信用卡，无需注册。我们的免费 AI 图像编辑工具提供自动图层分解、RGBA 图层分离和 AI 驱动的编辑功能的全部访问权限。"
           },
           {
-            "question": "ShipAny 支持哪些类型的 AI SaaS 项目？",
-            "answer": "ShipAny 支持内容生成、数据分析、AI 聊天机器人、图片/内容生成器等多种主流 AI 应用场景。"
+            "question": "这与 Photoshop 或其他图像编辑软件有什么不同？",
+            "answer": "与 Photoshop 需要手动选择图层和蒙版不同，Qwen Image Layered 使用 AI 自动将图像分解为图层。它是免费的 Photoshop 替代方案，自动处理复杂的图像分割任务——为您节省数小时的手工工作。非常适合快速编辑和基于图层的调整。"
           },
           {
-            "question": "用 ShipAny 一般多久能上线？",
-            "answer": "借助 ShipAny，可在数小时内拿到产品原型并上线生产环境，预配置的一键部署大幅缩短开发周期。"
+            "question": "支持哪些图像格式和文件大小？",
+            "answer": "Qwen Image Layered 支持所有常见的图像格式，包括 PNG, JPG, JPEG, WEBP 等。为了获得最佳的自动图层分解效果，我们建议图像大小在 10MB 以下。AI 图像编辑器在浏览器中安全地处理您的图像。"
           },
           {
-            "question": "ShipAny 的基础设施包括哪些内容？",
-            "answer": "包含认证、数据库、API 集成、支付、云端部署等全栈解决方案，全部遵循业界最佳实践预配置。"
+            "question": "我可以用分解后的 RGBA 图层做什么？",
+            "answer": "一旦图像分解为 RGBA 图层，您可以：使用 AI 描述重新着色单个图层，用新元素替换对象，移除不需要的对象，调整透明度和可见性，按层级组织图层，并以高分辨率（1K, 2K 或 4K）导出。每个图层都保持透明度，以便进行精确编辑。"
           },
           {
-            "question": "模板是否支持定制自己的品牌？",
-            "answer": "当然支持！所有模板均可自定义设计、功能和品牌，既保持基础架构稳定，又能满足个性扩展需求。"
+            "question": "自动图像分割的准确性如何？",
+            "answer": "Qwen Image Layered 使用最先进的 AI 进行图像分割，准确率极高。该模型擅长识别不同的视觉元素，分离前景和背景，以及检测对象。对于复杂的图像，您可以使用递归分解进行更详细的图层分离。"
+          },
+          {
+            "question": "我可以将其用于专业设计工作吗？",
+            "answer": "当然可以！Qwen Image Layered 生成适合设计工作的专业级 RGBA 图层。具有 AI 放大功能的高分辨率导出（高达 4K）使其非常适合网络和印刷项目。它特别适用于快速模型、照片编辑和创意合成。"
+          },
+          {
+            "question": "我需要安装任何东西或创建帐户吗？",
+            "answer": "无需安装，也无需创建帐户！Qwen Image Layered 是一款基于网络的免费图像编辑工具，完全在您的浏览器中运行。只需访问网站，上传图像，即可立即开始使用自动 AI 图层分解。无需注册，无需下载，无需麻烦。"
           }
         ]
       },
       "cta": {
         "id": "cta",
-        "title": "发布你的第一个 AI SaaS 项目",
-        "description": "从这里出发，用 ShipAny 极速交付。",
+        "title": "立即开始自动图像图层分解",
+        "description": "体验 Qwen Image Layered 的免费 AI 图像图层编辑。无需注册。",
         "buttons": [
           {
-            "title": "获取 ShipAny",
-            "url": "https://shipany.ai",
-            "target": "_blank",
+            "title": "免费尝试图像图层编辑器",
+            "url": "/qwenimagelayered",
+            "target": "_self",
             "icon": "Zap"
           },
           {
-            "title": "阅读文档",
+            "title": "查看文档",
             "url": "/docs",
             "target": "_blank",
             "variant": "outline",
@@ -405,11 +398,11 @@
       },
       "subscribe": {
         "id": "subscribe",
-        "title": "订阅我们的邮件通知",
-        "description": "获取 ShipAny 最新资讯与产品动态。",
+        "title": "订阅我们的通讯",
+        "description": "获取 Qwen Image Layered 的最新消息和更新。",
         "submit": {
           "input": {
-            "placeholder": "输入邮箱"
+            "placeholder": "输入您的邮箱"
           },
           "button": {
             "title": "订阅"

@@ -175,18 +175,18 @@
           "title": "Friends",
           "children": [
             {
-              "title": "ShipAny",
-              "url": "https://shipany.ai",
+              "title": "Pathwordle",
+              "url": "https://pathwordle.com",
               "target": "_blank"
             },
             {
-              "title": "ThinkAny",
-              "url": "https://thinkany.ai",
+              "title": "DisneySolitaire",
+              "url": "https://disneysolitaire.net",
               "target": "_blank"
             },
             {
-              "title": "MCP.so",
-              "url": "https://mcp.so",
+              "title": "Hotgame",
+              "url": "https://speedsters1.net",
               "target": "_blank"
             }
           ]

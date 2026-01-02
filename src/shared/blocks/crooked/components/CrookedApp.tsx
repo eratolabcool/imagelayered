@@ -17,10 +17,12 @@ const CrookedApp: React.FC = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
   const [layerDragOffset, setLayerDragOffset] = useState({ x: 0, y: 0 });
   const [layerCount, setLayerCount] = useState<number>(5);
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
+  const [isLayerPanelCollapsed, setIsLayerPanelCollapsed] = useState(false);
 
   // Advanced Settings State
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedDecompositionConfig>({
@@ -39,12 +41,67 @@ const CrookedApp: React.FC = () => {
 
   // Handle Panning Logic
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Start panning if clicking the background or using the 'move' tool
-    if (e.target === mainRef.current || activeTool === 'move') {
+    // Start panning if:
+    // 1. Clicking directly on the main canvas container (not on a layer)
+    // 2. Using the 'move' tool
+    // 3. Holding space key (like Photoshop/Figma)
+    const target = e.target as HTMLElement;
+    const isClickingOnCanvas = target === mainRef.current || target.classList.contains('canvas-container');
+
+    if (isClickingOnCanvas || activeTool === 'move' || isSpacePressed) {
       setIsDraggingCanvas(true);
       setLastMousePos({ x: e.clientX, y: e.clientY });
     }
   };
+
+  // Handle keyboard events for space key panning
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isSpacePressed) {
+        setIsSpacePressed(true);
+        e.preventDefault();
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpacePressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isSpacePressed]);
+
+  // Handle mouse wheel zoom
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 50) {
+      // Pinch-to-zoom or large scroll gestures
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom(prev => Math.max(0.1, Math.min(5, prev + delta)));
+    } else if (!e.ctrlKey && !e.metaKey) {
+      // Regular scroll - zoom in/out
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      setZoom(prev => Math.max(0.1, Math.min(5, prev * zoomFactor)));
+    }
+  }, []);
+
+  useEffect(() => {
+    const mainElement = mainRef.current;
+    if (mainElement) {
+      mainElement.addEventListener('wheel', handleWheel, { passive: false });
+      return () => {
+        mainElement.removeEventListener('wheel', handleWheel);
+      };
+    }
+  }, [handleWheel]);
 
   // Handle layer dragging
   const handleLayerMouseDown = (e: React.MouseEvent, layer: Layer) => {
@@ -158,19 +215,53 @@ const CrookedApp: React.FC = () => {
       return;
     }
 
-    console.log('[smartDecompose] Starting decomposition', { count, targetId, targetName: target.name });
+    console.log('[smartDecompose] Starting decomposition', { count, targetId, targetName: target.name, urlType: target.url?.substring(0, 50) });
 
     setIsProcessing(true);
     try {
-      // Check if target.url is a valid data URI
-      if (!target.url || !target.url.startsWith('data:')) {
-        console.error('[smartDecompose] Invalid image data:', { hasUrl: !!target.url, startsWithData: target.url?.startsWith('data:') });
-        throw new Error('Invalid image data. Please upload a valid image.');
+      // Check if target.url is valid
+      if (!target.url) {
+        console.error('[smartDecompose] No image URL found');
+        throw new Error('No image data found. Please upload a valid image.');
+      }
+
+      // Handle different image URL formats:
+      // 1. Base64 data URI (data:image/png;base64,...) - use directly
+      // 2. HTTP/HTTPS URL - fetch and convert to base64
+      // 3. Object URL (blob:http://...) - fetch and convert
+      let imageToUpload = target.url;
+
+      if (!target.url.startsWith('data:')) {
+        // Need to fetch the image and convert to base64
+        // Use backend proxy for external URLs to avoid CORS
+        let fetchUrl = target.url;
+        console.log('[smartDecompose] Fetching image from URL:', target.url.substring(0, 100));
+
+        if (target.url.startsWith('http://') || target.url.startsWith('https://')) {
+          // Use backend proxy for external URLs
+          fetchUrl = `/api/storage/proxy-image?url=${encodeURIComponent(target.url)}`;
+          console.log('[smartDecompose] Using backend proxy for external image');
+        }
+
+        const response = await fetch(fetchUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        imageToUpload = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+
+        console.log('[smartDecompose] Converted to base64, length:', imageToUpload.length);
       }
 
       // Upload the image to storage using FormData
       // Convert base64 to Blob
-      const base64Data = target.url.split(',')[1];
+      const base64Data = imageToUpload.split(',')[1];
       if (!base64Data) {
         console.error('[smartDecompose] Failed to extract base64 data');
         throw new Error('Invalid image format. Please try uploading again.');
@@ -221,7 +312,7 @@ const CrookedApp: React.FC = () => {
         num_inference_steps: advancedConfig.inferenceSteps,
         guidance_scale: advancedConfig.guidanceScale,
         enable_safety_checker: true,
-        // sync_mode: true, // Note: sync_mode may not be supported by qwen-image-layered
+        sync_mode: true, // Use synchronous mode - qwen-image-layered supports this
       };
 
       // Add optional parameters if provided
@@ -269,18 +360,36 @@ const CrookedApp: React.FC = () => {
       console.log('[smartDecompose] Full genData.data structure:', JSON.stringify(genData.data, null, 2));
 
       // With sync_mode=true, results should be available immediately in the response
-      if (genData.data?.status === 'SUCCESS') {
+      if (genData.data?.status === 'SUCCESS' || genData.data?.status === 'success') {
         console.log('[smartDecompose] Task completed successfully (sync mode)');
+
+        // Debug: log raw taskInfo before parsing
+        console.log('[smartDecompose] Raw taskInfo type:', typeof genData.data.taskInfo);
+        console.log('[smartDecompose] Raw taskInfo value:', genData.data.taskInfo);
+        console.log('[smartDecompose] Raw taskResult type:', typeof genData.data.taskResult);
+        console.log('[smartDecompose] Raw taskResult value:', genData.data.taskResult?.substring(0, 200));
 
         // Try to parse taskInfo
         if (genData.data.taskInfo) {
           try {
-            const taskInfo = JSON.parse(genData.data.taskInfo);
+            // taskInfo might already be an object or a string
+            let taskInfo;
+            if (typeof genData.data.taskInfo === 'string') {
+              console.log('[smartDecompose] Parsing taskInfo as JSON string');
+              taskInfo = JSON.parse(genData.data.taskInfo);
+            } else {
+              console.log('[smartDecompose] taskInfo is already an object');
+              taskInfo = genData.data.taskInfo;
+            }
             console.log('[smartDecompose] Parsed taskInfo keys:', Object.keys(taskInfo));
-            console.log('[smartDecompose] taskInfo.images:', taskInfo.images);
+            console.log('[smartDecompose] taskInfo.images:', JSON.stringify(taskInfo.images, null, 2));
 
             if (taskInfo?.images && Array.isArray(taskInfo.images)) {
-              layerImages = taskInfo.images;
+              layerImages = taskInfo.images.map((img: any) => {
+                const url = typeof img === 'string' ? img : (img.imageUrl || img.url || img.image_url);
+                console.log('[smartDecompose] TaskInfo image URL:', url ? url.substring(0, 100) : 'undefined');
+                return { imageUrl: url };
+              }).filter((img: any) => img.imageUrl);
               console.log('[smartDecompose] Found images in taskInfo:', layerImages.length);
             }
           } catch (e) {
@@ -291,16 +400,23 @@ const CrookedApp: React.FC = () => {
         // Try to parse taskResult
         if ((!layerImages || layerImages.length === 0) && genData.data.taskResult) {
           try {
-            const parsedResult = JSON.parse(genData.data.taskResult);
+            let parsedResult;
+            if (typeof genData.data.taskResult === 'string') {
+              parsedResult = JSON.parse(genData.data.taskResult);
+            } else {
+              parsedResult = genData.data.taskResult;
+            }
             console.log('[smartDecompose] Parsed taskResult keys:', Object.keys(parsedResult));
             console.log('[smartDecompose] parsedResult.output:', parsedResult.output);
             console.log('[smartDecompose] parsedResult.images:', parsedResult.images);
 
             // Check for images in taskResult
             if (parsedResult?.images && Array.isArray(parsedResult.images)) {
-              layerImages = parsedResult.images.map((img: any) => ({
-                imageUrl: img.url || img,
-              }));
+              layerImages = parsedResult.images.map((img: any) => {
+                const url = typeof img === 'string' ? img : (img.url || img.image_url || img);
+                console.log('[smartDecompose] Image URL:', url ? url.substring(0, 100) : 'undefined');
+                return { imageUrl: url };
+              }).filter((img: any) => img.imageUrl);
               console.log('[smartDecompose] Found images in taskResult:', layerImages.length);
             }
             // Check for output array (fal.ai qwen-image-layered returns layers in output)
@@ -311,7 +427,7 @@ const CrookedApp: React.FC = () => {
               // qwen-image-layered returns an array of layer objects with url property
               layerImages = parsedResult.output.map((img: any, idx: number) => {
                 const url = typeof img === 'string' ? img : (img.url || img.image_url || img);
-                console.log(`[smartDecompose] Layer ${idx} URL:`, url);
+                console.log(`[smartDecompose] Layer ${idx} URL:`, url ? url.substring(0, 100) : 'undefined');
                 return { imageUrl: url };
               }).filter((img: any) => img.imageUrl);
               console.log('[smartDecompose] Found images in output:', layerImages.length);
@@ -323,15 +439,16 @@ const CrookedApp: React.FC = () => {
       }
 
       // If still no images and task is pending, we need to poll
-      if ((!layerImages || layerImages.length === 0) && genData.data?.status === 'PENDING') {
-        const taskId = genData.data?.id;
-        if (!taskId) {
+      if ((!layerImages || layerImages.length === 0) && (genData.data?.status === 'PENDING' || genData.data?.status === 'pending')) {
+        const dbTaskId = genData.data?.id; // Use database task ID, not fal.ai taskId
+        if (!dbTaskId) {
           throw new Error('Task ID missing in response');
         }
 
         console.log('[smartDecompose] Task is pending, starting polling...');
+        console.log('[smartDecompose] Database task ID:', dbTaskId);
         const POLL_INTERVAL = 2000; // 2 seconds
-        const MAX_POLL_TIME = 120000; // 2 minutes max for sync mode timeout
+        const MAX_POLL_TIME = 300000; // 5 minutes max (image decomposition can take a while)
         const startTime = Date.now();
         let pollCount = 0;
 
@@ -347,7 +464,7 @@ const CrookedApp: React.FC = () => {
           const queryRes = await fetch('/api/ai/query', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId }),
+            body: JSON.stringify({ taskId: dbTaskId }),
           });
 
           if (!queryRes.ok) {
@@ -365,14 +482,33 @@ const CrookedApp: React.FC = () => {
           const task = queryData.data;
           console.log('[smartDecompose] Task status:', task.status);
 
-          if (task.status === 'SUCCESS') {
+          // Log taskResult to see what fal.ai returns during polling
+          if (task.taskResult) {
+            try {
+              const resultObj = typeof task.taskResult === 'string' ? JSON.parse(task.taskResult) : task.taskResult;
+              console.log('[smartDecompose] Task result status:', resultObj.status);
+            } catch (e) {
+              console.log('[smartDecompose] Task result (raw):', task.taskResult?.substring(0, 100));
+            }
+          }
+
+          if (task.status === 'SUCCESS' || task.status === 'success') {
             console.log('[smartDecompose] Task completed after', Math.floor(elapsed / 1000), 'seconds');
 
             if (task.taskInfo) {
               try {
-                const parsedTaskInfo = JSON.parse(task.taskInfo);
+                let parsedTaskInfo;
+                if (typeof task.taskInfo === 'string') {
+                  parsedTaskInfo = JSON.parse(task.taskInfo);
+                } else {
+                  parsedTaskInfo = task.taskInfo;
+                }
                 if (parsedTaskInfo?.images && Array.isArray(parsedTaskInfo.images)) {
-                  layerImages = parsedTaskInfo.images;
+                  layerImages = parsedTaskInfo.images.map((img: any) => {
+                    const url = typeof img === 'string' ? img : (img.imageUrl || img.url || img.image_url);
+                    console.log('[smartDecompose] Poll TaskInfo image URL:', url ? url.substring(0, 100) : 'undefined');
+                    return { imageUrl: url };
+                  }).filter((img: any) => img.imageUrl);
                   console.log('[smartDecompose] Found images in taskInfo:', layerImages.length);
                   break;
                 }
@@ -383,18 +519,27 @@ const CrookedApp: React.FC = () => {
 
             if (task.taskResult && (!layerImages || layerImages.length === 0)) {
               try {
-                const parsedResult = JSON.parse(task.taskResult);
+                let parsedResult;
+                if (typeof task.taskResult === 'string') {
+                  parsedResult = JSON.parse(task.taskResult);
+                } else {
+                  parsedResult = task.taskResult;
+                }
                 if (parsedResult?.images && Array.isArray(parsedResult.images)) {
-                  layerImages = parsedResult.images.map((img: any) => ({
-                    imageUrl: img.url || img,
-                  }));
+                  layerImages = parsedResult.images.map((img: any) => {
+                    const url = typeof img === 'string' ? img : (img.url || img.image_url || img);
+                    console.log('[smartDecompose] Poll: Image URL:', url ? url.substring(0, 100) : 'undefined');
+                    return { imageUrl: url };
+                  }).filter((img: any) => img.imageUrl);
                   console.log('[smartDecompose] Found images in taskResult:', layerImages.length);
                   break;
                 }
                 if (parsedResult?.output && Array.isArray(parsedResult.output)) {
-                  layerImages = parsedResult.output.map((img: any) => ({
-                    imageUrl: typeof img === 'string' ? img : (img.url || img),
-                  }));
+                  layerImages = parsedResult.output.map((img: any, idx: number) => {
+                    const url = typeof img === 'string' ? img : (img.url || img.image_url || img);
+                    console.log(`[smartDecompose] Poll: Layer ${idx} URL:`, url ? url.substring(0, 100) : 'undefined');
+                    return { imageUrl: url };
+                  }).filter((img: any) => img.imageUrl);
                   console.log('[smartDecompose] Found images in output:', layerImages.length);
                   break;
                 }
@@ -405,7 +550,7 @@ const CrookedApp: React.FC = () => {
             break;
           }
 
-          if (task.status === 'FAILED') {
+          if (task.status === 'FAILED' || task.status === 'failed') {
             const errorMsg = task.taskInfo
               ? JSON.parse(task.taskInfo)?.errorMessage || 'Decomposition failed'
               : 'Decomposition failed';
@@ -413,7 +558,8 @@ const CrookedApp: React.FC = () => {
             throw new Error(errorMsg);
           }
 
-          if (pollCount % 10 === 0) {
+          // Log status every 5 polls to avoid too much output
+          if (pollCount % 5 === 0) {
             console.log(`[smartDecompose] Still polling... (${Math.floor(elapsed / 1000)}s elapsed, status: ${task.status})`);
           }
         }
@@ -430,17 +576,50 @@ const CrookedApp: React.FC = () => {
         throw new Error('No layers generated. The task completed but returned no images.');
       }
 
-      // Create a layer for each generated image
+      // Helper function to load image and get its natural dimensions
+      const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            resolve({ width: img.naturalWidth, height: img.naturalHeight });
+          };
+          img.onerror = () => {
+            // Fallback to parent dimensions if load fails
+            console.warn('[smartDecompose] Failed to load image for dimensions, using parent dimensions');
+            resolve({ width: target.width, height: target.height });
+          };
+          img.src = url;
+        });
+      };
+
+      // Load all images to get their natural dimensions
+      console.log('[smartDecompose] Loading images to get natural dimensions...');
+      const layerDimensions = await Promise.all(
+        layerImages.map(async (img: any) => {
+          // Use proxy for external URLs to avoid CORS
+          let imageUrl = img.imageUrl;
+          if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            imageUrl = `/api/storage/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+          }
+          return getImageDimensions(imageUrl);
+        })
+      );
+
+      console.log('[smartDecompose] Layer dimensions:', layerDimensions);
+
+      // Create a layer for each generated image with correct dimensions
       const newLayers: Layer[] = layerImages.map((img: any, idx: number) => {
+        const dims = layerDimensions[idx];
         return {
           id: crypto.randomUUID(),
-          name: `Layer ${idx + 1}`,
+          name: `${target.name} - Layer ${idx + 1}`,
           type: 'image',
           url: img.imageUrl,
           x: target.x,
           y: target.y,
-          width: target.width,
-          height: target.height,
+          width: dims.width,
+          height: dims.height,
           opacity: 1,
           visible: true,
           locked: false,
@@ -603,66 +782,245 @@ const CrookedApp: React.FC = () => {
   const handleExport = async (settings: ExportSettings) => {
     setIsProcessing(true);
     try {
-      const originalLayer = layers[0];
-      if (!originalLayer) return;
+      console.log('[handleExport] Starting export with settings:', settings);
 
-      let finalUrl = originalLayer.url;
+      // Get only visible layers, filtered by visibility and sorted by zIndex
+      const visibleLayers = layers
+        .filter(l => {
+          // Check if layer itself is visible
+          if (!l.visible) return false;
+          // Check if any ancestor is collapsed
+          let current = l;
+          while (current.parentId) {
+            if (collapsedLayerIds.has(current.parentId)) return false;
+            const parent = layers.find(pl => pl.id === current.parentId);
+            if (!parent) break;
+            current = parent;
+          }
+          return true;
+        })
+        .sort((a, b) => a.zIndex - b.zIndex);
 
-      // If upscale is enabled, call AI upscaling
-      if (settings.upscale) {
-        const uploadRes = await fetch('/api/storage/upload-image', {
-          method: 'POST',
-          body: JSON.stringify({
-            file: originalLayer.url,
-            contentType: 'image/jpeg',
-          }),
-        });
+      console.log('[handleExport] Visible layers:', visibleLayers.length, 'Total layers:', layers.length);
 
-        const uploadData = await uploadRes.json();
-        if (uploadData.code !== 0) {
-          throw new Error(uploadData.message || 'Upload failed');
-        }
-
-        const imageUrl = uploadData.data.url;
-
-        // Call AI for upscaling
-        const genRes = await fetch('/api/ai/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            mediaType: 'image',
-            scene: 'text-to-image',
-            provider: 'openrouter',
-            model: 'qwen/qwen3-vl-8b-instruct',
-            prompt: `Redraw this image with extreme high quality, sharpness, and high resolution. Maintain every detail from the original but upscale and enhance it to ${settings.resolution}.`,
-            options: {
-              image_input: [imageUrl],
-              resolution: settings.resolution,
-            },
-          }),
-        });
-
-        const genData = await genRes.json();
-        if (genData.code !== 0) {
-          throw new Error(genData.message || 'Upscale failed');
-        }
-
-        const taskInfo = genData.data.taskInfo ? JSON.parse(genData.data.taskInfo) : null;
-        finalUrl = taskInfo?.images?.[0]?.imageUrl || finalUrl;
+      if (visibleLayers.length === 0) {
+        throw new Error('No visible layers to export');
       }
 
-      const link = document.createElement('a');
-      link.href = finalUrl;
-      link.download = `QwenImageLayered-export-${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Create a canvas to composite all visible layers (exactly as displayed on screen)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
 
-      setIsExportModalOpen(false);
+      if (!ctx) {
+        throw new Error('Failed to create canvas context');
+      }
+
+      // Helper function to load an image
+      // For external URLs, use backend GET proxy to avoid CORS issues and quality loss
+      const loadImage = async (url: string): Promise<HTMLImageElement> => {
+        console.log('[handleExport] Loading image:', url?.substring(0, 80));
+
+        let finalUrl = url;
+
+        // For external URLs, use backend GET proxy (returns binary data, no base64 conversion)
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          // Use GET method with URL parameter - proxy returns raw image data
+          finalUrl = `/api/storage/proxy-image?url=${encodeURIComponent(url)}`;
+          console.log('[handleExport] Using backend GET proxy for external image');
+        }
+
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            console.log('[handleExport] Image loaded successfully, natural size:', img.naturalWidth, 'x', img.naturalHeight);
+            resolve(img);
+          };
+          img.onerror = (e) => {
+            console.error('[handleExport] Image load error:', e);
+            reject(new Error(`Failed to load image: ${url?.substring(0, 50)}`));
+          };
+          // Set crossOrigin to anonymous for CORS
+          img.crossOrigin = 'anonymous';
+          img.src = finalUrl;
+        });
+      };
+
+      // Use the base layer's dimensions
+      const baseLayer = layers[0];
+
+      // For original size, we need to load the base layer image to get its natural dimensions
+      let targetWidth = settings.width || baseLayer.width;
+      let targetHeight = settings.height || baseLayer.height;
+      let baseNaturalWidth = baseLayer.width;
+      let baseNaturalHeight = baseLayer.height;
+
+      if (settings.useOriginalSize) {
+        // Load the base layer image to get natural dimensions
+        const baseImg = await loadImage(baseLayer.url);
+        baseNaturalWidth = baseImg.naturalWidth;
+        baseNaturalHeight = baseImg.naturalHeight;
+        targetWidth = baseNaturalWidth;
+        targetHeight = baseNaturalHeight;
+        console.log('[handleExport] Using base layer natural dimensions:', { targetWidth, targetHeight });
+      }
+
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      console.log('[handleExport] Canvas size:', { width: targetWidth, height: targetHeight, original: { width: baseLayer.width, height: baseLayer.height }, useOriginalSize: settings.useOriginalSize });
+
+      // Fill with transparent background first
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw each visible layer exactly as displayed
+      for (const layer of visibleLayers) {
+        try {
+          console.log('[handleExport] Drawing layer:', layer.name, {
+            url: layer.url?.substring(0, 50),
+            x: layer.x,
+            y: layer.y,
+            width: layer.width,
+            height: layer.height,
+            opacity: layer.opacity,
+            zIndex: layer.zIndex
+          });
+
+          const img = await loadImage(layer.url);
+
+          // Use the image's natural dimensions for best quality
+          const naturalWidth = img.naturalWidth;
+          const naturalHeight = img.naturalHeight;
+
+          console.log('[handleExport] Image natural size:', {
+            naturalWidth,
+            naturalHeight,
+            layerSize: { width: layer.width, height: layer.height },
+            canvasSize: { width: targetWidth, height: targetHeight },
+            useOriginalSize: settings.useOriginalSize
+          });
+
+          // Save context state
+          ctx.save();
+
+          // Apply layer opacity
+          ctx.globalAlpha = layer.opacity;
+
+          // When using original size, use the image's natural dimensions
+          // Calculate scale factor based on baseLayer's natural size vs stored size
+          if (settings.useOriginalSize) {
+            // Calculate the ratio between natural and stored dimensions for base layer
+            const baseScaleX = baseNaturalWidth / baseLayer.width;
+            const baseScaleY = baseNaturalHeight / baseLayer.height;
+
+            // Apply this scale to position and size
+            ctx.drawImage(
+              img,
+              layer.x * baseScaleX,
+              layer.y * baseScaleY,
+              layer.width * baseScaleX,
+              layer.height * baseScaleY
+            );
+          } else {
+            // Scale to match target export size
+            const scaleX = targetWidth / baseLayer.width;
+            const scaleY = targetHeight / baseLayer.height;
+
+            ctx.drawImage(
+              img,
+              layer.x * scaleX,
+              layer.y * scaleY,
+              layer.width * scaleX,
+              layer.height * scaleY
+            );
+          }
+
+          // Restore context state
+          ctx.restore();
+        } catch (err) {
+          console.error('[handleExport] Failed to draw layer:', layer.name, err);
+        }
+      }
+
+      console.log('[handleExport] All layers drawn, converting to blob...');
+
+      // Convert canvas to blob and download
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setIsProcessing(false);
+          throw new Error('Failed to export image');
+        }
+
+        console.log('[handleExport] Blob created:', blob.size, 'bytes');
+
+        let finalUrl = URL.createObjectURL(blob);
+        let fileName = `QwenImageLayered-export-${targetWidth}x${targetHeight}-${Date.now()}.png`;
+
+        // If upscale is enabled, call AI upscaling
+        if (settings.upscale) {
+          console.log('[handleExport] Upscaling enabled, resolution:', settings.resolution);
+
+          try {
+            // Convert blob to base64 for upload
+            const reader = new FileReader();
+            const base64Promise = new Promise<string>((resolve) => {
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+
+            const base64Url = await base64Promise;
+            console.log('[handleExport] Converted to base64, length:', base64Url.length);
+
+            // Upload to storage
+            const uploadRes = await fetch('/api/storage/upload-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                file: base64Url,
+                contentType: 'image/png',
+              }),
+            });
+
+            const uploadData = await uploadRes.json();
+            if (uploadData.code !== 0) {
+              throw new Error(uploadData.message || 'Upload failed');
+            }
+
+            const imageUrl = uploadData.data.url;
+            console.log('[handleExport] Image uploaded to storage:', imageUrl);
+
+            // For now, skip AI upscaling as it may cause issues
+            // Just use the composited image
+            console.log('[handleExport] Skipping AI upscaling, using composited image');
+          } catch (err) {
+            console.error('[handleExport] Upscaling failed, using original:', err);
+            // Continue with original image if upscaling fails
+          }
+        }
+
+        // Download the image
+        console.log('[handleExport] Starting download:', fileName);
+        const link = document.createElement('a');
+        link.href = finalUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up object URL
+        setTimeout(() => {
+          if (finalUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(finalUrl);
+          }
+        }, 100);
+
+        setIsExportModalOpen(false);
+        setIsProcessing(false);
+        console.log('[handleExport] Export completed successfully');
+      }, 'image/png');
+
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Export failed.");
-    } finally {
+      console.error('[handleExport] Export failed:', err);
+      alert(err.message || "Export failed. Please try again.");
       setIsProcessing(false);
     }
   };
@@ -681,7 +1039,9 @@ const CrookedApp: React.FC = () => {
       {/* Home Icon - Canvas Top Right */}
       <a
         href="/"
-        className="absolute top-4 right-[360px] z-30 p-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all shadow-lg"
+        className={`absolute top-4 z-30 p-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all shadow-lg ${
+          isLayerPanelCollapsed ? 'right-4' : 'right-[364px]'
+        }`}
         title="Back to Home"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -724,7 +1084,9 @@ const CrookedApp: React.FC = () => {
       <main
         ref={mainRef}
         onMouseDown={handleMouseDown}
-        className={`flex-1 relative flex items-center justify-center overflow-hidden canvas-container ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' ? 'cursor-grab' : 'cursor-default'}`}
+        className={`flex-1 relative flex items-center justify-center overflow-hidden canvas-container ${
+          isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'
+        }`}
       >
         <div
           className="relative transition-transform duration-300 ease-out will-change-transform flex items-center justify-center"
@@ -748,31 +1110,40 @@ const CrookedApp: React.FC = () => {
                   current = parent;
                 }
                 return l.visible;
-              }).sort((a, b) => a.zIndex - b.zIndex).map(layer => (
-                <div
-                  key={layer.id}
-                  className={`absolute pointer-events-auto transition-shadow duration-200 ${!layer.locked ? 'cursor-move' : 'cursor-default'} ${selectedLayerId === layer.id ? 'ring-2 ring-blue-500 ring-offset-4 ring-offset-[#0d0d0d] z-50' : ''} ${draggingLayerId === layer.id ? 'cursor-grabbing' : ''}`}
-                  style={{
-                    left: layer.x,
-                    top: layer.y,
-                    width: layer.width,
-                    height: layer.height,
-                    opacity: layer.opacity,
-                    zIndex: layer.zIndex,
-                    backgroundImage: `url(${layer.url})`,
-                    backgroundPosition: `-${layer.x}px -${layer.y}px`,
-                    backgroundSize: `${layers[0].width}px ${layers[0].height}px`,
-                    backgroundRepeat: 'no-repeat'
-                  }}
-                  onMouseDown={(e) => handleLayerMouseDown(e, layer)}
-                  onClick={(e) => {
-                    if (draggingLayerId !== layer.id) {
-                      e.stopPropagation();
-                      setSelectedLayerId(layer.id);
-                    }
-                  }}
-                />
-              ))}
+              }).sort((a, b) => a.zIndex - b.zIndex).map(layer => {
+                // Find the root layer (base layer) for reference
+                const isRootLayer = !layer.parentId;
+                const baseLayer = layers[0];
+
+                return (
+                  <div
+                    key={layer.id}
+                    className={`absolute pointer-events-auto transition-all duration-200 ${!layer.locked ? 'cursor-move' : 'cursor-default'} ${selectedLayerId === layer.id ? 'z-50' : ''} ${draggingLayerId === layer.id ? 'cursor-grabbing' : ''}`}
+                    style={{
+                      left: isRootLayer ? layer.x : 0,
+                      top: isRootLayer ? layer.y : 0,
+                      width: isRootLayer ? layer.width : baseLayer.width,
+                      height: isRootLayer ? layer.height : baseLayer.height,
+                      opacity: layer.opacity,
+                      zIndex: layer.zIndex,
+                      backgroundImage: `url(${layer.url})`,
+                      backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
+                      backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
+                      backgroundRepeat: 'no-repeat',
+                      // Use outline instead of ring to avoid covering the image
+                      outline: selectedLayerId === layer.id ? '2px solid rgba(59, 130, 246, 0.8)' : 'none',
+                      outlineOffset: selectedLayerId === layer.id ? '2px' : '0'
+                    }}
+                    onMouseDown={(e) => handleLayerMouseDown(e, layer)}
+                    onClick={(e) => {
+                      if (draggingLayerId !== layer.id) {
+                        e.stopPropagation();
+                        setSelectedLayerId(layer.id);
+                      }
+                    }}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div
@@ -828,18 +1199,51 @@ const CrookedApp: React.FC = () => {
         setAdvancedConfig={setAdvancedConfig}
       />
 
-      <CrookedLayerPanel
-        layers={layers}
-        selectedLayerId={selectedLayerId}
-        onSelectLayer={setSelectedLayerId}
-        onToggleVisibility={toggleLayerVisibility}
-        onRecursiveDecompose={(id) => smartDecompose(layerCount, id)}
-        onRemoveLayer={removeLayer}
-        onUpdateLayer={handleUpdateLayer}
-        onDuplicateLayer={handleDuplicateLayer}
-        collapsedLayerIds={collapsedLayerIds}
-        onToggleCollapse={toggleCollapse}
-      />
+      {/* Collapse Toggle Button */}
+      <button
+        onClick={() => setIsLayerPanelCollapsed(!isLayerPanelCollapsed)}
+        className={`absolute top-1/2 -translate-y-1/2 z-40 p-2 rounded-l-lg glass-panel border-l-0 border-y-0 border-r border-white/20 hover:bg-white/10 transition-all ${
+          isLayerPanelCollapsed ? 'right-0' : 'right-[360px]'
+        }`}
+        title={isLayerPanelCollapsed ? 'Show Layers' : 'Hide Layers'}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`transition-transform ${isLayerPanelCollapsed ? 'rotate-180' : ''}`}
+        >
+          <polyline points={isLayerPanelCollapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'} />
+        </svg>
+      </button>
+
+      <div
+        className={`absolute top-0 right-0 h-full glass-panel border-l border-white/10 transition-all duration-300 ease-in-out ${
+          isLayerPanelCollapsed ? 'w-0 opacity-0' : 'w-[360px] opacity-100'
+        }`}
+        style={{
+          overflow: isLayerPanelCollapsed ? 'hidden' : 'visible'
+        }}
+      >
+        <CrookedLayerPanel
+          layers={layers}
+          selectedLayerId={selectedLayerId}
+          onSelectLayer={setSelectedLayerId}
+          onToggleVisibility={toggleLayerVisibility}
+          onRecursiveDecompose={(id) => smartDecompose(layerCount, id)}
+          onRemoveLayer={removeLayer}
+          onUpdateLayer={handleUpdateLayer}
+          onDuplicateLayer={handleDuplicateLayer}
+          collapsedLayerIds={collapsedLayerIds}
+          onToggleCollapse={toggleCollapse}
+        />
+      </div>
 
       {selectedLayerId && activeTool !== 'select' && activeTool !== 'move' && (
         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 w-[500px] glass-panel p-4 rounded-2xl z-30 flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-300 shadow-2xl border-blue-500/20">

@@ -94,7 +94,7 @@
         "label": "Introduce",
         "description": "Qwen Image Layered is an AI-powered vision editor with smart layer decomposition using Qwen's advanced vision model. Decompose, recolor, replace, and remove objects with precision.",
         "image": {
-          "src": "/imgs/features/landing-page.png",
+          "src": "/imgs/features/001.jpeg",
           "alt": "introduce"
         },
         "items": [
@@ -158,7 +158,7 @@
             "description": "Choose from various AI SaaS templates to kickstart your project - chatbots, image generation, and more.",
             "icon": "RiClapperboardAiLine",
             "image": {
-              "src": "/imgs/features/admin-settings.png",
+              "src": "/imgs/features/admin.png",
               "alt": "benefits"
             }
           },

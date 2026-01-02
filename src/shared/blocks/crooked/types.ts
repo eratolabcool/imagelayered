@@ -35,6 +35,7 @@ export type ExportResolution = '1K' | '2K' | '4K';
 export interface ExportSettings {
   width: number;
   height: number;
+  useOriginalSize: boolean; // When true, ignore width/height and use original image dimensions
   upscale: boolean;
   resolution: ExportResolution;
 }

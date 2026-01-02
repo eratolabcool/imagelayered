@@ -24,6 +24,7 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
   const [settings, setSettings] = useState<ExportSettings>({
     width: initialWidth,
     height: initialHeight,
+    useOriginalSize: true, // Default to original size to avoid blurriness
     upscale: true,
     resolution: '2K'
   });
@@ -32,6 +33,15 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
 
   const handleExport = () => {
     onExport(settings);
+  };
+
+  const handleUseOriginalSize = () => {
+    setSettings({
+      ...settings,
+      useOriginalSize: true,
+      width: initialWidth,
+      height: initialHeight
+    });
   };
 
   return (
@@ -48,14 +58,29 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         <div className="space-y-6">
+          {/* Original Size Button */}
+          <button
+            onClick={handleUseOriginalSize}
+            className={`w-full py-3 rounded-xl text-sm font-bold border transition-all ${
+              settings.useOriginalSize
+                ? 'bg-green-600/20 border-green-500 text-green-400'
+                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
+            }`}
+          >
+            {settings.useOriginalSize ? '✓ Original Size (' + initialWidth + 'x' + initialHeight + ')' : 'Use Original Size (' + initialWidth + 'x' + initialHeight + ')'}
+          </button>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-wider">Width (PX)</label>
               <input
                 type="number"
                 value={settings.width}
-                onChange={(e) => setSettings({ ...settings, width: parseInt(e.target.value) || 0 })}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-colors"
+                onChange={(e) => setSettings({ ...settings, width: parseInt(e.target.value) || 0, useOriginalSize: false })}
+                disabled={settings.useOriginalSize}
+                className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-colors ${
+                  settings.useOriginalSize ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               />
             </div>
             <div>
@@ -63,8 +88,11 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
               <input
                 type="number"
                 value={settings.height}
-                onChange={(e) => setSettings({ ...settings, height: parseInt(e.target.value) || 0 })}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-colors"
+                onChange={(e) => setSettings({ ...settings, height: parseInt(e.target.value) || 0, useOriginalSize: false })}
+                disabled={settings.useOriginalSize}
+                className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-colors ${
+                  settings.useOriginalSize ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               />
             </div>
           </div>

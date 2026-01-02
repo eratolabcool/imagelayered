@@ -169,18 +169,18 @@
           "title": "合作伙伴",
           "children": [
             {
-              "title": "Qwen Image Layered",
-              "url": "https://qwen-image-layered.ai",
+              "title": "Pathwordle",
+              "url": "https://pathwordle.com",
               "target": "_blank"
             },
             {
-              "title": "ThinkAny",
-              "url": "https://thinkany.ai",
+              "title": "DisneySolitaire",
+              "url": "https://disneysolitaire.net",
               "target": "_blank"
             },
             {
-              "title": "MCP.so",
-              "url": "https://mcp.so",
+              "title": "Hotgame",
+              "url": "https://speedsters1.net",
               "target": "_blank"
             }
           ]
@@ -189,24 +189,8 @@
     },
     "social": {
       "items": [
-        {
-          "title": "X",
-          "icon": "RiTwitterXFill",
-          "url": "https://x.com/your-app-name",
-          "target": "_blank"
-        },
-        {
-          "title": "Github",
-          "icon": "Github",
-          "url": "https://github.com/your-app-name",
-          "target": "_blank"
-        },
-        {
-          "title": "Discord",
-          "icon": "RiDiscordFill",
-          "url": "https://discord.gg/your-app-name",
-          "target": "_blank"
-        },
+        
+    
         {
           "title": "邮箱",
           "icon": "Mail",

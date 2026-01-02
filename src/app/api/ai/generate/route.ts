@@ -98,6 +98,14 @@ export async function POST(request: Request) {
 
     // generate content
     const result = await aiProvider.generate({ params });
+
+    // Debug log
+    console.log('[generate] AI provider result:', JSON.stringify(result, null, 2));
+    console.log('[generate] taskStatus:', result.taskStatus);
+    console.log('[generate] taskId:', result.taskId);
+    console.log('[generate] taskInfo:', JSON.stringify(result.taskInfo, null, 2));
+    console.log('[generate] taskResult keys:', result.taskResult ? Object.keys(result.taskResult) : 'null');
+
     if (!result?.taskId) {
       throw new Error(
         `ai generate failed, mediaType: ${mediaType}, provider: ${provider}, model: ${model}`

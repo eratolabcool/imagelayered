@@ -107,32 +107,54 @@ export class FalProvider implements AIProvider {
     }
 
     const data = await resp.json();
+    console.log('[fal] API response data:', JSON.stringify(data, null, 2));
     console.log('[fal] API response keys:', Object.keys(data));
 
     // Check if sync_mode was used and response contains results
     // When sync_mode=true, fal.ai returns the complete response directly
-    if (data.output !== undefined || data.images !== undefined || data.video !== undefined || data.videos !== undefined) {
+    if (data.images !== undefined || data.output !== undefined || data.video !== undefined || data.videos !== undefined) {
       // Synchronous response with results
       let images: AIImage[] | undefined = undefined;
       let videos: AIVideo[] | undefined = undefined;
 
-      // Handle image output
+      // Handle image output - qwen-image-layered returns images array
       if (data.images && Array.isArray(data.images)) {
-        images = data.images.map((image: any) => ({
-          id: '',
-          createTime: new Date(),
-          imageUrl: image.url || image,
-        }));
-      } else if (data.output && Array.isArray(data.output)) {
-        // Check if output contains image URLs
+        console.log('[fal] Found images array in response:', data.images.length);
+        console.log('[fal] First image item:', JSON.stringify(data.images[0]));
+        // Handle both string URLs (including Base64 data URIs) and { url: string } objects
+        images = data.images.map((image: any) => {
+          const url = typeof image === 'string' ? image : (image.url || image.image_url);
+          console.log('[fal] Processing image:', url ? url.substring(0, 100) : 'undefined');
+          return {
+            id: '',
+            createTime: new Date(),
+            imageUrl: url,
+          };
+        }).filter((img: any) => img.imageUrl);
+        console.log('[fal] Processed images count:', images?.length || 0);
+      }
+
+      // Also check for output array (some fal.ai models use this)
+      if ((!images || images.length === 0) && data.output && Array.isArray(data.output)) {
+        console.log('[fal] Found output array:', data.output.length);
+        console.log('[fal] First output item:', JSON.stringify(data.output[0]));
+        // Check if output contains image URLs or image objects
         const firstOutput = data.output[0];
-        if (typeof firstOutput === 'string' && (firstOutput.startsWith('http://') || firstOutput.startsWith('https://'))) {
+        // Handle Base64 data URIs (data:image/...) and HTTP(S) URLs
+        if (typeof firstOutput === 'string' && (firstOutput.startsWith('http://') || firstOutput.startsWith('https://') || firstOutput.startsWith('data:'))) {
           images = data.output.map((url: string) => ({
             id: '',
             createTime: new Date(),
             imageUrl: url,
           }));
+        } else if (firstOutput?.url || firstOutput?.image_url) {
+          images = data.output.map((img: any) => ({
+            id: '',
+            createTime: new Date(),
+            imageUrl: img.url || img.image_url || img,
+          }));
         }
+        console.log('[fal] Processed output images count:', images?.length || 0);
       }
 
       // Handle video output
@@ -149,6 +171,8 @@ export class FalProvider implements AIProvider {
           videoUrl: video.url || video,
         }));
       }
+
+      console.log('[fal] Processed images:', images?.length || 0, 'videos:', videos?.length || 0);
 
       return {
         taskStatus: AITaskStatus.SUCCESS,
@@ -237,6 +261,8 @@ export class FalProvider implements AIProvider {
     }
 
     const data = await resultResp.json();
+    console.log('[fal] Query result data:', JSON.stringify(data, null, 2));
+    console.log('[fal] Query result keys:', Object.keys(data));
 
     let images: AIImage[] | undefined = undefined;
     let videos: AIVideo[] | undefined = undefined;
@@ -260,12 +286,42 @@ export class FalProvider implements AIProvider {
       }
     } else {
       // handle image output (default)
+      // Check for images array first (fal.ai standard format)
       if (data.images && Array.isArray(data.images)) {
-        images = data.images.map((image: any) => ({
-          id: '',
-          createTime: new Date(),
-          imageUrl: image.url,
-        }));
+        console.log('[fal] Query: Found images array:', data.images.length);
+        console.log('[fal] Query: First image:', JSON.stringify(data.images[0]));
+        // Handle both string URLs (including Base64 data URIs) and { url: string } objects
+        images = data.images.map((image: any) => {
+          const url = typeof image === 'string' ? image : (image.url || image.image_url);
+          console.log('[fal] Query: Processing image URL:', url ? url.substring(0, 100) : 'undefined');
+          return {
+            id: '',
+            createTime: new Date(),
+            imageUrl: url,
+          };
+        }).filter((img: any) => img.imageUrl);
+        console.log('[fal] Query: Processed images count:', images?.length || 0);
+      }
+      // Also check for output array (some models use this)
+      else if (data.output && Array.isArray(data.output)) {
+        console.log('[fal] Query: Found output array:', data.output.length);
+        console.log('[fal] Query: First output item:', JSON.stringify(data.output[0]));
+        const firstOutput = data.output[0];
+        // Handle Base64 data URIs (data:image/...) and HTTP(S) URLs
+        if (typeof firstOutput === 'string' && (firstOutput.startsWith('http://') || firstOutput.startsWith('https://') || firstOutput.startsWith('data:'))) {
+          images = data.output.map((url: string) => ({
+            id: '',
+            createTime: new Date(),
+            imageUrl: url,
+          }));
+        } else if (firstOutput?.url || firstOutput?.image_url) {
+          images = data.output.map((img: any) => ({
+            id: '',
+            createTime: new Date(),
+            imageUrl: img.url || img.image_url || img,
+          }));
+        }
+        console.log('[fal] Query: Processed output images count:', images?.length || 0);
       }
     }
 
