@@ -27,6 +27,8 @@ const nextConfig = {
         hostname: '*',
       },
     ],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
   async redirects() {
     return [];
@@ -42,21 +44,58 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/:all*(svg|jpg|jpeg|png|ico|webp|avif)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
     ];
   },
+  compress: true,
+  poweredByHeader: false,
   turbopack: {
-    resolveAlias: {
-      // fs: {
-      //   browser: './empty.ts', // We recommend to fix code imports before using this method
-      // },
-    },
+    resolveAlias: {},
   },
   experimental: {
     turbopackFileSystemCacheForDev: true,
-    // Disable mdxRs for Vercel deployment compatibility with fumadocs-mdx
     ...(process.env.VERCEL ? {} : { mdxRs: true }),
+    optimizePackageImports: [
+      '@radix-ui/react-icons',
+      '@tabler/icons-react',
+      'framer-motion',
+      'lucide-react',
+      'react-icons',
+      'react-icons/fa',
+      'react-icons/ri',
+      'react-icons/md',
+    ],
+    optimizeCss: true,
+    optimizeServerReact: true,
   },
   reactCompiler: true,
+  productionBrowserSourceMaps: false,
 };
 
 export default withBundleAnalyzer(withNextIntl(withMDX(nextConfig)));

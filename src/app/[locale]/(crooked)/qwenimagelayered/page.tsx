@@ -4,7 +4,7 @@ import '@/shared/blocks/crooked/styles/crooked.css';
 
 // SEO Metadata optimized for target keywords
 export const metadata: Metadata = {
-  title: 'Qwen Image Layered - Free AI Image Layer Editor | Automatic Image Decomposition & RGBA Layer Separation',
+  title: 'Qwen Image Layered - AI Image Layer Editor | Automatic Image Decomposition & RGBA Layer Separation',
   description: 'Free AI-powered image layer editor using Qwen Image Layered model. Automatically decompose images into RGBA layers, separate visual elements, and edit with AI. Photoshop alternative for automatic layer separation and image segmentation.',
   keywords: 'qwen image layered, image layer decomposition, RGBA layers, AI image editing, Photoshop alternative, image segmentation, automatic layer separation, free image editing, layer separation AI, image to layers, AI image decomposer',
   authors: [{ name: 'Qwen Image Layered Team' }],

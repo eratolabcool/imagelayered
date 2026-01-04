@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "Qwen Image Layered",
-    "description": "Qwen Image Layered 是一个基于 Qwen AI 模型的图像图层分解工具。您可以将任何图像分解为多个可编辑的 RGBA 图层，实现专业的图像编辑。",
-    "keywords": "Qwen Image Layered, 图像图层分解, AI 图像编辑器, 图层分离, 图像图层, Qwen AI, 视觉 AI"
+    "title": "Qwen Image Layered - 免费AI图像图层编辑器与RGBA分解工具",
+    "description": "使用 Qwen Image Layered 自动将任何图像分解为可编辑的 RGBA 图层。免费开源的 AI 图像编辑工具，Photoshop 替代方案。适用于电商产品图片、平面设计和内容创作。支持零漂移编辑、图层分离和智能物体检测。",
+    "keywords": "AI图像编辑器, 图像图层分解, RGBA图层, Photoshop替代, 免费图片编辑软件, AI图片编辑工具, 图层分离工具, 物体检测, 抠图, 图像遮罩, Qwen AI, 计算机视觉, 平面设计工具, 电商图片编辑, 内容创作软件, 开源图像编辑器, 通义千问, 阿里AI, 图层管理, 图片分层, 智能抠图, 背景移除, 图像处理"
   },
   "sign": {
     "sign_in_title": "登录",

@@ -11,6 +11,19 @@ export const revalidate = 3600;
 export const generateMetadata = getMetadata({
   metadataKey: 'pages.pricing.metadata',
   canonicalUrl: '/pricing',
+  additionalKeywords: [
+    'affordable AI image editor',
+    'cheap Photoshop alternative',
+    'image layer editor pricing',
+    'AI photo editing subscription',
+    'pay as you go image editor',
+    'professional AI design tools',
+    'image decomposition pricing',
+    'AI layer separation cost',
+    'budget-friendly design software',
+    'no subscription image editor',
+    'one-time purchase AI tool',
+  ],
 });
 
 export default async function PricingPage({

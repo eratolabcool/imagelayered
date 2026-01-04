@@ -12,27 +12,36 @@ import { getAdsService } from '@/shared/services/ads';
 import { getAffiliateService } from '@/shared/services/affiliate';
 import { getAnalyticsService } from '@/shared/services/analytics';
 import { getCustomerService } from '@/shared/services/customer_service';
+import { JsonLd } from '@/shared/components/seo/json-ld';
+import {
+  generateWebSiteSchemaData,
+  generateOrganizationSchemaData,
+  generateSoftwareApplicationSchemaData,
+} from '@/shared/lib/schema';
 
 const notoSansMono = Noto_Sans_Mono({
   subsets: ['latin'],
   variable: '--font-sans',
-  display: 'swap',
+  display: 'optional',
   preload: true,
+  adjustFontFallback: true,
 });
 
 const merriweather = Merriweather({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-serif',
-  display: 'swap',
-  preload: true,
+  display: 'optional',
+  preload: false,
+  adjustFontFallback: true,
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
-  display: 'swap',
-  preload: true,
+  display: 'optional',
+  preload: false,
+  adjustFontFallback: true,
 });
 
 export default async function RootLayout({
@@ -112,6 +121,28 @@ export default async function RootLayout({
         <link rel="alternate icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+        {/* Preconnect to external origins for faster connection setup */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+
+        {/* Preload critical assets */}
+        <link
+          rel="preload"
+          href="/logo.png"
+          as="image"
+          type="image/png"
+        />
+
+        {/* Performance hints */}
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)" />
+
+        {/* DNS prefetch for external domains */}
+        <link rel="dns-prefetch" href="https://modelscope.cn" />
+        <link rel="dns-prefetch" href="https://github.com" />
+
         {/* inject locales */}
         {locales ? (
           <>
@@ -147,6 +178,11 @@ export default async function RootLayout({
         {customerServiceHeadScripts}
       </head>
       <body suppressHydrationWarning className="overflow-x-hidden">
+        {/* JSON-LD Structured Data for SEO */}
+        <JsonLd data={generateWebSiteSchemaData(locale, envConfigs.app_url, envConfigs.app_name)} />
+        <JsonLd data={generateOrganizationSchemaData(envConfigs.app_url, envConfigs.app_name)} />
+        <JsonLd data={generateSoftwareApplicationSchemaData(envConfigs.app_name)} />
+
         <NextTopLoader
           color="#6466F1"
           initialPosition={0.08}

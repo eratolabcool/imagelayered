@@ -28,9 +28,17 @@ export async function POST(request: Request) {
     return limited;
   }
 
-  const auth = await getAuth();
-  const handler = toNextJsHandler(auth.handler);
-  return handler.POST(request);
+  try {
+    const auth = await getAuth();
+    const handler = toNextJsHandler(auth.handler);
+    return await handler.POST(request);
+  } catch (e: any) {
+    console.error('Auth POST error:', e);
+    return new Response(JSON.stringify({ error: e.message, stack: e.stack }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 export async function GET(request: Request) {

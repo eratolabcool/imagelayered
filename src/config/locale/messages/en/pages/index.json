@@ -1,21 +1,24 @@
 {
+  "metadata": {
+    "title": "Qwen Image Layered - Free AI Image Layer Editor | Automatic RGBA Decomposition",
+    "description": "Free AI-powered image layer editor. Automatically decompose any image into editable RGBA layers with Qwen's advanced vision model. The best free Photoshop alternative with zero-drift editing, layer separation, and intelligent object detection.",
+    "keywords": "AI image editor, image layer decomposition, RGBA layers, Photoshop alternative, free image editing software, AI-powered photo editor, layer separation tool, object detection, background removal, image masking, Qwen AI, computer vision, graphic design tool, e-commerce photo editor, content creation software, open-source image editor"
+  },
   "page": {
     "show_sections": [
       "hero",
-     
       "introduce",
-   
       "usage",
       "features",
       "stats",
-      "testimonials",
+      
       "faq",
       "cta"
     ],
     "sections": {
       "hero": {
         "id": "hero",
-        "title": "Qwen Image Layered - Free AI Image Layer Editor | Automatic Image Decomposition",
+        "title": "Qwen Image Layered - AI Image Layer Editor",
         "highlight_text": "Qwen Image Layered",
         "description": "Free AI-powered image layer editor using Qwen Image Layered model. Automatically decompose images into RGBA layers, separate visual elements, and edit with AI. The best free Photoshop alternative for automatic layer separation and image segmentation.",
         "announcement": {
@@ -43,8 +46,6 @@
         "show_avatars": false,
         "avatars_tip": "999+ users are using Qwen Image Layered Editor",
         "show_award": false
-        
-       
       },
       "logos": {
         "id": "logos",

@@ -2,6 +2,55 @@
 title: 介绍
 ---
 
-## 什么是 YourAppName?
+## 什么是 Qwen Image Layered?
 
-YourAppName 是一个基于 NextJS 的 AI SaaS 开发框架，内置丰富的组件和 AI SDK，帮助你快速完成 AI SaaS 项目开发。
+Qwen Image Layered 是一款基于 Qwen 视觉模型的免费 AI 图像分层编辑器，支持自动图像分解、RGBA 图层分离和 AI 编辑。
+
+模型地址：https://modelscope.cn/models/Qwen/Qwen-Image-Layered
+
+## 模型概述
+
+**Qwen-Image-Layered** 是由阿里巴巴通义千问(Qwen)团队在 2025 年 12 月发布的革命性 AI 图像模型，该模型通过**图像层分解技术**，打破了传统 AI 图像编辑的"扁平式思维"限制。
+
+## 核心技术特点
+
+### 1. 图层拆解能力
+- 能够自动将静态图像分解为多个 **RGBA 图层**（红、绿、蓝、Alpha 通道）
+- 与传统仅识别对象的分割工具不同，实现真正的语义解耦分层
+- 每个图层具有独立的可编辑性，支持"指哪改哪"的精准编辑
+
+### 2. 零漂移编辑
+- 传统 AI 修图采用全局重采样，类似在湿透的画纸上改色，颜色会渗开
+- Qwen-Image-Layered 实现几乎"**零漂移**"的精准编辑
+- 彻底解决 AI 图像编辑中常见的细节丢失问题
+
+### 3. 物理式理解
+- 通过"分层"和"补全"建立对现实世界更准确的物理式理解
+- 让 AI 从平面的"看图说话"迈向真实的物理感知
+
+## 技术架构演进
+
+模型经历了三个阶段的进化：
+1. **生成单图阶段**：基础的图像生成
+2. **生成多层阶段**：开始探索多图层生成
+3. **拆解任意 RGB 图像阶段**：最终实现将现有图像拆解为可编辑图层
+
+## 应用场景
+
+- 类似 Photoshop 的分层作图和修图
+- 精细的局部图像编辑
+- 图像内容的结构化理解
+- AI 辅助的图像内容修改和再创作
+
+## 使用方法
+
+1. 访问 [ModelScope 平台](https://modelscope.cn/models/Qwen/Qwen-Image-Layered)
+2. 上传您的图片
+3. 让 AI 自动分解为图层
+4. 独立编辑每个图层
+5. 导出最终结果
+
+## 相关资源
+
+- [GitHub 仓库](https://github.com/QwenLM/Qwen-Image-Layered)
+- [模型：Qwen-Image-Edit-2511](https://modelscope.cn/models/Qwen/Qwen-Image-Edit-2511) - 图像编辑模型，配合实现完整工作流

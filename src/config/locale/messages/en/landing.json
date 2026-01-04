@@ -18,11 +18,7 @@
           "url": "/#features",
           "icon": "Sparkles"
         },
-        {
-          "title": "Showcases",
-          "url": "/showcases",
-          "icon": "Box"
-        },
+        
         {
           "title": "Pricing",
           "url": "/pricing",
@@ -37,31 +33,8 @@
               "description": "AI-powered layer decomposition & image editing powered by Qwen",
               "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
-            },
-            {
-              "title": "AI Image Generator",
-              "description": "Use AI to generate images",
-              "url": "/ai-image-generator",
-              "icon": "RiImage2Line"
-            },
-            {
-              "title": "AI Music Generator",
-              "description": "Use AI to generate music",
-              "url": "/ai-music-generator",
-              "icon": "RiMusic2Line"
-            },
-            {
-              "title": "AI Video Generator",
-              "description": "Use AI to generate videos",
-              "url": "/ai-video-generator",
-              "icon": "RiVideoLine"
-            },
-            {
-              "title": "AI Chatbot",
-              "description": "Chat with AI chatbot",
-              "url": "/chat",
-              "icon": "RiMessage2Line"
             }
+           
           ]
         },
         {

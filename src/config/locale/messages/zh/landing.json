@@ -18,11 +18,8 @@
           "url": "/#features",
           "icon": "Sparkles"
         },
-        {
-          "title": "案例展示",
-          "url": "/showcases",
-          "icon": "Box"
-        },
+     
+     
         {
           "title": "价格",
           "url": "/pricing",
@@ -33,29 +30,13 @@
           "icon": "RiRobot2Line",
           "children": [
             {
-              "title": "AI 图片生成器",
-              "description": "使用 AI 生成图片",
-              "url": "/ai-image-generator",
+              "title": "Qwen Image Layered Vision Editor",
+              "description": "AI-powered layer decomposition & image editing powered by Qwen",
+              "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
-            },
-            {
-              "title": "AI 音乐生成器",
-              "description": "使用 AI 生成美妙的音乐",
-              "url": "/ai-music-generator",
-              "icon": "RiMusic2Line"
-            },
-            {
-              "title": "AI 视频生成器",
-              "description": "使用 AI 生成视频",
-              "url": "/ai-video-generator",
-              "icon": "RiVideoLine"
-            },
-            {
-              "title": "AI 聊天机器人",
-              "description": "与 AI 聊天机器人对话",
-              "url": "/chat",
-              "icon": "RiMessage2Line"
             }
+            
+            
           ]
         },
         {
@@ -107,7 +88,7 @@
     "show_theme": true,
     "show_locale": true,
     "topbanner": {
-      "text": "此网站是 Qwen Image Layered 的演示站点，购买 Qwen Image Layered，请访问 <a href='https://shipany.ai/zh/pricing' class='text-orange-300' target='_blank'>ShipAny 官网</a>"
+      "text": "Professional AI-powered image editing with Qwen Vision Layered Model. Decompose, recolor, replace, and remove objects with precision.</a>"
     }
   },
   "footer": {

@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { envConfigs } from '@/config';
-import { defaultLocale } from '@/config/locale';
+import { defaultLocale, locales } from '@/config/locale';
 
 // get metadata for page component
 export function getMetadata(
@@ -14,6 +14,9 @@ export function getMetadata(
     imageUrl?: string;
     appName?: string;
     noIndex?: boolean;
+    noFollow?: boolean;
+    additionalKeywords?: string[];
+    structuredData?: Record<string, any>;
   } = {}
 ) {
   return async function generateMetadata({
@@ -59,6 +62,17 @@ export function getMetadata(
       translatedMetadata.description ||
       defaultMetadata.description;
 
+    // Combine keywords with additional long-tail keywords
+    const baseKeywords =
+      passedMetadata.keywords ||
+      translatedMetadata.keywords ||
+      defaultMetadata.keywords ||
+      '';
+    const additionalKeywords = options.additionalKeywords || [];
+    const allKeywords = options.additionalKeywords
+      ? [...baseKeywords.split(',').map((k: string) => k.trim()), ...additionalKeywords].join(', ')
+      : baseKeywords;
+
     // image url
     let imageUrl = options.imageUrl || envConfigs.app_preview_image;
     if (imageUrl.startsWith('http')) {
@@ -73,22 +87,25 @@ export function getMetadata(
       appName = envConfigs.app_name || '';
     }
 
+    // Build alternates with hreflang
+    const alternates: Record<string, string> = {
+      canonical: canonicalUrl,
+    };
+
+    // Add language alternates for SEO
+    for (const loc of locales) {
+      const localeUrl = await getCanonicalUrl(options.canonicalUrl || '', loc);
+      alternates[loc === defaultLocale ? 'x-default' : loc] = localeUrl;
+    }
+
     return {
-      title:
-        passedMetadata.title ||
-        translatedMetadata.title ||
-        defaultMetadata.title,
-      description:
-        passedMetadata.description ||
-        translatedMetadata.description ||
-        defaultMetadata.description,
-      keywords:
-        passedMetadata.keywords ||
-        translatedMetadata.keywords ||
-        defaultMetadata.keywords,
-      alternates: {
-        canonical: canonicalUrl,
-      },
+      title,
+      description,
+      keywords: allKeywords,
+      alternates,
+
+      // Explicit meta tags for better SEO
+      metadataBase: new URL(envConfigs.app_url),
 
       openGraph: {
         type: 'website',
@@ -97,7 +114,14 @@ export function getMetadata(
         title,
         description,
         siteName: appName,
-        images: [imageUrl.toString()],
+        images: [
+          {
+            url: imageUrl.toString(),
+            width: 1200,
+            height: 630,
+            alt: title,
+          },
+        ],
       },
 
       twitter: {
@@ -106,11 +130,38 @@ export function getMetadata(
         description,
         images: [imageUrl.toString()],
         site: envConfigs.app_url,
+        creator: '@' + appName.toLowerCase().replace(/\s+/g, ''),
       },
 
       robots: {
         index: options.noIndex ? false : true,
-        follow: options.noIndex ? false : true,
+        follow: options.noFollow !== undefined ? options.noFollow : !options.noIndex,
+        googleBot: {
+          index: options.noIndex ? false : true,
+          follow: options.noFollow !== undefined ? options.noFollow : !options.noIndex,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+
+      verification: {
+        // Add verification meta tags for search consoles
+        google: envConfigs.google_site_verification || '',
+        yandex: envConfigs.yandex_verification || '',
+      },
+
+      // Additional SEO tags
+      category: 'technology',
+      classification: 'AI Image Editing Tool',
+      referrer: 'origin-when-cross-origin',
+
+      // Structured data will be injected separately
+      other: {
+        'application-name': appName,
+        'apple-mobile-web-app-title': appName,
+        'apple-mobile-web-app-capable': 'yes',
+        'mobile-web-app-capable': 'yes',
       },
     };
   };

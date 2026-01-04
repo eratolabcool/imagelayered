@@ -1,29 +1,32 @@
 {
+  "metadata": {
+    "title": "Qwen Image Layered - AI 图像分层编辑器 | 自动 RGBA 分解",
+    "description": "免费 AI 驱动的图像分层编辑器。使用 Qwen 先进的视觉模型自动将任何图像分解为可编辑的 RGBA 图层。最佳免费 Photoshop 替代方案，支持零漂移编辑、图层分离和智能物体检测。",
+    "keywords": "AI图像编辑器, 图像图层分解, RGBA图层, Photoshop替代, 免费图片编辑软件, AI图片编辑工具, 图层分离工具, 物体检测, 抠图, 图像遮罩, Qwen AI, 计算机视觉, 平面设计工具, 电商图片编辑, 内容创作软件, 开源图像编辑器, 通义千问, 阿里AI, 图层管理, 图片分层, 智能抠图, 背景移除, 图像处理"
+  },
   "page": {
     "show_sections": [
       "hero",
-      "logos",
       "introduce",
-      "benefits",
       "usage",
       "features",
       "stats",
-      "testimonials",
+     
       "faq",
       "cta"
     ],
     "sections": {
       "hero": {
         "id": "hero",
-        "title": "Qwen Image Layered - 免费 AI 图像分层编辑器 | 自动图像分解",
+        "title": "Qwen Image Layered -AI 图像分层编辑器 | 自动图像分解",
         "highlight_text": "Qwen Image Layered",
-        "description": "基于 Qwen Image Layered 模型的免费 AI 图像分层编辑器。自动将图像分解为 RGBA 图层，分离视觉元素，并利用 AI 进行编辑。最佳的免费 Photoshop 替代方案，用于自动图层分离和图像分割。",
+        "description": "基于 Qwen Image Layered 模型的AI 图像分层编辑器。自动将图像分解为 RGBA 图层，分离视觉元素，并利用 AI 进行编辑。最佳的免费 Photoshop 替代方案，用于自动图层分离和图像分割。",
         "announcement": {
-          "badge": "免费",
-          "title": "🚀 免费 AI 图像分层分解工具",
+          "badge": "",
+          "title": "🚀 AI 图像分层分解工具",
           "url": "/qwenimagelayered"
         },
-        "tip": "✨ 自动图像分层分解 - 无需注册",
+        "tip": "✨ 自动图像分层分解",
         "buttons": [
           {
             "title": "免费开始编辑",
