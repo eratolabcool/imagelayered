@@ -29,7 +29,12 @@ const authOptions = {
   appName: envConfigs.app_name,
   baseURL: envConfigs.auth_url,
   secret: envConfigs.auth_secret,
-  trustedOrigins: envConfigs.app_url ? [envConfigs.app_url] : [],
+  // Support both www and non-www versions of the domain
+  trustedOrigins: envConfigs.app_url ? [
+    envConfigs.app_url,
+    // Add www variant if URL doesn't already have www
+    ...(envConfigs.app_url.includes('www.') ? [] : [envConfigs.app_url.replace('://', '://www.')])
+  ] : [],
   user: {
     // Allow persisting custom columns on user table.
     // Without this, better-auth may ignore extra properties during create/update.
