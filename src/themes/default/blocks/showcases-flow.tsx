@@ -247,6 +247,7 @@ export function ShowcasesFlow({
               <button
                 className="absolute top-4 right-4 z-50 text-white/70 transition-colors hover:text-white"
                 onClick={() => setSelectedIndex(null)}
+                aria-label="Close gallery"
               >
                 <X className="size-8" />
               </button>
@@ -257,6 +258,7 @@ export function ShowcasesFlow({
                   e.stopPropagation();
                   handlePrevious();
                 }}
+                aria-label="Previous image"
               >
                 <ChevronLeft className="size-8 md:size-12" />
               </button>
@@ -267,6 +269,7 @@ export function ShowcasesFlow({
                   e.stopPropagation();
                   handleNext();
                 }}
+                aria-label="Next image"
               >
                 <ChevronRight className="size-8 md:size-12" />
               </button>

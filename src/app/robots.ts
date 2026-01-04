@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next';
 import { envConfigs } from '@/config';
 
 export default function robots(): MetadataRoute.Robots {
-  const appUrl = envConfigs.app_url;
+  const appUrl = envConfigs.app_url || 'http://localhost:3000';
 
   return {
     rules: [

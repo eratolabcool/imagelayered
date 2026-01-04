@@ -11,7 +11,7 @@ export default async function DynamicPage({
   data?: Record<string, any>;
 }) {
   return (
-    <>
+    <main id="main-content">
       {page.title && !page.sections?.hero && (
         <h1 className="sr-only">{page.title}</h1>
       )}
@@ -49,6 +49,6 @@ export default async function DynamicPage({
               }
           }
         })}
-    </>
+    </main>
   );
 }

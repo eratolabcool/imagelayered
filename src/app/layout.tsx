@@ -178,6 +178,14 @@ export default async function RootLayout({
         {customerServiceHeadScripts}
       </head>
       <body suppressHydrationWarning className="overflow-x-hidden">
+        {/* Skip to main content link for accessibility */}
+        <a
+          href="#main-content"
+          className="sr-only absolute top-4 left-4 z-50 rounded-md bg-primary p-4 text-primary-foreground"
+        >
+          Skip to main content
+        </a>
+
         {/* JSON-LD Structured Data for SEO */}
         <JsonLd data={generateWebSiteSchemaData(locale, envConfigs.app_url, envConfigs.app_name)} />
         <JsonLd data={generateOrganizationSchemaData(envConfigs.app_url, envConfigs.app_name)} />

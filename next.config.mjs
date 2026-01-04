@@ -91,7 +91,8 @@ const nextConfig = {
       'react-icons/ri',
       'react-icons/md',
     ],
-    optimizeCss: true,
+    // Only enable optimizeCss in production
+    ...(process.env.NODE_ENV === 'production' ? { optimizeCss: true } : {}),
     optimizeServerReact: true,
   },
   reactCompiler: true,
