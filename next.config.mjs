@@ -29,6 +29,7 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
+    unoptimized: false,
   },
   async redirects() {
     return [];
@@ -97,6 +98,10 @@ const nextConfig = {
   },
   reactCompiler: true,
   productionBrowserSourceMaps: false,
+  // Performance optimizations
+  swcMinify: true,
+  // Optimize CSS
+  cssLoader: false,
 };
 
 export default withBundleAnalyzer(withNextIntl(withMDX(nextConfig)));

@@ -181,27 +181,31 @@ async function getTranslatedMetadata(metadataKey: string, locale: string) {
 }
 
 async function getCanonicalUrl(canonicalUrl: string, locale: string) {
+  // Use a consistent base URL for canonical URLs
+  const baseUrl = envConfigs.app_url || 'http://localhost:3000';
+
   if (!canonicalUrl) {
     canonicalUrl = '/';
   }
 
   if (canonicalUrl.startsWith('http')) {
-    // full url
-    canonicalUrl = canonicalUrl;
-  } else {
-    // relative path
-    if (!canonicalUrl.startsWith('/')) {
-      canonicalUrl = `/${canonicalUrl}`;
-    }
-
-    canonicalUrl = `${envConfigs.app_url}${
-      !locale || locale === defaultLocale ? '' : `/${locale}`
-    }${canonicalUrl}`;
-
-    if (locale !== defaultLocale && canonicalUrl.endsWith('/')) {
-      canonicalUrl = canonicalUrl.slice(0, -1);
-    }
+    // full url - return as is
+    return canonicalUrl;
   }
 
-  return canonicalUrl;
+  // relative path - construct full URL
+  if (!canonicalUrl.startsWith('/')) {
+    canonicalUrl = `/${canonicalUrl}`;
+  }
+
+  // Build the full canonical URL
+  const localePrefix = !locale || locale === defaultLocale ? '' : `/${locale}`;
+  let fullUrl = `${baseUrl}${localePrefix}${canonicalUrl}`;
+
+  // Remove trailing slash for non-default locales
+  if (locale !== defaultLocale && fullUrl.endsWith('/')) {
+    fullUrl = fullUrl.slice(0, -1);
+  }
+
+  return fullUrl;
 }
