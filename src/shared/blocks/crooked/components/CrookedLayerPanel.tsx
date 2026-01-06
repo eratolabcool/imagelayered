@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Layer } from '../types';
 import { Icons } from './Icon';
 
@@ -15,9 +15,131 @@ interface LayerPanelProps {
   onDuplicateLayer: (id: string) => void;
   collapsedLayerIds: Set<string>;
   onToggleCollapse: (id: string) => void;
+  layerCount?: number;
+  onLayerCountChange?: (count: number) => void;
+  onDecompose?: (count: number) => void;
+  isProcessing?: boolean;
 }
 
-const CrookedLayerPanel: React.FC<LayerPanelProps> = ({
+// Separate memoized component for each layer item to improve performance
+const LayerItem = memo(({
+  layer,
+  depth,
+  selectedLayerId,
+  collapsedLayerIds,
+  hasChildren,
+  onSelectLayer,
+  onToggleCollapse,
+  onRecursiveDecompose,
+  onToggleVisibility,
+  onRemoveLayer
+}: {
+  layer: Layer;
+  depth: number;
+  selectedLayerId: string | null;
+  collapsedLayerIds: Set<string>;
+  hasChildren: boolean;
+  onSelectLayer: (id: string) => void;
+  onToggleCollapse: (id: string) => void;
+  onRecursiveDecompose: (id: string) => void;
+  onToggleVisibility: (id: string) => void;
+  onRemoveLayer: (id: string) => void;
+}) => {
+  const isCollapsed = collapsedLayerIds.has(layer.id);
+
+  const handleSelect = useCallback(() => {
+    onSelectLayer(layer.id);
+  }, [layer.id, onSelectLayer]);
+
+  const handleToggleCollapse = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleCollapse(layer.id);
+  }, [layer.id, onToggleCollapse]);
+
+  const handleRecursiveDecompose = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRecursiveDecompose(layer.id);
+  }, [layer.id, onRecursiveDecompose]);
+
+  const handleToggleVisibility = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleVisibility(layer.id);
+  }, [layer.id, onToggleVisibility]);
+
+  const handleRemove = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRemoveLayer(layer.id);
+  }, [layer.id, onRemoveLayer]);
+
+  return (
+    <div
+      onClick={handleSelect}
+      className={`group relative flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
+        selectedLayerId === layer.id
+          ? 'bg-blue-600/20 border-blue-500/40'
+          : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
+      }`}
+      style={{ marginLeft: `${depth * 16}px` }}
+    >
+      {depth > 0 && <div className="absolute left-[-8px] top-1/2 w-2 h-px bg-white/20" />}
+
+      <div className="flex flex-col items-center">
+        {hasChildren && (
+            <button
+                onClick={handleToggleCollapse}
+                className={`p-0.5 text-gray-500 hover:text-white transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`}
+            >
+                <Icons.ChevronRight />
+            </button>
+        )}
+        <div className="w-10 h-10 bg-black rounded-lg overflow-hidden flex-shrink-0 border border-white/10 mt-1">
+            <img
+              src={layer.url}
+              alt={layer.name}
+              className="w-full h-full object-cover opacity-80"
+              loading="lazy"
+              decoding="async"
+            />
+        </div>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs font-semibold truncate ${layer.locked ? 'text-gray-500' : ''}`}>
+          {layer.name}
+        </p>
+        <p className="text-[9px] text-gray-500 uppercase tracking-wider font-mono">
+          {Math.round(layer.opacity * 100)}% OPAC
+        </p>
+      </div>
+
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={handleRecursiveDecompose}
+          className="p-1.5 hover:bg-blue-500/20 rounded text-blue-400"
+          title="Deep Decomposition"
+        >
+          <Icons.Plus />
+        </button>
+        <button
+          onClick={handleToggleVisibility}
+          className="p-1.5 hover:bg-white/10 rounded"
+        >
+          {layer.visible ? <Icons.Eye /> : <Icons.EyeOff />}
+        </button>
+        <button
+          onClick={handleRemove}
+          className="p-1.5 hover:bg-red-500/20 rounded text-red-400"
+        >
+          <Icons.Trash />
+        </button>
+      </div>
+    </div>
+  );
+});
+
+LayerItem.displayName = 'LayerItem';
+
+const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
   layers,
   selectedLayerId,
   onSelectLayer,
@@ -27,83 +149,68 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = ({
   onUpdateLayer,
   onDuplicateLayer,
   collapsedLayerIds,
-  onToggleCollapse
+  onToggleCollapse,
+  layerCount = 5,
+  onLayerCountChange,
+  onDecompose,
+  isProcessing = false
 }) => {
   const selectedLayer = layers.find(l => l.id === selectedLayerId);
 
-  // Helper to render layers with hierarchical nesting
-  const renderLayerTree = (parentId: string | undefined = undefined, depth: number = 0) => {
-    return layers
-      .filter(l => l.parentId === parentId)
-      .sort((a, b) => b.zIndex - a.zIndex)
-      .map((layer) => {
-        const isCollapsed = collapsedLayerIds.has(layer.id);
-        const hasChildren = layers.some(l => l.parentId === layer.id);
+  // Memoize layer tree for performance - only recalculate when dependencies change
+  const layerTree = useMemo(() => {
+    const renderTree = (parentId: string | undefined = undefined, depth: number = 0): React.ReactNode => {
+      return layers
+        .filter(l => l.parentId === parentId)
+        .sort((a, b) => b.zIndex - a.zIndex)
+        .map((layer) => {
+          const isCollapsed = collapsedLayerIds.has(layer.id);
+          const hasChildren = layers.some(l => l.parentId === layer.id);
 
-        return (
-          <React.Fragment key={layer.id}>
-            <div
-              onClick={() => onSelectLayer(layer.id)}
-              className={`group relative flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
-                selectedLayerId === layer.id
-                  ? 'bg-blue-600/20 border-blue-500/40'
-                  : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
-              }`}
-              style={{ marginLeft: `${depth * 16}px` }}
-            >
-              {depth > 0 && <div className="absolute left-[-8px] top-1/2 w-2 h-px bg-white/20" />}
+          return (
+            <React.Fragment key={layer.id}>
+              <LayerItem
+                layer={layer}
+                depth={depth}
+                selectedLayerId={selectedLayerId}
+                collapsedLayerIds={collapsedLayerIds}
+                hasChildren={hasChildren}
+                onSelectLayer={onSelectLayer}
+                onToggleCollapse={onToggleCollapse}
+                onRecursiveDecompose={onRecursiveDecompose}
+                onToggleVisibility={onToggleVisibility}
+                onRemoveLayer={onRemoveLayer}
+              />
+              {!isCollapsed && renderTree(layer.id, depth + 1)}
+            </React.Fragment>
+          );
+        });
+    };
+    return renderTree();
+  }, [layers, selectedLayerId, collapsedLayerIds, onSelectLayer, onToggleCollapse, onRecursiveDecompose, onToggleVisibility, onRemoveLayer]);
 
-              <div className="flex flex-col items-center">
-                {hasChildren && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onToggleCollapse(layer.id); }}
-                        className={`p-0.5 text-gray-500 hover:text-white transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`}
-                    >
-                        <Icons.ChevronRight />
-                    </button>
-                )}
-                <div className="w-10 h-10 bg-black rounded-lg overflow-hidden flex-shrink-0 border border-white/10 mt-1">
-                    <img src={layer.url} alt={layer.name} className="w-full h-full object-cover opacity-80" />
-                </div>
-              </div>
+  const handleLayerCountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCount = Math.max(1, Math.min(20, parseInt(e.target.value) || 1));
+    onLayerCountChange?.(newCount);
+  }, [onLayerCountChange]);
 
-              <div className="flex-1 min-w-0">
-                <p className={`text-xs font-semibold truncate ${layer.locked ? 'text-gray-500' : ''}`}>
-                  {layer.name}
-                </p>
-                <p className="text-[9px] text-gray-500 uppercase tracking-wider font-mono">
-                  {Math.round(layer.opacity * 100)}% OPAC
-                </p>
-              </div>
+  const handleDecompose = useCallback(() => {
+    if (onDecompose && !isProcessing) {
+      onDecompose(layerCount);
+    }
+  }, [onDecompose, layerCount, isProcessing]);
 
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRecursiveDecompose(layer.id); }}
-                  className="p-1.5 hover:bg-blue-500/20 rounded text-blue-400"
-                  title="Deep Decomposition"
-                >
-                  <Icons.Plus />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggleVisibility(layer.id); }}
-                  className="p-1.5 hover:bg-white/10 rounded"
-                >
-                  {layer.visible ? <Icons.Eye /> : <Icons.EyeOff />}
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRemoveLayer(layer.id); }}
-                  className="p-1.5 hover:bg-red-500/20 rounded text-red-400"
-                >
-                  <Icons.Trash />
-                </button>
-              </div>
-            </div>
-            {/* Recursively render children if not collapsed */}
-            {!isCollapsed && renderLayerTree(layer.id, depth + 1)}
-          </React.Fragment>
-        );
-      });
-  };
+  const handleLock = useCallback(() => {
+    if (selectedLayer) {
+      onUpdateLayer(selectedLayer.id, { locked: !selectedLayer.locked });
+    }
+  }, [selectedLayer, onUpdateLayer]);
+
+  const handleDuplicate = useCallback(() => {
+    if (selectedLayer) {
+      onDuplicateLayer(selectedLayer.id);
+    }
+  }, [selectedLayer, onDuplicateLayer]);
 
   return (
     <div className="absolute right-6 top-6 bottom-6 w-80 glass-panel rounded-3xl flex flex-col p-5 z-20 shadow-2xl">
@@ -117,8 +224,37 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = ({
         </span>
       </div>
 
+      {/* Layer Count Control - New Feature */}
+      {(onDecompose || onLayerCountChange) && (
+        <div className="mb-4 p-3 bg-white/5 rounded-xl border border-white/5">
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Layers</label>
+            <input
+              type="number"
+              min="1"
+              max="20"
+              value={layerCount}
+              onChange={handleLayerCountChange}
+              disabled={isProcessing}
+              className="flex-1 bg-black/40 border border-white/10 rounded-lg py-1 px-2 text-center text-xs text-blue-400 font-mono focus:border-blue-500/50 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50"
+            />
+            <button
+              onClick={handleDecompose}
+              disabled={isProcessing}
+              className={`px-3 py-1 text-[10px] font-bold uppercase rounded-lg transition-all ${
+                isProcessing
+                  ? 'bg-gray-600/20 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+              }`}
+            >
+              {isProcessing ? '...' : 'Go'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-        {layers.length > 0 ? renderLayerTree() : (
+        {layers.length > 0 ? layerTree : (
           <div className="h-full flex flex-col items-center justify-center text-gray-600 text-center space-y-4 px-4 opacity-50">
              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5">
                 <Icons.Layer />
@@ -153,18 +289,18 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = ({
 
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => onUpdateLayer(selectedLayer.id, { locked: !selectedLayer.locked })}
+                onClick={handleLock}
                 className={`py-2 px-3 flex items-center justify-center gap-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
                   selectedLayer.locked
-                  ? 'bg-blue-600 border-blue-500 text-white'
-                  : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'
+                    ? 'bg-blue-600 border-blue-500 text-white'
+                    : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'
                 }`}
               >
                 {selectedLayer.locked ? <Icons.Lock /> : <Icons.Unlock />}
                 {selectedLayer.locked ? 'Locked' : 'Lock'}
               </button>
               <button
-                onClick={() => onDuplicateLayer(selectedLayer.id)}
+                onClick={handleDuplicate}
                 className="py-2 px-3 flex items-center justify-center gap-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl text-[10px] font-bold uppercase tracking-wider text-gray-400 transition-all"
               >
                 <Icons.Copy />
@@ -176,6 +312,8 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = ({
       )}
     </div>
   );
-};
+});
+
+CrookedLayerPanel.displayName = 'CrookedLayerPanel';
 
 export default CrookedLayerPanel;

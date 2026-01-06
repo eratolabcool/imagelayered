@@ -1,332 +1,140 @@
 {
   "metadata": {
     "title": "Pricing Plans - Qwen Image Layered AI Editor | Affordable Image Layer Decomposition",
-    "description": "Choose the perfect plan for your needs. Start with our affordable tier or unlock unlimited AI layer decomposition with Pro plans starting at $8.9/month. No hidden fees, cancel anytime.",
-    "keywords": "AI image editor pricing, image layer decomposition cost, Photoshop alternative pricing, Qwen Image Layered plans, AI photo editing subscription, cheap AI design tools, image layer editor pricing"
+    "description": "Simple pricing: Buy credits as needed, or save with monthly/yearly Pro subscriptions. No hidden fees, cancel anytime.",
+    "keywords": "AI image editor pricing, image layer decomposition cost, credits pricing, Pro subscription, yearly plan"
   },
   "page": {
-    "title": "Qwen Image Layered Pricing Plans - AI Image Layer Editor",
+    "title": "Simple, Transparent Pricing",
     "sections": {
       "pricing": {
         "id": "pricing",
-        "title": "Simple, Transparent Pricing",
-        "description": "Unlock the full power of AI-powered image layer decomposition. Choose a plan that fits your creative workflow and budget. All plans include our core AI decomposition technology with no hidden fees.",
+        "title": "Choose Your Plan",
+        "description": "Pay as you go with credits, or save with Pro subscriptions. All plans include unlimited AI layer decomposition, high-resolution export, and commercial use license.",
         "groups": [
           {
             "name": "one-time",
-            "title": "Pay as you go"
+            "title": "Pay As You Go"
           },
           {
             "name": "monthly",
-            "title": "Monthly",
+            "title": "Monthly Subscription",
             "is_featured": true,
-            "label": "save 15%"
+            "label": "Most Popular"
           },
           {
             "name": "yearly",
-            "title": "Annually"
+            "title": "Yearly Subscription",
+            "label": "Save 40%"
           }
         ],
         "items": [
           {
-            "title": "Starter",
-            "description": "Start decomposing and editing images with AI.",
-            "features_title": "Includes",
+            "title": "Credits Pack",
+            "description": "Flexible pay-as-you-go option. Buy credits when you need them.",
+            "features_title": "What You Get",
             "features": [
-              "100 credits, valid for 1 month",
-              "AI Layer Decomposition",
-              "Smart Object Removal",
-              "Standard Resolution Export",
-              "Cloud Storage for Projects",
-              "Basic Editing Tools",
-              "Community Support"
+              "100 Credits per pack",
+              "5 credits per AI decomposition",
+              "20 image decompositions total",
+              "Credits never expire",
+              "4K high-resolution export",
+              "No watermarks",
+              "Commercial use license",
+              "Basic support"
             ],
             "interval": "one-time",
             "amount": 990,
             "currency": "USD",
-            "price": "$9.9",
-            "original_price": "$19.9",
-            "unit": "",
+            "price": "$9.99",
+            "original_price": "",
+            "unit": "/pack",
             "is_featured": false,
-            "tip": "Flexible plans. Process unlimited images!",
+            "tip": "Perfect for occasional users. No recurring charges.",
             "button": {
-              "title": "Get Started",
+              "title": "Buy Credits",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
-            "product_id": "starter",
-            "product_name": "Qwen Image Layered Starter",
+            "product_id": "credits-100",
+            "product_name": "100 Credits Pack",
             "credits": 100,
-            "valid_days": 30,
+            "valid_days": 0,
             "group": "one-time"
           },
           {
-            "title": "Pro",
-            "description": "Professional tools for serious creators.",
+            "title": "Pro Monthly",
+            "description": "Best value for regular creators. Unlimited access to all features.",
             "label": "Popular",
-            "features_title": "Everything in Starter, plus",
+            "features_title": "Everything Included",
             "features": [
-              "500 credits, valid for 3 month",
-              "4K Resolution Export",
-              "Advanced Layer Analysis",
-              "Batch Processing",
-              "Priority Processing",
-              "Commercial Usage License",
-              "Priority Support",
-              "Early Access to New Features"
-            ],
-            "interval": "one-time",
-            "amount": 2990,
-            "currency": "USD",
-            "price": "$29.9",
-            "original_price": "$49.9",
-            "unit": "",
-            "is_featured": true,
-            "tip": "Best value for professionals.",
-            "button": {
-              "title": "Get Pro",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "pro",
-            "product_name": "Qwen Image Layered Pro",
-            "credits": 500,
-            "valid_days": 90,
-            "group": "one-time"
-          },
-          {
-            "title": "Enterprise",
-            "description": "For teams and high-volume needs.",
-            "features_title": "Everything in Pro, plus",
-            "features": [
-              "3000 credits, valid for 1 year",
-              "Dedicated Server",
-              "Custom API Integration",
-              "SSO Support",
-              "SLA Support",
-              "On-premise Deployment Option",
-              "Dedicated Account Manager"
-            ],
-            "interval": "one-time",
-            "amount": 29900,
-            "currency": "USD",
-            "price": "$299",
-            "original_price": "$399",
-            "unit": "",
-            "is_featured": false,
-            "tip": "Ultimate power for your business.",
-            "button": {
-              "title": "Contact Sales",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "premium",
-            "product_name": "Qwen Image Layered Enterprise",
-            "credits": 3000,
-            "valid_days": 365,
-            "group": "one-time"
-          },
-          {
-            "title": "Starter",
-            "description": "Start decomposing and editing images with AI.",
-            "features_title": "Includes",
-            "features": [
-              "100 credits, valid for 1 month",
-              "AI Layer Decomposition",
-              "Smart Object Removal",
-              "Standard Resolution Export",
-              "Cloud Storage for Projects",
-              "Basic Editing Tools",
-              "Community Support"
-            ],
-            "interval": "month",
-            "amount": 890,
-            "currency": "USD",
-            "price": "$8.9",
-            "original_price": "$9.9",
-            "unit": "/ month",
-            "is_featured": false,
-            "tip": "Pay monthly. Process unlimited images!",
-            "button": {
-              "title": "Get Started",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "starter-monthly",
-            "product_name": "Qwen Image Layered Starter Monthly",
-            "credits": 100,
-            "valid_days": 30,
-            "group": "monthly",
-            "plan_name": "Starter"
-          },
-          {
-            "title": "Pro",
-            "description": "Professional tools for serious creators.",
-            "label": "Popular",
-            "features_title": "Everything in Starter, plus",
-            "features": [
-              "500 credits, valid for 1 month",
-              "4K Resolution Export",
-              "Advanced Layer Analysis",
-              "Batch Processing",
-              "Priority Processing",
-              "Commercial Usage License",
-              "Priority Support",
-              "Early Access to New Features"
+              "500 credits per month",
+              "Up to 100 image decompositions",
+              "Credits renew automatically",
+              "Unused credits roll over",
+              "Priority processing queue",
+              "4K high-resolution export",
+              "No watermarks",
+              "Commercial use license",
+              "Priority support"
             ],
             "interval": "month",
             "amount": 1690,
             "currency": "USD",
-            "price": "$16.9",
-            "original_price": "$19.9",
-            "unit": "/ month",
+            "price": "$16.90",
+            "original_price": "",
+            "unit": "/month",
             "is_featured": true,
-            "tip": "Pay monthly. Unleash your creativity.",
+            "tip": "Cancel anytime. Most flexible option.",
             "button": {
-              "title": "Get Pro",
+              "title": "Subscribe Now",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
-            "product_id": "standard-monthly",
-            "product_name": "Qwen Image Layered Pro Monthly",
+            "product_id": "pro-monthly",
+            "product_name": "Pro Monthly Subscription",
             "credits": 500,
             "valid_days": 30,
             "group": "monthly",
             "plan_name": "Pro"
           },
           {
-            "title": "Enterprise",
-            "description": "For teams and high-volume needs.",
-            "features_title": "Everything in Pro, plus",
+            "title": "Pro Yearly",
+            "description": "Save 40% with annual billing. Best for serious creators.",
+            "label": "Best Value",
+            "features_title": "Everything in Monthly, Plus",
             "features": [
-              "3000 credits, valid for 1 month",
-              "Dedicated Server",
-              "Custom API Integration",
-              "SSO Support",
-              "SLA Support",
-              "On-premise Deployment Option",
-              "Dedicated Account Manager"
-            ],
-            "interval": "month",
-            "amount": 24900,
-            "currency": "USD",
-            "price": "$249",
-            "original_price": "$299",
-            "unit": "/ month",
-            "is_featured": false,
-            "tip": "Pay monthly. Scale your business.",
-            "button": {
-              "title": "Contact Sales",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "premium-monthly",
-            "product_name": "Qwen Image Layered Enterprise Monthly",
-            "credits": 3000,
-            "valid_days": 30,
-            "group": "monthly",
-            "plan_name": "Enterprise"
-          },
-          {
-            "title": "Starter",
-            "description": "Start decomposing and editing images with AI.",
-            "features_title": "Includes",
-            "features": [
-              "1200 credits, valid for 1 year",
-              "AI Layer Decomposition",
-              "Smart Object Removal",
-              "Standard Resolution Export",
-              "Cloud Storage for Projects",
-              "Basic Editing Tools",
-              "Community Support"
+              "6000 credits per year",
+              "Up to 1200 image decompositions",
+              "Equivalent to 500 credits/month",
+              "Credits renew automatically",
+              "Maximum rollover allowance",
+              "Priority processing queue",
+              "4K high-resolution export",
+              "No watermarks",
+              "Commercial use license",
+              "Dedicated priority support",
+              "Early access to new features"
             ],
             "interval": "year",
-            "amount": 8280,
+            "amount": 12120,
             "currency": "USD",
-            "price": "$6.9",
-            "original_price": "$8.9",
-            "unit": "/ month",
-            "is_featured": false,
-            "tip": "Pay annually. Save big on image processing!",
-            "button": {
-              "title": "Get Started",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "starter-yearly",
-            "product_name": "Qwen Image Layered Starter Annually",
-            "credits": 1200,
-            "valid_days": 365,
-            "group": "yearly",
-            "plan_name": "Starter"
-          },
-          {
-            "title": "Pro",
-            "description": "Professional tools for serious creators.",
-            "label": "Popular",
-            "features_title": "Everything in Starter, plus",
-            "features": [
-              "6000 credits, valid for 1 year",
-              "4K Resolution Export",
-              "Advanced Layer Analysis",
-              "Batch Processing",
-              "Priority Processing",
-              "Commercial Usage License",
-              "Priority Support",
-              "Early Access to New Features"
-            ],
-            "interval": "year",
-            "amount": 15480,
-            "currency": "USD",
-            "price": "$12.9",
-            "original_price": "$16.9",
-            "unit": "/ month",
+            "price": "$10.10",
+            "original_price": "$16.90",
+            "unit": "/month",
             "is_featured": true,
-            "tip": "Pay annually. Best value for pros.",
+            "tip": "Billed annually. Save $68.40 per year.",
             "button": {
-              "title": "Get Pro",
+              "title": "Subscribe & Save",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
-            "product_id": "standard-yearly",
-            "product_name": "Qwen Image Layered Pro Annually",
+            "product_id": "pro-yearly",
+            "product_name": "Pro Yearly Subscription",
             "credits": 6000,
             "valid_days": 365,
             "group": "yearly",
             "plan_name": "Pro"
-          },
-          {
-            "title": "Enterprise",
-            "description": "For teams and high-volume needs.",
-            "features_title": "Everything in Pro, plus",
-            "features": [
-              "36000 credits, valid for 1 year",
-              "Dedicated Server",
-              "Custom API Integration",
-              "SSO Support",
-              "SLA Support",
-              "On-premise Deployment Option",
-              "Dedicated Account Manager"
-            ],
-            "interval": "year",
-            "amount": 226800,
-            "currency": "USD",
-            "price": "$189",
-            "original_price": "$249",
-            "unit": "/ month",
-            "is_featured": false,
-            "tip": "Pay annually. Scale without limits.",
-            "button": {
-              "title": "Contact Sales",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "premium-yearly",
-            "product_name": "Qwen Image Layered Enterprise Annually",
-            "credits": 36000,
-            "valid_days": 365,
-            "group": "yearly",
-            "plan_name": "Enterprise"
           }
         ]
       }
@@ -334,6 +142,12 @@
   },
   "messages": {
     "current_plan": "Current Plan",
-    "processing": "Processing"
+    "processing": "Processing",
+    "billed_monthly": "Billed monthly",
+    "billed_yearly": "Billed annually (save 40%)",
+    "cancel_anytime": "Cancel anytime",
+    "credits_never_expire": "Credits never expire",
+    "per_decomposition": "credits per decomposition",
+    "decompositions_per_pack": "decompositions per pack"
   }
 }

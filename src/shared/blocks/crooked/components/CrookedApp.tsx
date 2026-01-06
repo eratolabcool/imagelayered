@@ -1367,6 +1367,10 @@ const CrookedApp: React.FC = () => {
           onDuplicateLayer={handleDuplicateLayer}
           collapsedLayerIds={collapsedLayerIds}
           onToggleCollapse={toggleCollapse}
+          layerCount={layerCount}
+          onLayerCountChange={setLayerCount}
+          onDecompose={(count) => smartDecompose(count)}
+          isProcessing={isProcessing}
         />
       </div>
 

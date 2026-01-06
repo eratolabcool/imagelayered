@@ -1,359 +1,140 @@
 {
   "metadata": {
-    "title": "价格方案 - Qwen Image Layered AI 编辑器 | 优惠的图像图层分解工具",
-    "description": "选择最适合您需求的方案。从实惠的入门方案开始，或以每月 ¥69 起解锁专业版无限 AI 图层分解。无隐藏费用，随时取消。",
-    "keywords": "AI图像编辑器价格, 图像图层分解费用, Photoshop替代价格, Qwen Image Layered方案, AI图片编辑订阅, 便宜AI设计工具, 图层编辑器价格"
+    "title": "价格方案 - Qwen Image Layered AI 编辑器 | 简单透明的定价",
+    "description": "简单定价：按需购买积分，或使用 Pro 订阅节省开支。无隐藏费用，随时取消。",
+    "keywords": "AI图像编辑器价格, 图像图层分解费用, 积分定价, Pro订阅, 年度订阅"
   },
   "page": {
-    "title": "Qwen Image Layered 价格方案 - AI 图像图层编辑器",
+    "title": "简单透明的定价",
     "sections": {
       "pricing": {
         "id": "pricing",
-        "title": "简单透明的定价",
-        "description": "解锁 AI 驱动的图像图层分解全部功能。选择适合您创意工作流程和预算的方案。所有方案均包含我们核心的 AI 分解技术，无隐藏费用。",
+        "title": "选择您的方案",
+        "description": "按需购买积分，或使用 Pro 订阅节省开支。所有方案均包含无限 AI 分层、高清导出和商业使用授权。",
         "groups": [
           {
             "name": "one-time",
-            "title": "按次付费"
+            "title": "按需购买"
           },
           {
             "name": "monthly",
-            "title": "包月",
+            "title": "月度订阅",
             "is_featured": true,
-            "label": "立省15%"
+            "label": "最受欢迎"
           },
           {
             "name": "yearly",
-            "title": "包年"
+            "title": "年度订阅",
+            "label": "立省 40%"
           }
         ],
         "items": [
           {
-            "title": "入门版",
-            "description": "开始使用 AI 分解和编辑图像。",
-            "features_title": "包含",
+            "title": "积分包",
+            "description": "灵活的按需购买选项。需要时购买积分。",
+            "features_title": "您将获得",
             "features": [
-              "100 积分，有效期 1 个月",
-              "AI 图层分解",
-              "智能对象移除",
-              "标准分辨率导出",
-              "云端项目存储",
-              "基础编辑工具",
-              "社区支持"
+              "100 积分包",
+              "每次 AI 分层消耗 5 积分",
+              "可进行 20 次图像分层",
+              "积分永不过期",
+              "4K 高清导出",
+              "无水印",
+              "商业使用授权",
+              "基础支持"
             ],
             "interval": "one-time",
             "amount": 990,
             "currency": "USD",
-            "price": "$9.9",
-            "original_price": "$19.9",
-            "currencies": [
-              {
-                "currency": "CNY",
-                "amount": 6990,
-                "price": "¥69.9",
-                "original_price": "¥139.9",
-                "payment_providers": ["stripe"]
-              }
-            ],
-            "unit": "",
+            "price": "$9.99",
+            "original_price": "",
+            "unit": "/包",
             "is_featured": false,
-            "tip": "灵活付费，无限处理图像！",
+            "tip": "适合偶尔使用的用户。无定期收费。",
             "button": {
-              "title": "立即开始",
+              "title": "购买积分",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
-            "product_id": "starter",
-            "product_name": "Qwen Image Layered 入门版",
+            "product_id": "credits-100",
+            "product_name": "100 积分包",
             "credits": 100,
-            "valid_days": 30,
+            "valid_days": 0,
             "group": "one-time"
           },
           {
-            "title": "专业版",
-            "description": "为专业创作者打造的高级工具。",
+            "title": "Pro 月度订阅",
+            "description": "常创作者的最佳选择。无限访问所有功能。",
             "label": "热门",
-            "features_title": "包含入门版功能，此外",
+            "features_title": "包含所有功能",
             "features": [
-              "500 积分，有效期 3 个月",
-              "4K 超高清导出",
-              "高级图层分析",
-              "批量处理",
-              "优先处理通道",
-              "商业使用许可",
-              "优先技术支持",
-              "新功能抢先体验"
-            ],
-            "interval": "one-time",
-            "amount": 2990,
-            "currency": "USD",
-            "price": "$29.9",
-            "original_price": "$49.9",
-            "currencies": [
-              {
-                "currency": "CNY",
-                "amount": 19990,
-                "price": "¥199.9",
-                "original_price": "¥399.9",
-                "payment_providers": ["stripe"]
-              }
-            ],
-            "unit": "",
-            "is_featured": true,
-            "tip": "一次付费，畅享无限项目部署！",
-            "button": {
-              "title": "获取 ShipAny",
-              "url": "/#pricing",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "standard",
-            "product_name": "ShipAny 模板标准版",
-            "credits": 200,
-            "valid_days": 90,
-            "group": "one-time"
-          },
-          {
-            "title": "企业版",
-            "description": "适合团队和高频需求。",
-            "features_title": "包含专业版功能，此外",
-            "features": [
-              "3000 积分，有效期 1 年",
-              "专属服务器",
-              "自定义 API 集成",
-              "SSO 单点登录支持",
-              "SLA 服务等级协议",
-              "私有化部署选项",
-              "专属客户经理"
-            ],
-            "interval": "one-time",
-            "amount": 29900,
-            "currency": "USD",
-            "price": "$299",
-            "original_price": "$399",
-            "currencies": [
-              {
-                "currency": "CNY",
-                "amount": 199900,
-                "price": "¥1999",
-                "original_price": "¥2799",
-                "payment_providers": ["stripe", "creem"]
-              }
-            ],
-            "unit": "",
-            "is_featured": false,
-            "tip": "极致性能，助力业务腾飞。",
-            "button": {
-              "title": "联系销售",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "premium",
-            "product_name": "Qwen Image Layered 企业版",
-            "credits": 3000,
-            "valid_days": 365,
-            "group": "one-time"
-          },
-          {
-            "title": "入门版",
-            "description": "开始使用 AI 分解和编辑图像。",
-            "features_title": "包含",
-            "features": [
-              "100 积分，有效期 1 个月",
-              "AI 图层分解",
-              "智能对象移除",
-              "标准分辨率导出",
-              "云端项目存储",
-              "基础编辑工具",
-              "社区支持"
-            ],
-            "interval": "month",
-            "amount": 890,
-            "currency": "USD",
-            "price": "$8.9",
-            "original_price": "$9.9",
-            "unit": "/ 月",
-            "is_featured": false,
-            "tip": "按月付费，无限处理图像！",
-            "button": {
-              "title": "立即开始",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "starter-monthly",
-            "product_name": "Qwen Image Layered 入门版包月",
-            "credits": 100,
-            "valid_days": 30,
-            "group": "monthly",
-            "plan_name": "入门版"
-          },
-          {
-            "title": "专业版",
-            "description": "为专业创作者打造的高级工具。",
-            "label": "热门",
-            "features_title": "包含入门版功能，此外",
-            "features": [
-              "500 积分，有效期 1 个月",
-              "4K 超高清导出",
-              "高级图层分析",
-              "批量处理",
-              "优先处理通道",
-              "商业使用许可",
-              "优先技术支持",
-              "新功能抢先体验"
+              "每月 500 积分",
+              "最多 100 次图像分层",
+              "积分自动续费",
+              "未用积分可累积",
+              "优先处理队列",
+              "4K 高清导出",
+              "无水印",
+              "商业使用授权",
+              "优先支持"
             ],
             "interval": "month",
             "amount": 1690,
             "currency": "USD",
-            "price": "$16.9",
-            "original_price": "$19.9",
-            "unit": "/ 月",
+            "price": "$16.90",
+            "original_price": "",
+            "unit": "/月",
             "is_featured": true,
-            "tip": "按月付费，释放你的创造力。",
+            "tip": "随时取消。最灵活的选项。",
             "button": {
-              "title": "获取专业版",
+              "title": "立即订阅",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
-            "product_id": "standard-monthly",
-            "product_name": "Qwen Image Layered 专业版包月",
+            "product_id": "pro-monthly",
+            "product_name": "Pro 月度订阅",
             "credits": 500,
             "valid_days": 30,
             "group": "monthly",
-            "plan_name": "专业版"
+            "plan_name": "Pro"
           },
           {
-            "title": "企业版",
-            "description": "适合团队和高频需求。",
-            "features_title": "包含专业版功能，此外",
+            "title": "Pro 年度订阅",
+            "description": "年付立省 40%。专业创作者的最佳选择。",
+            "label": "超值",
+            "features_title": "包含月度所有功能，外加",
             "features": [
-              "3000 积分，有效期 1 个月",
-              "专属服务器",
-              "自定义 API 集成",
-              "SSO 单点登录支持",
-              "SLA 服务等级协议",
-              "私有化部署选项",
-              "专属客户经理"
-            ],
-            "interval": "month",
-            "amount": 24900,
-            "currency": "USD",
-            "price": "$249",
-            "original_price": "$299",
-            "unit": "/ 月",
-            "is_featured": false,
-            "tip": "按月付费，助力业务扩展。",
-            "button": {
-              "title": "联系销售",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "premium-monthly",
-            "product_name": "Qwen Image Layered 企业版包月",
-            "credits": 3000,
-            "valid_days": 30,
-            "group": "monthly",
-            "plan_name": "企业版"
-          },
-          {
-            "title": "入门版",
-            "description": "开始使用 AI 分解和编辑图像。",
-            "features_title": "包含",
-            "features": [
-              "1200 积分，有效期 1 年",
-              "AI 图层分解",
-              "智能对象移除",
-              "标准分辨率导出",
-              "云端项目存储",
-              "基础编辑工具",
-              "社区支持"
+              "每年 6000 积分",
+              "最多 1200 次图像分层",
+              "相当于每月 500 积分",
+              "积分自动续费",
+              "最大累积额度",
+              "优先处理队列",
+              "4K 高清导出",
+              "无水印",
+              "商业使用授权",
+              "专属优先支持",
+              "新功能优先体验"
             ],
             "interval": "year",
-            "amount": 8280,
+            "amount": 12120,
             "currency": "USD",
-            "price": "$6.9",
-            "original_price": "$8.9",
-            "unit": "/ 月",
-            "is_featured": false,
-            "tip": "按年付费，图像处理更优惠！",
-            "button": {
-              "title": "立即开始",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "starter-yearly",
-            "product_name": "Qwen Image Layered 入门版包年",
-            "credits": 1200,
-            "valid_days": 365,
-            "group": "yearly",
-            "plan_name": "入门版"
-          },
-          {
-            "title": "专业版",
-            "description": "为专业创作者打造的高级工具。",
-            "label": "热门",
-            "features_title": "包含入门版功能，此外",
-            "features": [
-              "6000 积分，有效期 1 年",
-              "4K 超高清导出",
-              "高级图层分析",
-              "批量处理",
-              "优先处理通道",
-              "商业使用许可",
-              "优先技术支持",
-              "新功能抢先体验"
-            ],
-            "interval": "year",
-            "amount": 15480,
-            "currency": "USD",
-            "price": "$12.9",
-            "original_price": "$16.9",
-            "unit": "/ 月",
+            "price": "$10.10",
+            "original_price": "$16.90",
+            "unit": "/月",
             "is_featured": true,
-            "tip": "按年付费，专业人士首选。",
+            "tip": "按年计费。每年节省 $68.40。",
             "button": {
-              "title": "获取专业版",
+              "title": "订阅并省钱",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
-            "product_id": "standard-yearly",
-            "product_name": "Qwen Image Layered 专业版包年",
+            "product_id": "pro-yearly",
+            "product_name": "Pro 年度订阅",
             "credits": 6000,
             "valid_days": 365,
             "group": "yearly",
-            "plan_name": "专业版"
-          },
-          {
-            "title": "企业版",
-            "description": "适合团队和高频需求。",
-            "features_title": "包含专业版功能，此外",
-            "features": [
-              "36000 积分，有效期 1 年",
-              "专属服务器",
-              "自定义 API 集成",
-              "SSO 单点登录支持",
-              "SLA 服务等级协议",
-              "私有化部署选项",
-              "专属客户经理"
-            ],
-            "interval": "year",
-            "amount": 226800,
-            "currency": "USD",
-            "price": "$189",
-            "original_price": "$249",
-            "unit": "/ 月",
-            "is_featured": false,
-            "tip": "按年付费，无限扩展。",
-            "button": {
-              "title": "联系销售",
-              "url": "/qwenimagelayered",
-              "icon": "RiFlashlightFill"
-            },
-            "product_id": "premium-yearly",
-            "product_name": "Qwen Image Layered 企业版包年",
-            "credits": 36000,
-            "valid_days": 365,
-            "group": "yearly",
-            "plan_name": "企业版"
+            "plan_name": "Pro"
           }
         ]
       }
@@ -361,6 +142,12 @@
   },
   "messages": {
     "current_plan": "当前方案",
-    "processing": "处理中"
+    "processing": "处理中",
+    "billed_monthly": "按月计费",
+    "billed_yearly": "按年计费（立省 40%）",
+    "cancel_anytime": "随时取消",
+    "credits_never_expire": "积分永不过期",
+    "per_decomposition": "积分/次分层",
+    "decompositions_per_pack": "次分层/包"
   }
 }
