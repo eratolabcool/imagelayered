@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/core/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { Icons } from './Icon';
 
@@ -49,7 +49,7 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
       message: isZh 
         ? `您已用完免费试用次数（${3 - remainingUploads}/3）。登录即可获得更多免费额度！`
         : `You have used your free trials (${3 - remainingUploads}/3). Log in to get more free credits!`,
-      cta: isZh ? '注册获取更多' : 'Register for More',
+      cta: isZh ? '立即注册' : 'Sign Up Now',
       subtext: isZh ? '注册即送 10 积分' : 'Get 10 credits upon registration'
     },
     login: {
@@ -95,9 +95,18 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
   };
 
   const handleSignIn = () => {
-    // 跳转到登录页面，带上回调
+    // 跳转到注册页面，带上回调
+    // Use window.location.pathname is safer for full path including locale if not handled by router,
+    // but since we are using i18n router now, we can just use the relative path if needed, 
+    // or keep full path for callback to be safe.
     const currentPath = window.location.pathname;
-    router.push(`/sign-in?callback=${encodeURIComponent(currentPath)}`);
+    
+    // Check if we should redirect to sign-up for "Register" actions
+    if (type === 'limit' || type === 'export') {
+       router.push(`/sign-up?callback=${encodeURIComponent(currentPath)}`);
+    } else {
+       router.push(`/sign-in?callback=${encodeURIComponent(currentPath)}`);
+    }
     onClose();
   };
 
