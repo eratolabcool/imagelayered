@@ -147,7 +147,7 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = ({
                 step="0.01"
                 value={selectedLayer.opacity}
                 className="w-full accent-blue-600 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
-                onChange={(e) => onUpdateLayer(selectedLayer.id, { opacity: parseFloat(e.target.value) })}
+                onInput={(e) => onUpdateLayer(selectedLayer.id, { opacity: parseFloat((e.target as HTMLInputElement).value) })}
               />
             </div>
 

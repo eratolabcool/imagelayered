@@ -229,7 +229,7 @@ export function SignUp({
             </form>
           )}
 
-          <SocialProviders
+          <SocialLogin
             configs={configs}
             callbackUrl={callbackUrl || '/'}
             loading={loading}

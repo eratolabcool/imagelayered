@@ -3,7 +3,7 @@ import { AIMediaType } from '@/extensions/ai';
 import { getUuid } from '@/shared/lib/hash';
 import { respData, respErr } from '@/shared/lib/resp';
 import { createAITask, NewAITask } from '@/shared/models/ai_task';
-import { getRemainingCredits } from '@/shared/models/credit';
+import { consumeCredits, getRemainingCredits } from '@/shared/models/credit';
 import { getUserInfo } from '@/shared/models/user';
 import { getAIService } from '@/shared/services/ai';
 
@@ -129,6 +129,30 @@ export async function POST(request: Request) {
       taskResult: result.taskResult ? JSON.stringify(result.taskResult) : null,
     };
     await createAITask(newAITask);
+
+    // consume credits (pre-deduct)
+    try {
+      await consumeCredits({
+        userId: user.id,
+        credits: costCredits,
+        scene: scene,
+        description: `AI ${mediaType} ${scene} - ${model}`,
+        metadata: JSON.stringify({
+          taskId: newAITask.id,
+          aiTaskId: result.taskId,
+          provider,
+          model,
+          scene,
+        }),
+      });
+      console.log(`[generate] Consumed ${costCredits} credits from user ${user.id}`);
+    } catch (creditError: any) {
+      console.error('[generate] Failed to consume credits:', creditError);
+      // Note: We don't rollback the task creation here because:
+      // 1. The task was already submitted to AI provider
+      // 2. We can handle credit discrepancies in admin dashboard
+      // 3. The credit check earlier should have prevented this
+    }
 
     return respData(newAITask);
   } catch (e: any) {

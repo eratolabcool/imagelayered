@@ -13,7 +13,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { useAppContext } from '@/shared/contexts/app';
 
-import { SocialProviders } from './social-providers';
+import { SocialLogin } from './social-login';
 
 export function SignInForm({
   callbackUrl = '/',
@@ -181,7 +181,7 @@ export function SignInForm({
           </form>
         )}
 
-        <SocialProviders
+        <SocialLogin
           configs={configs}
           callbackUrl={callbackUrl || '/'}
           loading={loading}

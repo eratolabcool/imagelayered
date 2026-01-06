@@ -5,7 +5,15 @@ import { Layer, ToolType, DecomposeResponse, ExportSettings, AdvancedDecompositi
 import CrookedToolbar from './CrookedToolbar';
 import CrookedLayerPanel from './CrookedLayerPanel';
 import CrookedExportModal from './CrookedExportModal';
+import CrookedUpgradeModal from './CrookedUpgradeModal';
 import { Icons } from './Icon';
+import {
+  getGuestUsage,
+  incrementUploadCount,
+  isUploadLimitReached,
+  getRemainingUploads,
+  isUserLoggedIn
+} from '@/shared/lib/guest-usage';
 
 const CrookedApp: React.FC = () => {
   const [layers, setLayers] = useState<Layer[]>([]);
@@ -23,6 +31,10 @@ const CrookedApp: React.FC = () => {
   const [layerCount, setLayerCount] = useState<number>(5);
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [isLayerPanelCollapsed, setIsLayerPanelCollapsed] = useState(false);
+
+  // Guest conversion modal state
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradeModalType, setUpgradeModalType] = useState<'save' | 'export' | 'limit' | 'login'>('login');
 
   // Advanced Settings State
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedDecompositionConfig>({
@@ -164,41 +176,132 @@ const CrookedApp: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      const img = new Image();
-      img.onload = () => {
-        const availableWidth = window.innerWidth - 450;
-        const availableHeight = window.innerHeight - 200;
+    // ========================================
+    // GUEST USAGE LIMIT CHECK
+    // ========================================
+    // Check if user is logged in
+    const isLoggedIn = isUserLoggedIn();
 
-        const scaleX = availableWidth / img.width;
-        const scaleY = availableHeight / img.height;
-        const initialScale = Math.min(scaleX, scaleY, 0.9);
+    if (!isLoggedIn) {
+      // Check if upload limit is reached
+      if (isUploadLimitReached()) {
+        const remaining = getRemainingUploads();
+        setUpgradeModalType('limit');
+        setUpgradeModalOpen(true);
+        e.target.value = '';
+        return;
+      }
 
-        const newLayer: Layer = {
-          id: crypto.randomUUID(),
-          name: 'Main Canvas',
-          type: 'image',
-          url: base64,
-          x: 0,
-          y: 0,
-          width: img.width,
-          height: img.height,
-          opacity: 1,
-          visible: true,
-          locked: false,
-          zIndex: 0
+      // Increment upload count for guest users
+      const newCount = incrementUploadCount();
+      console.log('[handleFileUpload] Guest upload count:', newCount, '/', 3);
+
+      // Show warning if approaching limit
+      if (newCount === 2) {
+        // Show a toast or inline message about remaining uploads
+        const remaining = getRemainingUploads();
+        console.log('[handleFileUpload] Last free upload remaining!');
+        // Could add a toast notification here
+      }
+    }
+    // ========================================
+    // END GUEST USAGE CHECK
+    // ========================================
+
+    // Helper function to create a properly oriented image
+    // This handles EXIF orientation data that causes images to appear rotated
+    const createOrientedImage = (file: File): Promise<{ base64: string; width: number; height: number }> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        const img = new Image();
+
+        reader.onload = (event) => {
+          img.src = event.target?.result as string;
+
+          img.onload = () => {
+            // Create canvas to normalize image orientation
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+              reject(new Error('Failed to get canvas context'));
+              return;
+            }
+
+            // Set canvas to image natural dimensions
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+
+            // Draw image - canvas operations normalize EXIF orientation
+            ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight);
+
+            // Export as PNG to preserve quality
+            const orientedBase64 = canvas.toDataURL('image/png', 1.0);
+
+            resolve({
+              base64: orientedBase64,
+              width: img.naturalWidth,
+              height: img.naturalHeight
+            });
+          };
+
+          img.onerror = () => {
+            reject(new Error('Failed to load image'));
+          };
         };
 
-        setLayers([newLayer]);
-        setSelectedLayerId(newLayer.id);
-        setZoom(initialScale);
-        setDragOffset({ x: 0, y: 0 });
-      };
-      img.src = base64;
+        reader.onerror = () => {
+          reject(new Error('Failed to read file'));
+        };
+
+        reader.readAsDataURL(file);
+      });
     };
-    reader.readAsDataURL(file);
+
+    try {
+      const { base64: orientedBase64, width, height } = await createOrientedImage(file);
+
+      // Responsive sizing - mobile gets full screen
+      const isMobile = window.innerWidth < 768;
+      const availableWidth = isMobile ? window.innerWidth - 20 : window.innerWidth - 450;
+      const availableHeight = window.innerHeight - 200;
+
+      const scaleX = availableWidth / width;
+      const scaleY = availableHeight / height;
+      const initialScale = Math.min(scaleX, scaleY, 0.9);
+
+      const newLayer: Layer = {
+        id: crypto.randomUUID(),
+        name: 'Main Canvas',
+        type: 'image',
+        url: orientedBase64,
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+        opacity: 1,
+        visible: true,
+        locked: false,
+        zIndex: 0
+      };
+
+      setLayers([newLayer]);
+      setSelectedLayerId(newLayer.id);
+      setZoom(initialScale);
+      setDragOffset({ x: 0, y: 0 });
+
+      console.log('[handleFileUpload] Image loaded successfully', {
+        width,
+        height,
+        initialScale,
+        isMobile
+      });
+    } catch (error) {
+      console.error('[handleFileUpload] Error processing image:', error);
+      alert('Failed to load image. Please try another image.');
+    }
+
+    // Reset input to allow uploading the same file again
     e.target.value = '';
   };
 
@@ -780,6 +883,19 @@ const CrookedApp: React.FC = () => {
   };
 
   const handleExport = async (settings: ExportSettings) => {
+    // ========================================
+    // GUEST EXPORT CONVERSION TRIGGER
+    // ========================================
+    const isLoggedIn = isUserLoggedIn();
+    if (!isLoggedIn) {
+      setIsProcessing(false);
+      setIsExportModalOpen(false);
+      setUpgradeModalType('export');
+      setUpgradeModalOpen(true);
+      return;
+    }
+    // ========================================
+
     setIsProcessing(true);
     try {
       console.log('[handleExport] Starting export with settings:', settings);
@@ -1077,6 +1193,15 @@ const CrookedApp: React.FC = () => {
               <Icons.Download />
               <span>Export Project</span>
             </button>
+            {/* Guest Upload Counter */}
+            {!isUserLoggedIn() && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 glass-panel rounded-xl border border-white/5">
+                <Icons.Star />
+                <span className="text-xs font-mono text-gray-400">
+                  {getRemainingUploads()}/3 FREE
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1287,6 +1412,14 @@ const CrookedApp: React.FC = () => {
         isProcessing={isProcessing}
         initialWidth={layers[0]?.width || 1024}
         initialHeight={layers[0]?.height || 1024}
+      />
+
+      {/* Guest Conversion Modal */}
+      <CrookedUpgradeModal
+        isOpen={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        type={upgradeModalType}
+        remainingUploads={getRemainingUploads()}
       />
 
       {isProcessing && !isExportModalOpen && (
