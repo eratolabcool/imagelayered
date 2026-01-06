@@ -21,7 +21,7 @@ import {
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 
-import { SocialProviders } from './social-providers';
+import { SocialLogin } from './social-login';
 
 export function SignUp({
   configs,
