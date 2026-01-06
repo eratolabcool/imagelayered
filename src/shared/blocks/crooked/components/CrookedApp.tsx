@@ -176,37 +176,8 @@ const CrookedApp: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // ========================================
-    // GUEST USAGE LIMIT CHECK
-    // ========================================
-    // Check if user is logged in
-    const isLoggedIn = isUserLoggedIn();
+    // Guest usage check moved to action execution (smartDecompose/handleEditAction)
 
-    if (!isLoggedIn) {
-      // Check if upload limit is reached
-      if (isUploadLimitReached()) {
-        const remaining = getRemainingUploads();
-        setUpgradeModalType('limit');
-        setUpgradeModalOpen(true);
-        e.target.value = '';
-        return;
-      }
-
-      // Increment upload count for guest users
-      const newCount = incrementUploadCount();
-      console.log('[handleFileUpload] Guest upload count:', newCount, '/', 3);
-
-      // Show warning if approaching limit
-      if (newCount === 2) {
-        // Show a toast or inline message about remaining uploads
-        const remaining = getRemainingUploads();
-        console.log('[handleFileUpload] Last free upload remaining!');
-        // Could add a toast notification here
-      }
-    }
-    // ========================================
-    // END GUEST USAGE CHECK
-    // ========================================
 
     // Helper function to create a properly oriented image
     // This handles EXIF orientation data that causes images to appear rotated
@@ -306,6 +277,14 @@ const CrookedApp: React.FC = () => {
   };
 
   const smartDecompose = async (count: number, targetLayerId?: string) => {
+    // Check guest limits before processing
+    const isLoggedIn = isUserLoggedIn();
+    if (!isLoggedIn && isUploadLimitReached()) {
+      setUpgradeModalType('limit');
+      setUpgradeModalOpen(true);
+      return;
+    }
+
     const targetId = targetLayerId || selectedLayerId || (layers.length > 0 ? layers[0].id : null);
     if (!targetId) {
       console.error('[smartDecompose] No target layer found');
@@ -744,6 +723,11 @@ const CrookedApp: React.FC = () => {
       });
 
       console.log('[smartDecompose] Decomposition completed successfully');
+
+      // Increment usage count on success for guest users
+      if (!isLoggedIn) {
+        incrementUploadCount();
+      }
     } catch (err) {
       console.error('[smartDecompose] Error:', err);
       const errMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -769,6 +753,14 @@ const CrookedApp: React.FC = () => {
   };
 
   const handleEditAction = async (instruction: string) => {
+    // Check guest limits before processing
+    const isLoggedIn = isUserLoggedIn();
+    if (!isLoggedIn && isUploadLimitReached()) {
+      setUpgradeModalType('limit');
+      setUpgradeModalOpen(true);
+      return;
+    }
+
     const target = layers.find(l => l.id === selectedLayerId);
     if (!target || target.locked) return;
 
@@ -843,6 +835,11 @@ const CrookedApp: React.FC = () => {
         setLayers(prev => prev.map(l =>
           l.id === selectedLayerId ? { ...l, url: newUrl } : l
         ));
+
+        // Increment usage count on success for guest users
+        if (!isLoggedIn) {
+          incrementUploadCount();
+        }
       } else {
         throw new Error('No image generated');
       }

@@ -35,9 +35,6 @@ export async function POST(request: Request) {
 
     // get current user
     const user = await getUserInfo();
-    if (!user) {
-      throw new Error('no auth, please sign in');
-    }
 
     // todo: get cost credits from settings
     let costCredits = 2;
@@ -76,6 +73,44 @@ export async function POST(request: Request) {
       scene = 'text-to-music';
     } else {
       throw new Error('invalid mediaType');
+    }
+
+    if (!user) {
+      // Special handling for Guest users (no auth)
+      // Only allow image-decomposition for guests
+      if (scene !== 'image-decomposition' && scene !== 'image-recolor' && scene !== 'image-replace' && scene !== 'image-remove') {
+        throw new Error('no auth, please sign in');
+      }
+      
+      // For guests, we skip credit check and credit consumption
+      // But we still create a task record (with null userId or special guest ID if model allows)
+      // Since createAITask requires userId, we might need a workaround or skip task recording
+      
+      const callbackUrl = `${envConfigs.app_url}/api/ai/notify/${provider}`;
+      const params: any = {
+        mediaType,
+        model,
+        prompt,
+        callbackUrl,
+        options: { ...options, scene }, 
+      };
+
+      console.log('AI generate params (GUEST):', params);
+      const result = await aiProvider.generate({ params });
+
+      if (!result?.taskId) {
+        throw new Error(`ai generate failed, mediaType: ${mediaType}, provider: ${provider}`);
+      }
+      
+      // Return a partial task object since we can't save to DB without userId
+      // Encode provider and taskId into the ID for stateless polling
+      return respData({
+        id: `guest-${provider}-${result.taskId}`,
+        status: result.taskStatus,
+        taskId: result.taskId,
+        taskInfo: result.taskInfo ? JSON.stringify(result.taskInfo) : null,
+        taskResult: result.taskResult ? JSON.stringify(result.taskResult) : null,
+      });
     }
 
     // check credits

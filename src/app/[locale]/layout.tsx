@@ -25,7 +25,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <NextIntlClientProvider>
+    <NextIntlClientProvider locale={locale}>
       <ThemeProvider>
         <AppContextProvider>
           {children}
