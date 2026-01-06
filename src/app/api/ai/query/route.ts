@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       return respErr('task not found');
     }
 
-    if (task.userId !== user.id) {
+    if (!user || task.userId !== user.id) {
       return respErr('no permission');
     }
 
