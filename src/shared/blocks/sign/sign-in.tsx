@@ -204,7 +204,7 @@ export function SignIn({
             </form>
           )}
 
-          <SocialProviders
+          <SocialLogin
             configs={configs}
             callbackUrl={callbackUrl || '/'}
             loading={loading}
