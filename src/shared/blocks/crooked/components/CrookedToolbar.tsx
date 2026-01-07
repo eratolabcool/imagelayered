@@ -135,6 +135,38 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
           </div>
 
           <div className="space-y-4">
+            {/* Model Selector */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">AI Model</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => updateConfig({ model: 'fal-ai/qwen-image-layered' })}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                    advancedConfig.model === 'fal-ai/qwen-image-layered'
+                      ? 'bg-blue-600/20 text-blue-400 border-blue-500/50'
+                      : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  Standard
+                </button>
+                <button
+                  onClick={() => updateConfig({ model: 'fal-ai/qwen-image-layered/lora' })}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                    advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
+                      ? 'bg-purple-600/20 text-purple-400 border-purple-500/50'
+                      : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  LoRA
+                </button>
+              </div>
+              <p className="text-[9px] text-gray-600">
+                {advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
+                  ? 'LoRA model supports custom style fine-tuning'
+                  : 'Standard model for general decomposition'}
+              </p>
+            </div>
+
             {/* Prompts */}
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Prompt (Optional)</label>

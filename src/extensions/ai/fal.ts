@@ -56,9 +56,9 @@ export class FalProvider implements AIProvider {
       throw new Error('model is required');
     }
 
-    // For qwen-image-layered, prompt is optional
+    // For qwen-image-layered and qwen-image-layered/lora, prompt is optional
     // For other models, prompt is required
-    if (!prompt && model !== 'fal-ai/qwen-image-layered') {
+    if (!prompt && model !== 'fal-ai/qwen-image-layered' && model !== 'fal-ai/qwen-image-layered/lora') {
       throw new Error('prompt is required');
     }
 
@@ -445,7 +445,9 @@ export class FalProvider implements AIProvider {
     options: any;
   }): any {
     // Special handling for qwen-image-layered model (Qwen Image Layered decomposition)
-    if (model === 'fal-ai/qwen-image-layered') {
+    if (model === 'fal-ai/qwen-image-layered' || model === 'fal-ai/qwen-image-layered/lora') {
+      const isLora = model === 'fal-ai/qwen-image-layered/lora';
+
       const input: any = {
         image_url: options?.image_input?.[0] || '',
         num_layers: options?.num_layers || options?.layer_count || 4,
@@ -469,6 +471,19 @@ export class FalProvider implements AIProvider {
       }
       if (options?.sync_mode !== undefined) {
         input.sync_mode = options.sync_mode;
+      }
+
+      // LoRA model specific: support lora_model_url for custom LoRA models
+      if (isLora) {
+        if (options?.lora_model_url) {
+          input.lora_model_url = options.lora_model_url;
+        }
+        if (options?.lora_strength !== undefined) {
+          input.lora_strength = options.lora_strength;
+        }
+        if (mediaType) {
+          input.mediaType = mediaType;
+        }
       }
 
       return input;

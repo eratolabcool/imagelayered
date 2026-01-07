@@ -45,7 +45,8 @@ const CrookedApp: React.FC = () => {
     enableCfgNormalization: true,
     autoCaptionLanguageEn: true,
     guidanceScale: 7.5,
-    inferenceSteps: 30
+    inferenceSteps: 30,
+    model: 'fal-ai/qwen-image-layered'
   });
 
   const mainRef = useRef<HTMLDivElement>(null);
@@ -417,7 +418,7 @@ const CrookedApp: React.FC = () => {
           mediaType: 'image',
           scene: 'image-decomposition',
           provider: 'fal',
-          model: 'fal-ai/qwen-image-layered',
+          model: advancedConfig.model,
           prompt: count > 0
             ? `Decompose this image into ${count} layers`
             : 'Decompose this image into layers',

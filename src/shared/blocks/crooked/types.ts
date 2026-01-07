@@ -49,4 +49,5 @@ export interface AdvancedDecompositionConfig {
   autoCaptionLanguageEn: boolean; // True for EN, False for ZH
   guidanceScale: number;
   inferenceSteps: number;
+  model: 'fal-ai/qwen-image-layered' | 'fal-ai/qwen-image-layered/lora';
 }
