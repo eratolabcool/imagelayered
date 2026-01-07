@@ -36,68 +36,186 @@ export default async function AiTasksPage({
     mediaType: type,
   });
 
+  // Status badge styles
+  const getStatusBadge = (status: AITaskStatus) => {
+    const styles: Record<string, string> = {
+      [AITaskStatus.PENDING]: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+      [AITaskStatus.PROCESSING]: 'bg-blue-500/20 text-blue-400 border-blue-500/30 animate-pulse',
+      [AITaskStatus.SUCCESS]: 'bg-green-500/20 text-green-400 border-green-500/30',
+      [AITaskStatus.FAILED]: 'bg-red-500/20 text-red-400 border-red-500/30',
+      [AITaskStatus.CANCELED]: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+    };
+    return styles[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  };
+
+  // Get status label
+  const getStatusLabel = (status: AITaskStatus) => {
+    const labels: Record<string, string> = {
+      [AITaskStatus.PENDING]: t('status.pending'),
+      [AITaskStatus.PROCESSING]: t('status.processing'),
+      [AITaskStatus.SUCCESS]: t('status.completed'),
+      [AITaskStatus.FAILED]: t('status.failed'),
+      [AITaskStatus.CANCELED]: t('status.canceled'),
+    };
+    return labels[status] || status;
+  };
+
+  // Format cost credits
+  const formatCost = (credits: number | null) => {
+    if (!credits || credits === 0) return '-';
+    return `${credits} credits`;
+  };
+
+  // Preview column callback
+  const renderPreview = (item: AITask) => {
+    if (item.taskInfo) {
+      const taskInfo = JSON.parse(item.taskInfo);
+
+      // Image preview
+      if (taskInfo.images && taskInfo.images.length > 0) {
+        return (
+          <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-black/40">
+            <img
+              src={taskInfo.images[0].imageUrl}
+              alt="Preview"
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+            {taskInfo.images.length > 1 && (
+              <div className="absolute bottom-0 right-0 bg-black/60 px-1 py-0.5 text-[10px] text-white">
+                +{taskInfo.images.length - 1}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      // Audio/Music preview
+      if (taskInfo.songs && taskInfo.songs.length > 0) {
+        return (
+          <div className="h-10 w-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+            <svg className="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+          </div>
+        );
+      }
+    }
+    return <div className="h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center text-gray-500">-</div>;
+  };
+
+  // Status column callback
+  const renderStatus = (item: AITask) => {
+    const status = item.status as AITaskStatus;
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadge(status)}`}>
+        {getStatusLabel(status)}
+      </span>
+    );
+  };
+
+  // Cost column callback
+  const renderCost = (item: AITask) => (
+    <span className="text-sm text-gray-400 font-mono">
+      {formatCost(item.costCredits)}
+    </span>
+  );
+
+  // Result column callback
+  const renderResult = (item: AITask) => {
+    if (item.taskInfo) {
+      const taskInfo = JSON.parse(item.taskInfo);
+      if (taskInfo.errorMessage) {
+        return (
+          <div className="max-w-xs text-red-400 text-sm truncate" title={taskInfo.errorMessage}>
+            Failed: {taskInfo.errorMessage}
+          </div>
+        );
+      } else if (taskInfo.songs && taskInfo.songs.length > 0) {
+        const songs: any[] = taskInfo.songs.filter(
+          (song: any) => song.audioUrl
+        );
+        if (songs.length > 0) {
+          return (
+            <div className="flex flex-col gap-1 max-w-xs">
+              <AudioPlayer
+                key={songs[0].id}
+                src={songs[0].audioUrl}
+                title={songs[0].title}
+                className="w-64"
+              />
+              {songs.length > 1 && (
+                <span className="text-xs text-gray-500">+ {songs.length - 1} more tracks</span>
+              )}
+            </div>
+          );
+        }
+      } else if (taskInfo.images && taskInfo.images.length > 0) {
+        return (
+          <div className="flex gap-1">
+            {taskInfo.images.slice(0, 4).map((image: any, index: number) => (
+              <LazyImage
+                key={index}
+                src={image.imageUrl}
+                alt={`Generated ${index + 1}`}
+                className="h-12 w-12 rounded border border-white/10"
+              />
+            ))}
+            {taskInfo.images.length > 4 && (
+              <div className="h-12 w-12 rounded bg-white/5 flex items-center justify-center text-xs text-gray-500">
+                +{taskInfo.images.length - 4}
+              </div>
+            )}
+          </div>
+        );
+      }
+    }
+    return '-';
+  };
+
   const table: Table = {
     title: t('list.title'),
     columns: [
-      { name: 'prompt', title: t('fields.prompt'), type: 'copy' },
-      { name: 'mediaType', title: t('fields.media_type'), type: 'label' },
-      { name: 'provider', title: t('fields.provider'), type: 'label' },
-      { name: 'model', title: t('fields.model'), type: 'label' },
-      // { name: 'options', title: t('fields.options'), type: 'copy' },
-      { name: 'status', title: t('fields.status'), type: 'label' },
-      { name: 'costCredits', title: t('fields.cost_credits'), type: 'label' },
+      {
+        name: 'preview',
+        title: t('fields.preview'),
+        callback: renderPreview,
+      },
+      {
+        name: 'prompt',
+        title: t('fields.prompt'),
+        type: 'copy',
+      },
+      {
+        name: 'mediaType',
+        title: t('fields.media_type'),
+        type: 'label',
+      },
+      {
+        name: 'provider',
+        title: t('fields.provider'),
+        type: 'label',
+      },
+      {
+        name: 'status',
+        title: t('fields.status'),
+        callback: renderStatus,
+      },
+      {
+        name: 'costCredits',
+        title: t('fields.cost_credits'),
+        callback: renderCost,
+      },
       {
         name: 'result',
         title: t('fields.result'),
-        callback: (item: AITask) => {
-          if (item.taskInfo) {
-            const taskInfo = JSON.parse(item.taskInfo);
-            if (taskInfo.errorMessage) {
-              return (
-                <div className="text-red-500">
-                  Failed: {taskInfo.errorMessage}
-                </div>
-              );
-            } else if (taskInfo.songs && taskInfo.songs.length > 0) {
-              const songs: any[] = taskInfo.songs.filter(
-                (song: any) => song.audioUrl
-              );
-              if (songs.length > 0) {
-                return (
-                  <div className="flex flex-col gap-2">
-                    {songs.map((song: any) => (
-                      <AudioPlayer
-                        key={song.id}
-                        src={song.audioUrl}
-                        title={song.title}
-                        className="w-80"
-                      />
-                    ))}
-                  </div>
-                );
-              }
-            } else if (taskInfo.images && taskInfo.images.length > 0) {
-              return (
-                <div className="flex flex-col gap-2">
-                  {taskInfo.images.map((image: any, index: number) => (
-                    <LazyImage
-                      key={index}
-                      src={image.imageUrl}
-                      alt="Generated image"
-                      className="h-32 w-auto"
-                    />
-                  ))}
-                </div>
-              );
-            } else {
-              return '-';
-            }
-          }
-
-          return '-';
-        },
+        callback: renderResult,
       },
-      { name: 'createdAt', title: t('fields.created_at'), type: 'time' },
+      {
+        name: 'createdAt',
+        title: t('fields.created_at'),
+        type: 'time',
+      },
       {
         name: 'action',
         title: t('fields.action'),

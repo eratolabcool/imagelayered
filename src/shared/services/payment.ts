@@ -43,7 +43,7 @@ import {
 export function getPaymentServiceWithConfigs(configs: Configs) {
   const paymentManager = new PaymentManager();
 
-  const defaultProvider = configs.default_payment_provider;
+  const configDefaultProvider = configs.default_payment_provider;
 
   // add stripe provider
   if (configs.stripe_enabled === 'true') {
@@ -56,6 +56,7 @@ export function getPaymentServiceWithConfigs(configs: Configs) {
         allowedPaymentMethods = [];
       }
     }
+    const isDefault = configDefaultProvider === 'stripe';
     paymentManager.addProvider(
       new StripeProvider({
         secretKey: configs.stripe_secret_key,
@@ -64,12 +65,13 @@ export function getPaymentServiceWithConfigs(configs: Configs) {
         allowedPaymentMethods: allowedPaymentMethods as string[],
         allowPromotionCodes: configs.stripe_allow_promotion_codes === 'true',
       }),
-      defaultProvider === 'stripe'
+      isDefault
     );
   }
 
   // add creem provider
   if (configs.creem_enabled === 'true') {
+    const isDefault = configDefaultProvider === 'creem';
     paymentManager.addProvider(
       new CreemProvider({
         apiKey: configs.creem_api_key,
@@ -77,12 +79,13 @@ export function getPaymentServiceWithConfigs(configs: Configs) {
           configs.creem_environment === 'production' ? 'production' : 'sandbox',
         signingSecret: configs.creem_signing_secret,
       }),
-      defaultProvider === 'creem'
+      isDefault
     );
   }
 
   // add paypal provider
   if (configs.paypal_enabled === 'true') {
+    const isDefault = configDefaultProvider === 'paypal';
     paymentManager.addProvider(
       new PayPalProvider({
         clientId: configs.paypal_client_id,
@@ -92,8 +95,15 @@ export function getPaymentServiceWithConfigs(configs: Configs) {
             ? 'production'
             : 'sandbox',
       }),
-      defaultProvider === 'paypal'
+      isDefault
     );
+  }
+
+  // Auto-select first available provider if no default is set
+  // PaymentManager.getDefaultProvider() will auto-select the first provider if none is set
+  const provider = paymentManager.getDefaultProvider();
+  if (provider) {
+    console.log(`[PaymentService] Using ${provider.name} as payment provider`);
   }
 
   return paymentManager;

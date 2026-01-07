@@ -1,6 +1,7 @@
 {
   "fields": {
     "title": "Title",
+    "preview": "Preview",
     "media_type": "Media Type",
     "provider": "Provider",
     "model": "Model",
@@ -8,9 +9,15 @@
     "options": "Options",
     "status": "Status",
     "result": "Result",
-    "cost_credits": "Cost Credits",
+    "cost_credits": "Cost",
     "created_at": "Created At",
     "action": "Action"
+  },
+  "status": {
+    "pending": "Pending",
+    "processing": "Processing",
+    "completed": "Completed",
+    "failed": "Failed"
   },
   "list": {
     "title": "AI Tasks",
