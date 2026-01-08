@@ -36,6 +36,9 @@ const CrookedApp: React.FC = () => {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeModalType, setUpgradeModalType] = useState<'save' | 'export' | 'limit' | 'login'>('login');
 
+  // Theme state
+  const [isLightTheme, setIsLightTheme] = useState(false);
+
   // Advanced Settings State
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedDecompositionConfig>({
     prompt: '',
@@ -1320,6 +1323,8 @@ const CrookedApp: React.FC = () => {
         setLayerCount={setLayerCount}
         advancedConfig={advancedConfig}
         setAdvancedConfig={setAdvancedConfig}
+        isLightTheme={isLightTheme}
+        setIsLightTheme={setIsLightTheme}
       />
 
       {/* Collapse Toggle Button */}

@@ -78,7 +78,8 @@ export default async function RootLayout({
   let customerServiceHeadScripts = null;
   let customerServiceBodyScripts = null;
 
-  if (isProduction || isDebug) {
+  // Always load configs and services to ensure they work in all environments (including preview/dev for verification)
+  // if (isProduction || isDebug) {
     const configs = await getAllConfigs();
 
     const [adsService, analyticsService, affiliateService, customerService] =
@@ -108,7 +109,7 @@ export default async function RootLayout({
     customerServiceMetaTags = customerService.getMetaTags();
     customerServiceHeadScripts = customerService.getHeadScripts();
     customerServiceBodyScripts = customerService.getBodyScripts();
-  }
+  // }
 
   return (
     <html
@@ -142,6 +143,9 @@ export default async function RootLayout({
         {/* DNS prefetch for external domains */}
         <link rel="dns-prefetch" href="https://modelscope.cn" />
         <link rel="dns-prefetch" href="https://github.com" />
+
+        {/* Plausible Analytics */}
+        <script defer data-domain="image-layered.app" src="https://status.finaily.net/js/script.js"></script>
 
         {/* inject locales */}
         {locales ? (

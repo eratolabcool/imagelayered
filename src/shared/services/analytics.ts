@@ -16,9 +16,12 @@ export function getAnalyticsManagerWithConfigs(configs: Configs) {
 
   // google analytics
   if (configs.google_analytics_id) {
+    console.log('[Analytics] Google Analytics ID detected:', configs.google_analytics_id);
     analytics.addProvider(
       new GoogleAnalyticsProvider({ gaId: configs.google_analytics_id })
     );
+  } else {
+    console.log('[Analytics] Google Analytics ID not found in configs. Available configs:', Object.keys(configs));
   }
 
   // clarity
