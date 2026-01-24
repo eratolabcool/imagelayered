@@ -145,7 +145,7 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://github.com" />
 
         {/* Plausible Analytics */}
-        <script defer data-domain="image-layered.app" src="https://status.finaily.net/js/script.js"></script>
+        <script defer data-domain="image-layered.app" src="https://plausible.riftrunner.art/js/script.js"></script>
 
         {/* inject locales */}
         {locales ? (
