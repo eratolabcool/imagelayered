@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
-import { CrookedApp } from '@/shared/blocks/crooked';
-import '@/shared/blocks/crooked/styles/crooked.css';
+// dynamic import removed
+
 import Link from 'next/link';
+import CrookedAppWrapper from './CrookedAppWrapper';
 
 // SEO Metadata optimized for target keywords
 export const metadata: Metadata = {
@@ -150,7 +151,10 @@ export default function QwenImageLayeredPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
-      {/* Hero Section */}
+      {/* Main App (Tool) - Moved to Hero position */}
+      <CrookedAppWrapper />
+
+      {/* Original Hero Section - Moved below tool */}
       <section className="relative bg-[#0a0a0a] py-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/10 to-transparent" />
         <div className="max-w-6xl mx-auto relative z-10">
@@ -517,9 +521,6 @@ export default function QwenImageLayeredPage() {
 
       {/* Editor Anchor */}
       <div id="editor" />
-
-      {/* Main App */}
-      <CrookedApp />
     </>
   );
 }
