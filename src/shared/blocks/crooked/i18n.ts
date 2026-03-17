@@ -1,0 +1,321 @@
+import { useTranslations } from 'next-intl';
+
+type TranslationGetter = (key: string, fallback: string) => string;
+
+const getWithFallback = (t: ReturnType<typeof useTranslations>): TranslationGetter => {
+  const defaultVars = {
+    count: '{count}',
+    width: '{width}',
+    height: '{height}',
+    used: '{used}',
+    lang: '{lang}',
+    reason: '{reason}',
+  };
+  return (key, fallback) => {
+    try {
+      const value = t(key as any, defaultVars);
+      if (typeof value === 'string') return value;
+      return fallback;
+    } catch (err) {
+      return fallback;
+    }
+  };
+};
+
+const fallbackCopy = {
+  brand: {
+    title: 'Qwen Image Layered',
+    tagline: 'Vision Intelligence',
+    backHome: 'Back to Home',
+  },
+  buttons: {
+    changeImage: 'Change Image',
+    exportProject: 'Export Project',
+    guestQuota: '{count}/3 FREE',
+    resetView: 'Reset View',
+    fitToScreen: 'Fit to Screen',
+    showLayers: 'Show Layers',
+    hideLayers: 'Hide Layers',
+    processing: 'Processing...',
+    execute: 'Execute',
+    processingOverlayTitle: 'Qwen Image Layered Engine Running',
+    processingOverlaySubtitle: 'Neural Decomposition in Progress...',
+  },
+  empty: {
+    title: 'Upload image to Qwen Image Layered',
+    subtitle: 'Start your multi-layered AI editing experience',
+    cta: 'Upload Image',
+  },
+  zoom: {
+    reset: 'Reset View',
+  },
+  toolbar: {
+    selection: 'Selection',
+    panView: 'Pan View',
+    recolor: 'Recolor',
+    aiReplace: 'AI Replace',
+    removeObject: 'Remove Object',
+    layerCountPlaceholder: 'Count',
+    numberOfLayers: 'Number of Layers',
+    manualDecompose: 'Manual Decompose',
+    autoDecompose: 'Auto Decompose',
+    lightMode: 'Light Mode',
+    darkMode: 'Dark Mode',
+    switchToLight: 'Switch to Light Mode',
+    switchToDark: 'Switch to Dark Mode',
+    advancedSettings: 'Advanced Settings',
+    decomposeCallToAction: 'Decompose ({count} Layers)',
+    processing: 'Processing...',
+  },
+  advanced: {
+    title: 'Advanced Config',
+    aiModel: 'AI Model',
+    standard: 'Standard',
+    lora: 'LoRA',
+    standardDesc: 'Standard model for general decomposition',
+    loraDesc: 'LoRA model supports custom style fine-tuning',
+    prompt: 'Prompt (Optional)',
+    promptPlaceholder: 'Target elements to extract...',
+    negativePrompt: 'Negative Prompt (Optional)',
+    negativePromptPlaceholder: 'Elements to ignore...',
+    randomizeSeed: 'Randomize Seed',
+    guidanceScale: 'Guidance Scale',
+    inferenceSteps: 'Inference Steps',
+    cfgNormalization: 'CFG Normalization',
+    languageToggle: 'Language: {lang}',
+    switch: 'Switch',
+    apply: 'Apply',
+  },
+  layerPanel: {
+    title: 'Layers',
+    nodeCount: '{count} NODE(S)',
+    layersLabel: 'Layers',
+    split: 'Split Selected',
+    deep: 'Deep Decompose',
+    visibility: 'Toggle Visibility',
+    remove: 'Delete Layer',
+    lock: 'Lock Layer',
+    unlock: 'Unlock Layer',
+    duplicate: 'Duplicate',
+    opacity: 'Opacity',
+    moveUp: 'Bring Forward',
+    moveDown: 'Send Backward',
+  },
+  exportModal: {
+    title: 'Export Image',
+    originalSize: 'Use original size ({width}x{height})',
+    originalSizeSelected: '✓ Original size ({width}x{height})',
+    width: 'Width (PX)',
+    height: 'Height (PX)',
+    aiUpscale: 'AI Super Resolution',
+    aiUpscaleSub: 'Enhance details with Qwen Vision',
+    resolutionPro: 'PRO',
+    start: 'Start Export',
+    processing: 'Processing high-res export...',
+    disclaimer: '* 4K export requires paid API key and billing account',
+    learnBilling: 'Learn OpenRouter billing',
+  },
+  upgrade: {
+    viewPackages: 'View Credit Packages',
+    notNow: 'Not Now',
+    badges: {
+      secure: 'Secure',
+      payAsYouGo: 'Pay As You Go',
+      cancelAnytime: 'Cancel Anytime',
+    },
+    save: {
+      title: 'Save Your Creation',
+      message: 'Log in to save your progress and continue creating anytime!',
+      cta: 'Log In Now',
+      subtext: 'Free · No Credit Card Required',
+    },
+    export: {
+      title: 'HD Export Without Watermark',
+      message: 'Log in and use credits to export high-resolution layered images without watermarks.',
+      cta: 'Get Credits',
+      subtext: '5 credits per layer decomposition',
+    },
+    limit: {
+      title: 'Trial Limit Reached',
+      message: 'You have used your free trials ({used}/3). Log in to get more free credits!',
+      cta: 'Sign Up Now',
+      subtext: 'Get 10 credits upon registration',
+    },
+    login: {
+      title: 'Log In to Continue',
+      message: 'Log in to access full features including save, export, and unlimited AI layering.',
+      cta: 'Log In Now',
+      subtext: 'Supports Google / GitHub Quick Login',
+    },
+    default: {
+      title: 'Upgrade Your Experience',
+      message: 'Unlock more features and enjoy the full AI image layering experience.',
+      cta: 'Learn More',
+      subtext: '',
+    },
+  },
+  editBar: {
+    recolorPlaceholder: 'Describe new color (e.g., change car to metallic red)...',
+    replacePlaceholder: 'What do you want to replace it with? (e.g., a cyberpunk warrior)...',
+    removePlaceholder: 'Removing object precisely...',
+    defaultPlaceholder: 'Enter editing instruction...',
+  },
+  notifications: {
+    loadImageFail: 'Failed to load image. Please try another image.',
+    decomposeFail: 'Decomposition failed: {reason}',
+    editFail: 'Edit failed. Please try again.',
+    exportFail: 'Export failed. Please try again.',
+    noVisibleLayers: 'No visible layers to export.',
+  },
+};
+
+export type CrookedCopy = typeof fallbackCopy;
+
+export function useCrookedCopy(): CrookedCopy {
+  const t = useTranslations('pages.qwenimagelayered.tool');
+  const g = getWithFallback(t);
+
+  return {
+    brand: {
+      title: g('brand.title', fallbackCopy.brand.title),
+      tagline: g('brand.tagline', fallbackCopy.brand.tagline),
+      backHome: g('brand.backHome', fallbackCopy.brand.backHome),
+    },
+    buttons: {
+      changeImage: g('buttons.changeImage', fallbackCopy.buttons.changeImage),
+      exportProject: g('buttons.exportProject', fallbackCopy.buttons.exportProject),
+      guestQuota: g('buttons.guestQuota', fallbackCopy.buttons.guestQuota),
+      resetView: g('buttons.resetView', fallbackCopy.buttons.resetView),
+      fitToScreen: g('buttons.fitToScreen', fallbackCopy.buttons.fitToScreen),
+      showLayers: g('buttons.showLayers', fallbackCopy.buttons.showLayers),
+      hideLayers: g('buttons.hideLayers', fallbackCopy.buttons.hideLayers),
+      processing: g('buttons.processing', fallbackCopy.buttons.processing),
+      execute: g('buttons.execute', fallbackCopy.buttons.execute),
+      processingOverlayTitle: g('buttons.processingOverlayTitle', fallbackCopy.buttons.processingOverlayTitle),
+      processingOverlaySubtitle: g('buttons.processingOverlaySubtitle', fallbackCopy.buttons.processingOverlaySubtitle),
+    },
+    empty: {
+      title: g('empty.title', fallbackCopy.empty.title),
+      subtitle: g('empty.subtitle', fallbackCopy.empty.subtitle),
+      cta: g('empty.cta', fallbackCopy.empty.cta),
+    },
+    zoom: {
+      reset: g('zoom.reset', fallbackCopy.zoom.reset),
+    },
+    toolbar: {
+      selection: g('toolbar.selection', fallbackCopy.toolbar.selection),
+      panView: g('toolbar.panView', fallbackCopy.toolbar.panView),
+      recolor: g('toolbar.recolor', fallbackCopy.toolbar.recolor),
+      aiReplace: g('toolbar.aiReplace', fallbackCopy.toolbar.aiReplace),
+      removeObject: g('toolbar.removeObject', fallbackCopy.toolbar.removeObject),
+      layerCountPlaceholder: g('toolbar.layerCountPlaceholder', fallbackCopy.toolbar.layerCountPlaceholder),
+      numberOfLayers: g('toolbar.numberOfLayers', fallbackCopy.toolbar.numberOfLayers),
+      manualDecompose: g('toolbar.manualDecompose', fallbackCopy.toolbar.manualDecompose),
+      autoDecompose: g('toolbar.autoDecompose', fallbackCopy.toolbar.autoDecompose),
+      lightMode: g('toolbar.lightMode', fallbackCopy.toolbar.lightMode),
+      darkMode: g('toolbar.darkMode', fallbackCopy.toolbar.darkMode),
+      switchToLight: g('toolbar.switchToLight', fallbackCopy.toolbar.switchToLight),
+      switchToDark: g('toolbar.switchToDark', fallbackCopy.toolbar.switchToDark),
+      advancedSettings: g('toolbar.advancedSettings', fallbackCopy.toolbar.advancedSettings),
+      decomposeCallToAction: g('toolbar.decomposeCallToAction', fallbackCopy.toolbar.decomposeCallToAction),
+      processing: g('toolbar.processing', fallbackCopy.toolbar.processing),
+    },
+    advanced: {
+      title: g('advanced.title', fallbackCopy.advanced.title),
+      aiModel: g('advanced.aiModel', fallbackCopy.advanced.aiModel),
+      standard: g('advanced.standard', fallbackCopy.advanced.standard),
+      lora: g('advanced.lora', fallbackCopy.advanced.lora),
+      standardDesc: g('advanced.standardDesc', fallbackCopy.advanced.standardDesc),
+      loraDesc: g('advanced.loraDesc', fallbackCopy.advanced.loraDesc),
+      prompt: g('advanced.prompt', fallbackCopy.advanced.prompt),
+      promptPlaceholder: g('advanced.promptPlaceholder', fallbackCopy.advanced.promptPlaceholder),
+      negativePrompt: g('advanced.negativePrompt', fallbackCopy.advanced.negativePrompt),
+      negativePromptPlaceholder: g('advanced.negativePromptPlaceholder', fallbackCopy.advanced.negativePromptPlaceholder),
+      randomizeSeed: g('advanced.randomizeSeed', fallbackCopy.advanced.randomizeSeed),
+      guidanceScale: g('advanced.guidanceScale', fallbackCopy.advanced.guidanceScale),
+      inferenceSteps: g('advanced.inferenceSteps', fallbackCopy.advanced.inferenceSteps),
+      cfgNormalization: g('advanced.cfgNormalization', fallbackCopy.advanced.cfgNormalization),
+      languageToggle: g('advanced.languageToggle', fallbackCopy.advanced.languageToggle),
+      switch: g('advanced.switch', fallbackCopy.advanced.switch),
+      apply: g('advanced.apply', fallbackCopy.advanced.apply),
+    },
+    layerPanel: {
+      title: g('layerPanel.title', fallbackCopy.layerPanel.title),
+      nodeCount: g('layerPanel.nodeCount', fallbackCopy.layerPanel.nodeCount),
+      layersLabel: g('layerPanel.layersLabel', fallbackCopy.layerPanel.layersLabel),
+      split: g('layerPanel.split', fallbackCopy.layerPanel.split),
+      deep: g('layerPanel.deep', fallbackCopy.layerPanel.deep),
+      visibility: g('layerPanel.visibility', fallbackCopy.layerPanel.visibility),
+      remove: g('layerPanel.remove', fallbackCopy.layerPanel.remove),
+      lock: g('layerPanel.lock', fallbackCopy.layerPanel.lock),
+      duplicate: g('layerPanel.duplicate', fallbackCopy.layerPanel.duplicate),
+      opacity: g('layerPanel.opacity', fallbackCopy.layerPanel.opacity),
+    },
+    exportModal: {
+      title: g('exportModal.title', fallbackCopy.exportModal.title),
+      originalSize: g('exportModal.originalSize', fallbackCopy.exportModal.originalSize),
+      originalSizeSelected: g('exportModal.originalSizeSelected', fallbackCopy.exportModal.originalSizeSelected),
+      width: g('exportModal.width', fallbackCopy.exportModal.width),
+      height: g('exportModal.height', fallbackCopy.exportModal.height),
+      aiUpscale: g('exportModal.aiUpscale', fallbackCopy.exportModal.aiUpscale),
+      aiUpscaleSub: g('exportModal.aiUpscaleSub', fallbackCopy.exportModal.aiUpscaleSub),
+      resolutionPro: g('exportModal.resolutionPro', fallbackCopy.exportModal.resolutionPro),
+      start: g('exportModal.start', fallbackCopy.exportModal.start),
+      processing: g('exportModal.processing', fallbackCopy.exportModal.processing),
+      disclaimer: g('exportModal.disclaimer', fallbackCopy.exportModal.disclaimer),
+      learnBilling: g('exportModal.learnBilling', fallbackCopy.exportModal.learnBilling),
+    },
+    upgrade: {
+      viewPackages: g('upgrade.viewPackages', fallbackCopy.upgrade.viewPackages),
+      notNow: g('upgrade.notNow', fallbackCopy.upgrade.notNow),
+      badges: {
+        secure: g('upgrade.badges.secure', fallbackCopy.upgrade.badges.secure),
+        payAsYouGo: g('upgrade.badges.payAsYouGo', fallbackCopy.upgrade.badges.payAsYouGo),
+        cancelAnytime: g('upgrade.badges.cancelAnytime', fallbackCopy.upgrade.badges.cancelAnytime),
+      },
+      save: {
+        title: g('upgrade.save.title', fallbackCopy.upgrade.save.title),
+        message: g('upgrade.save.message', fallbackCopy.upgrade.save.message),
+        cta: g('upgrade.save.cta', fallbackCopy.upgrade.save.cta),
+        subtext: g('upgrade.save.subtext', fallbackCopy.upgrade.save.subtext),
+      },
+      export: {
+        title: g('upgrade.export.title', fallbackCopy.upgrade.export.title),
+        message: g('upgrade.export.message', fallbackCopy.upgrade.export.message),
+        cta: g('upgrade.export.cta', fallbackCopy.upgrade.export.cta),
+        subtext: g('upgrade.export.subtext', fallbackCopy.upgrade.export.subtext),
+      },
+      limit: {
+        title: g('upgrade.limit.title', fallbackCopy.upgrade.limit.title),
+        message: g('upgrade.limit.message', fallbackCopy.upgrade.limit.message),
+        cta: g('upgrade.limit.cta', fallbackCopy.upgrade.limit.cta),
+        subtext: g('upgrade.limit.subtext', fallbackCopy.upgrade.limit.subtext),
+      },
+      login: {
+        title: g('upgrade.login.title', fallbackCopy.upgrade.login.title),
+        message: g('upgrade.login.message', fallbackCopy.upgrade.login.message),
+        cta: g('upgrade.login.cta', fallbackCopy.upgrade.login.cta),
+        subtext: g('upgrade.login.subtext', fallbackCopy.upgrade.login.subtext),
+      },
+      default: {
+        title: g('upgrade.default.title', fallbackCopy.upgrade.default.title),
+        message: g('upgrade.default.message', fallbackCopy.upgrade.default.message),
+        cta: g('upgrade.default.cta', fallbackCopy.upgrade.default.cta),
+        subtext: g('upgrade.default.subtext', fallbackCopy.upgrade.default.subtext),
+      },
+    },
+    editBar: {
+      recolorPlaceholder: g('editBar.recolorPlaceholder', fallbackCopy.editBar.recolorPlaceholder),
+      replacePlaceholder: g('editBar.replacePlaceholder', fallbackCopy.editBar.replacePlaceholder),
+      removePlaceholder: g('editBar.removePlaceholder', fallbackCopy.editBar.removePlaceholder),
+      defaultPlaceholder: g('editBar.defaultPlaceholder', fallbackCopy.editBar.defaultPlaceholder),
+    },
+    notifications: {
+      loadImageFail: g('notifications.loadImageFail', fallbackCopy.notifications.loadImageFail),
+      decomposeFail: g('notifications.decomposeFail', fallbackCopy.notifications.decomposeFail),
+      editFail: g('notifications.editFail', fallbackCopy.notifications.editFail),
+      exportFail: g('notifications.exportFail', fallbackCopy.notifications.exportFail),
+      noVisibleLayers: g('notifications.noVisibleLayers', fallbackCopy.notifications.noVisibleLayers),
+    },
+  };
+}

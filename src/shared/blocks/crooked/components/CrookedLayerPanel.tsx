@@ -3,6 +3,7 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { Layer } from '../types';
 import { Icons } from './Icon';
+import { useCrookedCopy } from '../i18n';
 
 interface LayerPanelProps {
   layers: Layer[];
@@ -32,7 +33,8 @@ const LayerItem = memo(({
   onToggleCollapse,
   onRecursiveDecompose,
   onToggleVisibility,
-  onRemoveLayer
+  onRemoveLayer,
+  deepLabel
 }: {
   layer: Layer;
   depth: number;
@@ -44,6 +46,7 @@ const LayerItem = memo(({
   onRecursiveDecompose: (id: string) => void;
   onToggleVisibility: (id: string) => void;
   onRemoveLayer: (id: string) => void;
+  deepLabel: string;
 }) => {
   const isCollapsed = collapsedLayerIds.has(layer.id);
 
@@ -116,7 +119,7 @@ const LayerItem = memo(({
         <button
           onClick={handleRecursiveDecompose}
           className="p-1.5 hover:bg-blue-500/20 rounded text-blue-400"
-          title="Deep Decomposition"
+          title={deepLabel}
         >
           <Icons.Plus />
         </button>
@@ -155,6 +158,9 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
   onDecompose,
   isProcessing = false
 }) => {
+  const copy = useCrookedCopy();
+  const lp = copy.layerPanel;
+  const tb = copy.toolbar;
   const selectedLayer = layers.find(l => l.id === selectedLayerId);
 
   // Memoize layer tree for performance - only recalculate when dependencies change
@@ -180,6 +186,7 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
                 onRecursiveDecompose={onRecursiveDecompose}
                 onToggleVisibility={onToggleVisibility}
                 onRemoveLayer={onRemoveLayer}
+                deepLabel={lp.deep}
               />
               {!isCollapsed && renderTree(layer.id, depth + 1)}
             </React.Fragment>
@@ -212,15 +219,28 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
     }
   }, [selectedLayer, onDuplicateLayer]);
 
+  const shiftLayer = useCallback((direction: 'up' | 'down') => {
+    if (!selectedLayer) return;
+    const sorted = [...layers].sort((a, b) => a.zIndex - b.zIndex);
+    const idx = sorted.findIndex(l => l.id === selectedLayer.id);
+    const targetIdx = direction === 'up' ? idx + 1 : idx - 1;
+    if (targetIdx < 0 || targetIdx >= sorted.length) return;
+
+    const current = sorted[idx];
+    const target = sorted[targetIdx];
+    onUpdateLayer(current.id, { zIndex: target.zIndex });
+    onUpdateLayer(target.id, { zIndex: current.zIndex });
+  }, [layers, onUpdateLayer, selectedLayer]);
+
   return (
     <div className="absolute right-6 top-6 bottom-6 w-80 glass-panel rounded-3xl flex flex-col p-5 z-20 shadow-2xl">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-black italic flex items-center gap-2 uppercase tracking-tighter">
           <Icons.Layer />
-          Layers
+          {lp.title}
         </h2>
         <span className="bg-white/5 px-2 py-1 rounded text-[10px] text-gray-400 font-mono">
-          {layers.length} NODE(S)
+          {lp.nodeCount.replace('{count}', String(layers.length))}
         </span>
       </div>
 
@@ -228,7 +248,7 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
       {(onDecompose || onLayerCountChange) && (
         <div className="mb-4 p-3 bg-white/5 rounded-xl border border-white/5">
           <div className="flex items-center gap-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Layers</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{lp.layersLabel}</label>
             <input
               type="number"
               min="1"
@@ -247,7 +267,7 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
                   : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
               }`}
             >
-              {isProcessing ? '...' : 'Go'}
+              {isProcessing ? copy.buttons.processing : tb.autoDecompose}
             </button>
           </div>
         </div>
@@ -259,7 +279,7 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5">
                 <Icons.Layer />
              </div>
-             <p className="text-xs font-medium italic">Empty workspace. Qwen Image Layered awaits input.</p>
+             <p className="text-xs font-medium italic">{copy.empty.subtitle}</p>
           </div>
         )}
       </div>
@@ -267,13 +287,13 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
       {selectedLayer && (
         <div className="mt-4 pt-4 border-t border-white/10 space-y-4 animate-in slide-in-from-bottom-2 duration-300">
           <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic flex items-center gap-2">
-            Properties: {selectedLayer.name}
+            {lp.title}: {selectedLayer.name}
           </p>
 
           <div className="space-y-4">
             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Opacity</label>
+                <label className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">{lp.opacity}</label>
                 <span className="text-[10px] font-mono text-blue-400">{Math.round(selectedLayer.opacity * 100)}%</span>
               </div>
               <input
@@ -297,14 +317,30 @@ const CrookedLayerPanel: React.FC<LayerPanelProps> = memo(({
                 }`}
               >
                 {selectedLayer.locked ? <Icons.Lock /> : <Icons.Unlock />}
-                {selectedLayer.locked ? 'Locked' : 'Lock'}
+                {selectedLayer.locked ? lp.unlock : lp.lock}
               </button>
               <button
                 onClick={handleDuplicate}
                 className="py-2 px-3 flex items-center justify-center gap-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl text-[10px] font-bold uppercase tracking-wider text-gray-400 transition-all"
               >
                 <Icons.Copy />
-                Duplicate
+                {lp.duplicate}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => shiftLayer('up')}
+                className="py-2 px-3 flex items-center justify-center gap-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl text-[10px] font-bold uppercase tracking-wider text-gray-300 transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                {lp.moveUp}
+              </button>
+              <button
+                onClick={() => shiftLayer('down')}
+                className="py-2 px-3 flex items-center justify-center gap-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl text-[10px] font-bold uppercase tracking-wider text-gray-300 transition-all"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                {lp.moveDown}
               </button>
             </div>
           </div>

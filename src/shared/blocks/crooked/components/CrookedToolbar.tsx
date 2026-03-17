@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { ToolType, AdvancedDecompositionConfig } from '../types';
 import { Icons } from './Icon';
+import { useCrookedCopy } from '../i18n';
 
 interface ToolbarProps {
   activeTool: ToolType;
@@ -29,14 +30,17 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
   isLightTheme,
   setIsLightTheme
 }) => {
+  const copy = useCrookedCopy();
+  const tb = copy.toolbar;
+  const adv = copy.advanced;
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const tools: Array<{ id: ToolType; icon: React.ReactNode; label: string }> = [
-    { id: 'select', icon: <Icons.ChevronRight />, label: 'Selection' },
-    { id: 'move', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 9-3 3 3 3"/><path d="M22 12H2"/><path d="m19 15 3-3-3-3"/><path d="m15 5-3-3-3 3"/><path d="M12 2v20"/><path d="m9 19 3 3 3-3"/></svg>, label: 'Pan View' },
-    { id: 'recolor', icon: <Icons.Colors />, label: 'Recolor' },
-    { id: 'replace', icon: <Icons.Magic />, label: 'AI Replace' },
-    { id: 'remove', icon: <Icons.Trash />, label: 'Remove Object' },
+    { id: 'select', icon: <Icons.ChevronRight />, label: tb.selection },
+    { id: 'move', icon: <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 9-3 3 3 3"/><path d="M22 12H2"/><path d="m19 15 3-3-3-3"/><path d="m15 5-3-3-3 3"/><path d="M12 2v20"/><path d="m9 19 3 3 3-3"/></svg>, label: tb.panView },
+    { id: 'recolor', icon: <Icons.Colors />, label: tb.recolor },
+    { id: 'replace', icon: <Icons.Magic />, label: tb.aiReplace },
+    { id: 'remove', icon: <Icons.Trash />, label: tb.removeObject },
   ];
 
   const updateConfig = (updates: Partial<AdvancedDecompositionConfig>) => {
@@ -77,8 +81,8 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                     value={layerCount}
                     onChange={(e) => setLayerCount(Math.max(1, parseInt(e.target.value) || 1))}
                     className="w-full bg-white/5 border border-white/10 rounded-lg py-1 text-center text-xs text-blue-400 font-mono focus:border-blue-500/50 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    placeholder="Count"
-                    title="Number of Layers"
+                    placeholder={tb.layerCountPlaceholder}
+                    title={tb.numberOfLayers}
                 />
             </div>
 
@@ -88,11 +92,11 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                 className={`p-3 rounded-xl transition-all duration-200 group relative flex items-center justify-center border border-white/5 ${
                     isProcessing ? 'opacity-50' : 'hover:bg-white/5 text-white/80'
                 }`}
-                title="Manual Decompose"
+                title={tb.manualDecompose}
             >
                 <Icons.Layer />
                 <span className="absolute left-full ml-4 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">
-                    Manual Decompose ({layerCount})
+                    {tb.manualDecompose} ({layerCount})
                 </span>
             </button>
 
@@ -102,13 +106,13 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                 className={`p-3 rounded-xl transition-all duration-200 group relative flex items-center justify-center bg-blue-600/10 border border-blue-500/20 ${
                     isProcessing ? 'animate-pulse text-blue-300' : 'hover:bg-blue-600/20 text-blue-400'
                 }`}
-                title="Auto Decompose"
+                title={tb.autoDecompose}
             >
                 <div className="scale-110">
                     <Icons.Magic />
                 </div>
                 <span className="absolute left-full ml-4 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">
-                    Auto Decompose
+                    {tb.autoDecompose}
                 </span>
             </button>
         </div>
@@ -124,7 +128,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
             ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
             : 'text-gray-500 hover:text-white hover:bg-white/5'
         }`}
-        title={isLightTheme ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        title={isLightTheme ? tb.switchToDark : tb.switchToLight}
       >
         {isLightTheme ? (
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -144,7 +148,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
           </svg>
         )}
         <span className="absolute left-full ml-4 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">
-          {isLightTheme ? 'Light Mode' : 'Dark Mode'}
+          {isLightTheme ? tb.lightMode : tb.darkMode}
         </span>
       </button>
 
@@ -158,7 +162,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
               : 'bg-white/10 text-white border-white/10'
             : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
         }`}
-        title="Advanced Settings"
+        title={tb.advancedSettings}
       >
         <Icons.Settings />
       </button>
@@ -174,7 +178,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
           <div className="flex items-center justify-between">
             <h3 className={`text-sm font-black italic uppercase tracking-widest ${
               isLightTheme ? 'text-gray-800' : 'text-blue-400'
-            }`}>Advanced Config</h3>
+            }`}>{adv.title}</h3>
             <button
               onClick={() => setShowAdvanced(false)}
               className={`transition-colors ${
@@ -192,7 +196,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
             <div className="space-y-2">
               <label className={`text-[10px] font-bold uppercase tracking-wider ${
                 isLightTheme ? 'text-gray-700' : 'text-gray-500'
-              }`}>AI Model</label>
+              }`}>{adv.aiModel}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => updateConfig({ model: 'fal-ai/qwen-image-layered' })}
@@ -206,7 +210,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                         : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                   }`}
                 >
-                  Standard
+                  {adv.standard}
                 </button>
                 <button
                   onClick={() => updateConfig({ model: 'fal-ai/qwen-image-layered/lora' })}
@@ -220,13 +224,13 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                         : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                   }`}
                 >
-                  LoRA
+                  {adv.lora}
                 </button>
               </div>
               <p className={`text-[9px] ${isLightTheme ? 'text-gray-600' : 'text-gray-600'}`}>
                 {advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
-                  ? 'LoRA model supports custom style fine-tuning'
-                  : 'Standard model for general decomposition'}
+                  ? adv.loraDesc
+                  : adv.standardDesc}
               </p>
             </div>
 
@@ -234,7 +238,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
             <div className="space-y-2">
               <label className={`text-[10px] font-bold uppercase tracking-wider ${
                 isLightTheme ? 'text-gray-700' : 'text-gray-500'
-              }`}>Prompt (Optional)</label>
+              }`}>{adv.prompt}</label>
               <textarea
                 value={advancedConfig.prompt}
                 onChange={(e) => updateConfig({ prompt: e.target.value })}
@@ -243,14 +247,14 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                     ? 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-blue-500'
                     : 'bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-blue-500/50'
                 }`}
-                placeholder="Target elements to extract..."
+                placeholder={adv.promptPlaceholder}
               />
             </div>
 
             <div className="space-y-2">
               <label className={`text-[10px] font-bold uppercase tracking-wider ${
                 isLightTheme ? 'text-gray-700' : 'text-gray-500'
-              }`}>Negative Prompt (Optional)</label>
+              }`}>{adv.negativePrompt}</label>
               <textarea
                 value={advancedConfig.negativePrompt}
                 onChange={(e) => updateConfig({ negativePrompt: e.target.value })}
@@ -259,7 +263,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                     ? 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-red-500'
                     : 'bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-red-500/50'
                 }`}
-                placeholder="Elements to ignore..."
+                placeholder={adv.negativePromptPlaceholder}
               />
             </div>
 
@@ -270,7 +274,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                 <div className="flex items-center justify-between">
                     <label className={`text-[10px] font-bold uppercase tracking-wider ${
                       isLightTheme ? 'text-gray-600' : 'text-gray-400'
-                    }`}>Randomize Seed</label>
+                    }`}>{adv.randomizeSeed}</label>
                     <button
                         onClick={() => updateConfig({ randomizeSeed: !advancedConfig.randomizeSeed })}
                         className={`w-8 h-4 rounded-full relative transition-colors ${
@@ -304,7 +308,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                     <div className="flex justify-between">
                         <label className={`text-[10px] font-bold uppercase ${
                           isLightTheme ? 'text-gray-700' : 'text-gray-500'
-                        }`}>Guidance Scale</label>
+                        }`}>{adv.guidanceScale}</label>
                         <span className={`text-[10px] font-mono ${
                           isLightTheme ? 'text-blue-700' : 'text-blue-400'
                         }`}>{advancedConfig.guidanceScale}</span>
@@ -323,7 +327,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                     <div className="flex justify-between">
                         <label className={`text-[10px] font-bold uppercase ${
                           isLightTheme ? 'text-gray-700' : 'text-gray-500'
-                        }`}>Inference Steps</label>
+                        }`}>{adv.inferenceSteps}</label>
                         <span className={`text-[10px] font-mono ${
                           isLightTheme ? 'text-blue-700' : 'text-blue-400'
                         }`}>{advancedConfig.inferenceSteps}</span>
@@ -346,7 +350,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                 <div className="flex items-center justify-between">
                     <label className={`text-[10px] font-bold uppercase ${
                       isLightTheme ? 'text-gray-700' : 'text-gray-500'
-                    }`}>CFG Normalization</label>
+                    }`}>{adv.cfgNormalization}</label>
                     <button
                         onClick={() => updateConfig({ enableCfgNormalization: !advancedConfig.enableCfgNormalization })}
                         className={`w-8 h-4 rounded-full relative transition-colors ${
@@ -363,7 +367,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                 <div className="flex items-center justify-between">
                     <label className={`text-[10px] font-bold uppercase ${
                       isLightTheme ? 'text-gray-700' : 'text-gray-500'
-                    }`}>Language: {advancedConfig.autoCaptionLanguageEn ? 'EN' : 'ZH'}</label>
+                    }`}>{adv.languageToggle.replace('{lang}', advancedConfig.autoCaptionLanguageEn ? 'EN' : 'ZH')}</label>
                     <button
                         onClick={() => updateConfig({ autoCaptionLanguageEn: !advancedConfig.autoCaptionLanguageEn })}
                         className={`px-2 py-0.5 rounded text-[9px] font-bold border transition-colors ${
@@ -372,7 +376,7 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                             : 'bg-white/10 border-white/10 hover:border-blue-500/50'
                         }`}
                     >
-                        Switch
+                        {adv.switch}
                     </button>
                 </div>
             </div>
@@ -400,12 +404,12 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Processing...
+                            {tb.processing}
                         </>
                     ) : (
                         <>
                             <Icons.Magic />
-                            Decompose ({layerCount} Layers)
+                            {tb.decomposeCallToAction.replace('{count}', String(layerCount))}
                         </>
                     )}
                 </button>

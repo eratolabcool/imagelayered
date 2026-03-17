@@ -4,5 +4,151 @@
     "title": "Qwen Image Layered - AI 视觉编辑器",
     "description": "使用 Qwen Image Layered AI 模型将图像分解为多个图层。由 AI 驱动的专业图像分层编辑。",
     "keywords": "Qwen Image Layered, 图像分层, AI图像编辑器, 图层分离, 图像图层, Qwen AI, 视觉AI"
+  },
+  "tool": {
+    "brand": {
+      "title": "Qwen Image Layered",
+      "tagline": "视觉智能引擎",
+      "backHome": "返回首页"
+    },
+    "buttons": {
+      "changeImage": "更换图片",
+      "exportProject": "导出工程",
+      "guestQuota": "{count}/3 次免费",
+      "resetView": "重置视图",
+      "fitToScreen": "适配屏幕",
+      "showLayers": "展开图层",
+      "hideLayers": "收起图层",
+      "processing": "处理中...",
+      "execute": "执行",
+      "processingOverlayTitle": "Qwen Image Layered 引擎运行中",
+      "processingOverlaySubtitle": "神经分层处理中..."
+    },
+    "empty": {
+      "title": "上传图片到 Qwen Image Layered",
+      "subtitle": "开始多图层的 AI 编辑体验",
+      "cta": "上传图片"
+    },
+    "zoom": {
+      "reset": "重置视图"
+    },
+    "toolbar": {
+      "selection": "选择",
+      "panView": "平移视图",
+      "recolor": "重新上色",
+      "aiReplace": "AI 替换",
+      "removeObject": "移除物体",
+      "layerCountPlaceholder": "数量",
+      "numberOfLayers": "分层数量",
+      "manualDecompose": "手动分层",
+      "autoDecompose": "一键分层",
+      "lightMode": "亮色模式",
+      "darkMode": "暗色模式",
+      "switchToLight": "切换到亮色模式",
+      "switchToDark": "切换到暗色模式",
+      "advancedSettings": "高级设置",
+      "decomposeCallToAction": "分层（{count} 层）",
+      "processing": "处理中..."
+    },
+    "advanced": {
+      "title": "高级配置",
+      "aiModel": "AI 模型",
+      "standard": "标准版",
+      "lora": "LoRA",
+      "standardDesc": "通用高质量分层模型",
+      "loraDesc": "LoRA 适合自定义风格微调",
+      "prompt": "提示词（可选）",
+      "promptPlaceholder": "希望提取的元素...",
+      "negativePrompt": "反向提示（可选）",
+      "negativePromptPlaceholder": "需要忽略的元素...",
+      "randomizeSeed": "随机种子",
+      "guidanceScale": "引导强度",
+      "inferenceSteps": "迭代步数",
+      "cfgNormalization": "CFG 归一化",
+      "languageToggle": "字幕语言：{lang}",
+      "switch": "切换",
+      "apply": "应用"
+    },
+    "layerPanel": {
+      "title": "图层",
+      "nodeCount": "{count} 个节点",
+      "layersLabel": "分层数量",
+      "split": "分解选中",
+      "deep": "深度分解",
+      "visibility": "显示/隐藏",
+      "remove": "删除图层",
+      "lock": "锁定图层",
+      "unlock": "解除锁定",
+      "duplicate": "复制",
+      "opacity": "不透明度",
+      "moveUp": "上移一层",
+      "moveDown": "下移一层"
+    },
+    "exportModal": {
+      "title": "导出图片",
+      "originalSize": "使用原始尺寸（{width}x{height}）",
+      "originalSizeSelected": "✓ 原始尺寸（{width}x{height}）",
+      "width": "宽度 (PX)",
+      "height": "高度 (PX)",
+      "aiUpscale": "AI 神经放大",
+      "aiUpscaleSub": "使用 Qwen Vision 增强细节",
+      "resolutionPro": "PRO",
+      "start": "开始导出",
+      "processing": "正在处理高清导出...",
+      "disclaimer": "* 4K 导出需要付费 API KEY 和计费账户",
+      "learnBilling": "了解 OpenRouter 计费"
+    },
+    "upgrade": {
+      "viewPackages": "查看积分套餐",
+      "notNow": "暂不升级",
+      "badges": {
+        "secure": "安全加密",
+        "payAsYouGo": "按需付费",
+        "cancelAnytime": "随时取消"
+      },
+      "save": {
+        "title": "保存你的创作",
+        "message": "登录后即可保存进度，随时继续创作！",
+        "cta": "立即登录",
+        "subtext": "完全免费 · 无需信用卡"
+      },
+      "export": {
+        "title": "高清无水印导出",
+        "message": "登录并使用积分即可导出高分辨率无水印的分层图像。",
+        "cta": "获取积分",
+        "subtext": "单次分层仅需 5 积分"
+      },
+      "limit": {
+        "title": "试用次数已用完",
+        "message": "你已用完免费试用（{used}/3）。登录即可获得更多免费额度！",
+        "cta": "立即注册",
+        "subtext": "注册即送 10 积分"
+      },
+      "login": {
+        "title": "登录以继续",
+        "message": "登录后即可使用保存、导出和无限次 AI 分层等完整功能。",
+        "cta": "立即登录",
+        "subtext": "支持 Google / GitHub 登录"
+      },
+      "default": {
+        "title": "升级体验",
+        "message": "解锁更多功能，享受完整的 AI 图像分层体验。",
+        "cta": "了解更多",
+        "subtext": ""
+      }
+    },
+    "editBar": {
+      "recolorPlaceholder": "描述新的颜色（如：把车改成金属红）...",
+      "replacePlaceholder": "想替换成什么？（如：赛博朋克战士）...",
+      "removePlaceholder": "精准移除物体...",
+      "defaultPlaceholder": "输入编辑指令..."
+    },
+    "notifications": {
+      "loadImageFail": "图片加载失败，请换一张再试。",
+      "decomposeFail": "分层失败：{reason}",
+      "editFail": "编辑失败，请重试。",
+      "exportFail": "导出失败，请重试。",
+      "noVisibleLayers": "没有可导出的可见图层。"
+    }
   }
 }

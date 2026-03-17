@@ -14,8 +14,21 @@ import {
   getRemainingUploads,
   isUserLoggedIn
 } from '@/shared/lib/guest-usage';
+import { useCrookedCopy } from '../i18n';
+import { toast } from 'sonner';
+import { useLocale } from 'next-intl';
+import { usePathname, useRouter } from '@/core/i18n/navigation';
 
 const CrookedApp: React.FC = () => {
+  const copy = useCrookedCopy();
+  const { brand, buttons, empty, editBar, zoom: zoomCopy } = copy;
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+  const toggleLocale = useCallback(() => {
+    const next = locale?.startsWith('zh') ? 'en' : 'zh';
+    router.replace(pathname, { locale: next });
+  }, [locale, router, pathname]);
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolType>('select');
@@ -54,6 +67,41 @@ const CrookedApp: React.FC = () => {
 
   const mainRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editPlaceholder = React.useMemo(() => {
+    if (activeTool === 'recolor') return editBar.recolorPlaceholder;
+    if (activeTool === 'replace') return editBar.replacePlaceholder;
+    if (activeTool === 'remove') return editBar.removePlaceholder;
+    return editBar.defaultPlaceholder;
+  }, [activeTool, editBar]);
+  const placeImageLayer = useCallback((base64: string, width: number, height: number, name: string = 'Main Canvas') => {
+    const isMobile = window.innerWidth < 768;
+    const availableWidth = isMobile ? window.innerWidth - 20 : window.innerWidth - 450;
+    const availableHeight = window.innerHeight - 200;
+
+    const scaleX = availableWidth / width;
+    const scaleY = availableHeight / height;
+    const initialScale = Math.min(scaleX, scaleY, 0.9);
+
+    const newLayer: Layer = {
+      id: crypto.randomUUID(),
+      name,
+      type: 'image',
+      url: base64,
+      x: 0,
+      y: 0,
+      width,
+      height,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      zIndex: 0
+    };
+
+    setLayers([newLayer]);
+    setSelectedLayerId(newLayer.id);
+    setZoom(initialScale);
+    setDragOffset({ x: 0, y: 0 });
+  }, []);
 
   // Handle Panning Logic
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -163,6 +211,12 @@ const CrookedApp: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (activeTool !== 'select' && activeTool !== 'move' && !selectedLayerId && layers.length > 0) {
+      setSelectedLayerId(layers[0].id);
+    }
+  }, [activeTool, selectedLayerId, layers]);
+
+  useEffect(() => {
     if (isDraggingCanvas || draggingLayerId) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
@@ -236,44 +290,12 @@ const CrookedApp: React.FC = () => {
     try {
       const { base64: orientedBase64, width, height } = await createOrientedImage(file);
 
-      // Responsive sizing - mobile gets full screen
-      const isMobile = window.innerWidth < 768;
-      const availableWidth = isMobile ? window.innerWidth - 20 : window.innerWidth - 450;
-      const availableHeight = window.innerHeight - 200;
+      placeImageLayer(orientedBase64, width, height);
 
-      const scaleX = availableWidth / width;
-      const scaleY = availableHeight / height;
-      const initialScale = Math.min(scaleX, scaleY, 0.9);
-
-      const newLayer: Layer = {
-        id: crypto.randomUUID(),
-        name: 'Main Canvas',
-        type: 'image',
-        url: orientedBase64,
-        x: 0,
-        y: 0,
-        width: width,
-        height: height,
-        opacity: 1,
-        visible: true,
-        locked: false,
-        zIndex: 0
-      };
-
-      setLayers([newLayer]);
-      setSelectedLayerId(newLayer.id);
-      setZoom(initialScale);
-      setDragOffset({ x: 0, y: 0 });
-
-      console.log('[handleFileUpload] Image loaded successfully', {
-        width,
-        height,
-        initialScale,
-        isMobile
-      });
+      console.log('[handleFileUpload] Image loaded successfully', { width, height });
     } catch (error) {
       console.error('[handleFileUpload] Error processing image:', error);
-      alert('Failed to load image. Please try another image.');
+      toast.error(copy.notifications.loadImageFail);
     }
 
     // Reset input to allow uploading the same file again
@@ -749,7 +771,7 @@ const CrookedApp: React.FC = () => {
           window.location.href = '/pricing';
         }
       } else {
-        alert(`Decomposition failed: ${errMsg}\n\nPlease check the browser console for more details.`);
+        toast.error(copy.notifications.decomposeFail.replace('{reason}', errMsg));
       }
     } finally {
       setIsProcessing(false);
@@ -849,7 +871,7 @@ const CrookedApp: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
-      alert("Edit failed. Please try again.");
+      toast.error(copy.notifications.editFail);
     } finally {
       setIsProcessing(false);
     }
@@ -921,7 +943,9 @@ const CrookedApp: React.FC = () => {
       console.log('[handleExport] Visible layers:', visibleLayers.length, 'Total layers:', layers.length);
 
       if (visibleLayers.length === 0) {
-        throw new Error('No visible layers to export');
+        toast.error(copy.notifications.noVisibleLayers);
+        setIsProcessing(false);
+        return;
       }
 
       // Create a canvas to composite all visible layers (exactly as displayed on screen)
@@ -1137,7 +1161,7 @@ const CrookedApp: React.FC = () => {
 
     } catch (err: any) {
       console.error('[handleExport] Export failed:', err);
-      alert(err.message || "Export failed. Please try again.");
+      toast.error(err.message || copy.notifications.exportFail);
       setIsProcessing(false);
     }
   };
@@ -1152,14 +1176,16 @@ const CrookedApp: React.FC = () => {
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden flex bg-[#0d0d0d]">
+    <div className={`relative h-screen w-screen overflow-hidden flex ${isLightTheme ? 'bg-[#f5f6f9] text-slate-900 light-crooked' : 'bg-[#0d0d0d] text-white'}`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.08),transparent_30%),radial-gradient(circle_at_60%_80%,rgba(16,185,129,0.08),transparent_30%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.08] bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:160px_160px]" />
       {/* Home Icon - Canvas Top Right */}
       <a
         href="/"
         className={`absolute top-4 z-30 p-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all shadow-lg ${
           isLayerPanelCollapsed ? 'right-4' : 'right-[364px]'
         }`}
-        title="Back to Home"
+        title={brand.backHome}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -1173,10 +1199,24 @@ const CrookedApp: React.FC = () => {
             <Icons.CrookedLogo />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tighter text-white uppercase italic">Qwen Image Layered</h1>
-            <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest opacity-80">Vision Intelligence</p>
+            <h1 className="text-xl font-black tracking-tighter text-white uppercase italic">{brand.title}</h1>
+            <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest opacity-80">{brand.tagline}</p>
           </div>
         </div>
+        <button
+          onClick={toggleLocale}
+          className="flex items-center gap-2 px-3 py-2 glass-panel rounded-xl border border-white/10 text-xs font-semibold text-gray-200 hover:bg-white/10 transition-all"
+          title={locale?.startsWith('zh') ? 'Switch to English' : '切换到中文'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M2 12h20" />
+            <path d="M12 2c2.5 3 2.5 15 0 20" />
+            <path d="M7 4.5c1.6 2.2 1.6 12.8 0 15" />
+            <path d="M17 4.5c-1.6 2.2-1.6 12.8 0 15" />
+          </svg>
+          <span className="uppercase">{locale?.startsWith('zh') ? 'EN' : '中'}</span>
+        </button>
 
         {layers.length > 0 && (
           <div className="flex items-center gap-2">
@@ -1185,21 +1225,21 @@ const CrookedApp: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 glass-panel rounded-xl hover:bg-white/5 transition-all text-xs font-semibold text-gray-300 border border-white/10"
             >
               <Icons.Image />
-              <span>Change Image</span>
+              <span>{buttons.changeImage}</span>
             </button>
             <button
               onClick={() => setIsExportModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-xl hover:bg-blue-600/30 transition-all text-xs font-bold"
             >
               <Icons.Download />
-              <span>Export Project</span>
+              <span>{buttons.exportProject}</span>
             </button>
             {/* Guest Upload Counter */}
             {!isUserLoggedIn() && (
               <div className="flex items-center gap-1.5 px-3 py-1.5 glass-panel rounded-xl border border-white/5">
                 <Icons.Star />
                 <span className="text-xs font-mono text-gray-400">
-                  {getRemainingUploads()}/3 FREE
+                  {buttons.guestQuota.replace('{count}', String(getRemainingUploads()))}
                 </span>
               </div>
             )}
@@ -1280,9 +1320,18 @@ const CrookedApp: React.FC = () => {
                 <Icons.Upload />
               </div>
               <div className="text-center">
-                <p className="text-lg font-medium text-gray-300">Upload image to <span className="text-blue-500 font-bold italic">Qwen Image Layered</span></p>
-                <p className="text-sm text-gray-500 mt-1">Start your multi-layered AI editing experience</p>
+                <p className="text-lg font-medium text-gray-300">{empty.title}</p>
+                <p className="text-sm text-gray-500 mt-1">{empty.subtitle}</p>
               </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20"
+              >
+                {buttons.changeImage}
+              </button>
             </div>
           )}
         </div>
@@ -1296,21 +1345,32 @@ const CrookedApp: React.FC = () => {
              <Icons.Plus />
           </button>
           <div className="w-px h-4 bg-white/10 mx-1" />
-          <button
-            onClick={() => {
-               if (layers[0]) {
-                 const availableWidth = window.innerWidth - 450;
-                 const availableHeight = window.innerHeight - 200;
-                 const scaleX = availableWidth / layers[0].width;
-                 const scaleY = availableHeight / layers[0].height;
-                 setZoom(Math.min(scaleX, scaleY, 0.9));
-                 setDragOffset({ x: 0, y: 0 });
-               }
-            }}
-            className="px-3 py-1 text-[10px] font-bold text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors uppercase tracking-widest"
-          >
-            Reset View
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                 if (layers[0]) {
+                   const availableWidth = window.innerWidth - 450;
+                   const availableHeight = window.innerHeight - 200;
+                   const scaleX = availableWidth / layers[0].width;
+                   const scaleY = availableHeight / layers[0].height;
+                   setZoom(Math.min(scaleX, scaleY, 0.9));
+                   setDragOffset({ x: 0, y: 0 });
+                 }
+              }}
+              className="px-3 py-1 text-[10px] font-bold text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors uppercase tracking-widest"
+            >
+              {buttons.fitToScreen}
+            </button>
+            <button
+              onClick={() => {
+                setZoom(1);
+                setDragOffset({ x: 0, y: 0 });
+              }}
+              className="px-3 py-1 text-[10px] font-bold text-gray-400 hover:bg-white/10 rounded-full transition-colors uppercase tracking-widest"
+            >
+              {buttons.resetView}
+            </button>
+          </div>
         </div>
       </main>
 
@@ -1333,7 +1393,7 @@ const CrookedApp: React.FC = () => {
         className={`absolute top-1/2 -translate-y-1/2 z-40 p-2 rounded-l-lg glass-panel border-l-0 border-y-0 border-r border-white/20 hover:bg-white/10 transition-all ${
           isLayerPanelCollapsed ? 'right-0' : 'right-[360px]'
         }`}
-        title={isLayerPanelCollapsed ? 'Show Layers' : 'Hide Layers'}
+        title={isLayerPanelCollapsed ? buttons.showLayers : buttons.hideLayers}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -1381,12 +1441,8 @@ const CrookedApp: React.FC = () => {
         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 w-[500px] glass-panel p-4 rounded-2xl z-30 flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-300 shadow-2xl border-blue-500/20">
            <input
             type="text"
-            placeholder={
-                activeTool === 'recolor' ? "Describe new color (e.g., change car to metallic red)..." :
-                activeTool === 'replace' ? "What do you want to replace it with? (e.g., a cyberpunk warrior)..." :
-                activeTool === 'remove' ? "Removing object precisely..." : "Enter editing instruction..."
-            }
-            className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder:text-gray-600 px-2"
+            placeholder={editPlaceholder}
+            className="flex-1 bg-transparent border-none outline-none text-sm text-black placeholder:text-gray-500 px-2"
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleEditAction((e.target as HTMLInputElement).value);
             }}
@@ -1399,7 +1455,7 @@ const CrookedApp: React.FC = () => {
             disabled={isProcessing}
             className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
            >
-             {isProcessing ? 'Processing...' : 'Execute'}
+             {isProcessing ? buttons.processing : buttons.execute}
            </button>
         </div>
       )}
@@ -1435,8 +1491,8 @@ const CrookedApp: React.FC = () => {
                 <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
             </div>
-            <p className="mt-8 text-lg font-black text-white tracking-[0.3em] uppercase italic">Qwen Image Layered Engine Running</p>
-            <p className="text-sm text-gray-400 mt-2 font-mono uppercase tracking-widest">Neural Decomposition in Progress...</p>
+            <p className="mt-8 text-lg font-black text-white tracking-[0.3em] uppercase italic">{buttons.processingOverlayTitle}</p>
+            <p className="text-sm text-gray-400 mt-2 font-mono uppercase tracking-widest">{buttons.processingOverlaySubtitle}</p>
         </div>
       )}
     </div>

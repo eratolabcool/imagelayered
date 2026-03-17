@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "Qwen Image Layered - AI 图像分层编辑器 | 自动 RGBA 分解",
-    "description": "免费 AI 驱动的图像分层编辑器。使用 Qwen 先进的视觉模型自动将任何图像分解为可编辑的 RGBA 图层。最佳免费 Photoshop 替代方案，支持零漂移编辑、图层分离和智能物体检测。",
-    "keywords": "AI图像编辑器, 图像图层分解, RGBA图层, Photoshop替代, 免费图片编辑软件, AI图片编辑工具, 图层分离工具, 物体检测, 抠图, 图像遮罩, Qwen AI, 计算机视觉, 平面设计工具, 电商图片编辑, 内容创作软件, 开源图像编辑器, 通义千问, 阿里AI, 图层管理, 图片分层, 智能抠图, 背景移除, 图像处理"
+    "title": "多角度产品图生成器 | ProductViews",
+    "description": "一次上传即可生成多角度产品图。ProductViews 自动生成正面、侧面、背面和 3/4 角度的产品照片，无需拍摄。",
+    "keywords": "产品视图生成, 多角度产品图, 3/4 视角, 正侧背产品照片, 电商产品图, AI 产品摄影, 无需拍摄产品图"
   },
   "page": {
     "show_sections": [

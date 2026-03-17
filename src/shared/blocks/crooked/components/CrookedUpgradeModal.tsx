@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { useRouter } from '@/core/i18n/navigation';
-import { useLocale } from 'next-intl';
 import { Icons } from './Icon';
+import { useCrookedCopy } from '../i18n';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -19,68 +19,16 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
   remainingUploads = 0
 }) => {
   const router = useRouter();
-  const locale = useLocale();
-  // Default to English unless it explicitly starts with 'zh'
-  const isZh = locale?.startsWith('zh');
-
-  // Debug logging for locale issues
-  React.useEffect(() => {
-    console.log('[CrookedUpgradeModal] Current locale:', locale, 'isZh:', isZh);
-  }, [locale, isZh]);
+  const t = useCrookedCopy().upgrade;
 
   if (!isOpen) return null;
-
-  // Multi-language content dictionary
-  const t = {
-    save: {
-      title: isZh ? '保存您的创作' : 'Save Your Creation',
-      message: isZh ? '登录后即可保存您的编辑进度，随时继续创作！' : 'Log in to save your progress and continue creating anytime!',
-      cta: isZh ? '立即登录' : 'Log In Now',
-      subtext: isZh ? '完全免费 · 无需信用卡' : 'Free · No Credit Card Required'
-    },
-    export: {
-      title: isZh ? '高清无水印导出' : 'HD Export Without Watermark',
-      message: isZh ? '登录并使用积分即可导出高分辨率无水印的分层图像。' : 'Log in and use credits to export high-resolution layered images without watermarks.',
-      cta: isZh ? '获取积分' : 'Get Credits',
-      subtext: isZh ? '单次分层仅需 5 积分' : '5 credits per layer decomposition'
-    },
-    limit: {
-      title: isZh ? '试用次数已用完' : 'Trial Limit Reached',
-      message: isZh 
-        ? `您已用完免费试用次数（${3 - remainingUploads}/3）。登录即可获得更多免费额度！`
-        : `You have used your free trials (${3 - remainingUploads}/3). Log in to get more free credits!`,
-      cta: isZh ? '立即注册' : 'Sign Up Now',
-      subtext: isZh ? '注册即送 10 积分' : 'Get 10 credits upon registration'
-    },
-    login: {
-      title: isZh ? '登录以继续' : 'Log In to Continue',
-      message: isZh ? '登录后即可使用完整功能，包括保存、导出和无限次 AI 分层。' : 'Log in to access full features including save, export, and unlimited AI layering.',
-      cta: isZh ? '立即登录' : 'Log In Now',
-      subtext: isZh ? '支持 Google / GitHub 快速登录' : 'Supports Google / GitHub Quick Login'
-    },
-    default: {
-      title: isZh ? '升级您的体验' : 'Upgrade Your Experience',
-      message: isZh ? '解锁更多功能，享受完整的 AI 图像分层编辑体验。' : 'Unlock more features and enjoy the full AI image layering experience.',
-      cta: isZh ? '了解更多' : 'Learn More',
-      subtext: ''
-    },
-    buttons: {
-      viewPackages: isZh ? '查看积分套餐' : 'View Credit Packages',
-      notNow: isZh ? '暂不升级' : 'Not Now'
-    },
-    badges: {
-      secure: isZh ? '安全加密' : 'Secure',
-      payAsYouGo: isZh ? '按需付费' : 'Pay As You Go',
-      cancelAnytime: isZh ? '随时取消' : 'Cancel Anytime'
-    }
-  };
 
   // 根据触发类型显示不同内容
   const getContent = () => {
     switch (type) {
       case 'save': return { ...t.save, icon: <Icons.Save /> };
       case 'export': return { ...t.export, icon: <Icons.Download /> };
-      case 'limit': return { ...t.limit, icon: <Icons.Upload /> };
+      case 'limit': return { ...t.limit, message: t.limit.message.replace('{used}', String(3 - remainingUploads)), icon: <Icons.Upload /> };
       case 'login': return { ...t.login, icon: <Icons.User /> };
       default: return { ...t.default, icon: <Icons.Star /> };
     }
@@ -152,14 +100,14 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
             onClick={handleUpgrade}
             className="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-300 font-semibold rounded-xl transition-all border border-white/10"
           >
-            {t.buttons.viewPackages}
+            {t.viewPackages}
           </button>
 
           <button
             onClick={onClose}
             className="w-full py-3 text-gray-500 hover:text-gray-400 text-sm transition-colors"
           >
-            {t.buttons.notNow}
+            {t.notNow}
           </button>
         </div>
 

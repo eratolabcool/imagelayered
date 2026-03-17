@@ -4,5 +4,151 @@
     "title": "Qwen Image Layered - AI Vision Editor",
     "description": "Decompose images into multiple layers using Qwen Image Layered AI model. Professional image editing with layer separation powered by AI.",
     "keywords": "Qwen Image Layered, image decomposition, AI image editor, layer separation, image layers, Qwen AI, vision AI"
+  },
+  "tool": {
+    "brand": {
+      "title": "Qwen Image Layered",
+      "tagline": "Vision Intelligence",
+      "backHome": "Back to Home"
+    },
+    "buttons": {
+      "changeImage": "Change Image",
+      "exportProject": "Export Project",
+      "guestQuota": "{count}/3 FREE",
+      "resetView": "Reset View",
+      "fitToScreen": "Fit to Screen",
+      "showLayers": "Show Layers",
+      "hideLayers": "Hide Layers",
+      "processing": "Processing...",
+      "execute": "Execute",
+      "processingOverlayTitle": "Qwen Image Layered Engine Running",
+      "processingOverlaySubtitle": "Neural Decomposition in Progress..."
+    },
+    "empty": {
+      "title": "Upload image to Qwen Image Layered",
+      "subtitle": "Start your multi-layered AI editing experience",
+      "cta": "Upload Image"
+    },
+    "zoom": {
+      "reset": "Reset View"
+    },
+    "toolbar": {
+      "selection": "Selection",
+      "panView": "Pan View",
+      "recolor": "Recolor",
+      "aiReplace": "AI Replace",
+      "removeObject": "Remove Object",
+      "layerCountPlaceholder": "Count",
+      "numberOfLayers": "Number of Layers",
+      "manualDecompose": "Manual Decompose",
+      "autoDecompose": "Auto Decompose",
+      "lightMode": "Light Mode",
+      "darkMode": "Dark Mode",
+      "switchToLight": "Switch to Light Mode",
+      "switchToDark": "Switch to Dark Mode",
+      "advancedSettings": "Advanced Settings",
+      "decomposeCallToAction": "Decompose ({count} Layers)",
+      "processing": "Processing..."
+    },
+    "advanced": {
+      "title": "Advanced Config",
+      "aiModel": "AI Model",
+      "standard": "Standard",
+      "lora": "LoRA",
+      "standardDesc": "Standard model for general decomposition",
+      "loraDesc": "LoRA model supports custom style fine-tuning",
+      "prompt": "Prompt (Optional)",
+      "promptPlaceholder": "Target elements to extract...",
+      "negativePrompt": "Negative Prompt (Optional)",
+      "negativePromptPlaceholder": "Elements to ignore...",
+      "randomizeSeed": "Randomize Seed",
+      "guidanceScale": "Guidance Scale",
+      "inferenceSteps": "Inference Steps",
+      "cfgNormalization": "CFG Normalization",
+      "languageToggle": "Language: {lang}",
+      "switch": "Switch",
+      "apply": "Apply"
+    },
+    "layerPanel": {
+      "title": "Layers",
+      "nodeCount": "{count} NODE(S)",
+      "layersLabel": "Layers",
+      "split": "Split Selected",
+      "deep": "Deep Decompose",
+      "visibility": "Toggle Visibility",
+      "remove": "Delete Layer",
+      "lock": "Lock Layer",
+      "unlock": "Unlock Layer",
+      "duplicate": "Duplicate",
+      "opacity": "Opacity",
+      "moveUp": "Bring Forward",
+      "moveDown": "Send Backward"
+    },
+    "exportModal": {
+      "title": "Export Image",
+      "originalSize": "Use original size ({width}x{height})",
+      "originalSizeSelected": "✓ Original size ({width}x{height})",
+      "width": "Width (PX)",
+      "height": "Height (PX)",
+      "aiUpscale": "AI Super Resolution",
+      "aiUpscaleSub": "Enhance details with Qwen Vision",
+      "resolutionPro": "PRO",
+      "start": "Start Export",
+      "processing": "Processing high-res export...",
+      "disclaimer": "* 4K export requires paid API key and billing account",
+      "learnBilling": "Learn OpenRouter billing"
+    },
+    "upgrade": {
+      "viewPackages": "View Credit Packages",
+      "notNow": "Not Now",
+      "badges": {
+        "secure": "Secure",
+        "payAsYouGo": "Pay As You Go",
+        "cancelAnytime": "Cancel Anytime"
+      },
+      "save": {
+        "title": "Save Your Creation",
+        "message": "Log in to save your progress and continue creating anytime!",
+        "cta": "Log In Now",
+        "subtext": "Free · No Credit Card Required"
+      },
+      "export": {
+        "title": "HD Export Without Watermark",
+        "message": "Log in and use credits to export high-resolution layered images without watermarks.",
+        "cta": "Get Credits",
+        "subtext": "5 credits per layer decomposition"
+      },
+      "limit": {
+        "title": "Trial Limit Reached",
+        "message": "You have used your free trials ({used}/3). Log in to get more free credits!",
+        "cta": "Sign Up Now",
+        "subtext": "Get 10 credits upon registration"
+      },
+      "login": {
+        "title": "Log In to Continue",
+        "message": "Log in to access full features including save, export, and unlimited AI layering.",
+        "cta": "Log In Now",
+        "subtext": "Supports Google / GitHub Quick Login"
+      },
+      "default": {
+        "title": "Upgrade Your Experience",
+        "message": "Unlock more features and enjoy the full AI image layering experience.",
+        "cta": "Learn More",
+        "subtext": ""
+      }
+    },
+    "editBar": {
+      "recolorPlaceholder": "Describe new color (e.g., change car to metallic red)...",
+      "replacePlaceholder": "What do you want to replace it with? (e.g., a cyberpunk warrior)...",
+      "removePlaceholder": "Removing object precisely...",
+      "defaultPlaceholder": "Enter editing instruction..."
+    },
+    "notifications": {
+      "loadImageFail": "Failed to load image. Please try another image.",
+      "decomposeFail": "Decomposition failed: {reason}",
+      "editFail": "Edit failed. Please try again.",
+      "exportFail": "Export failed. Please try again.",
+      "noVisibleLayers": "No visible layers to export."
+    }
   }
 }

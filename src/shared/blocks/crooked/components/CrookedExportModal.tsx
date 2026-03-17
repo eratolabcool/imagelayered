@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Icons } from './Icon';
 import { ExportResolution, ExportSettings } from '../types';
+import { useCrookedCopy } from '../i18n';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
   initialWidth,
   initialHeight
 }) => {
+  const copy = useCrookedCopy().exportModal;
   const [settings, setSettings] = useState<ExportSettings>({
     width: initialWidth,
     height: initialHeight,
@@ -50,7 +52,7 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             <Icons.Download />
-            导出图片
+            {copy.title}
           </h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -67,12 +69,14 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
                 : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
             }`}
           >
-            {settings.useOriginalSize ? '✓ 原始尺寸 (' + initialWidth + 'x' + initialHeight + ')' : '使用原始尺寸 (' + initialWidth + 'x' + initialHeight + ')'}
+            {settings.useOriginalSize
+              ? copy.originalSizeSelected.replace('{width}', String(initialWidth)).replace('{height}', String(initialHeight))
+              : copy.originalSize.replace('{width}', String(initialWidth)).replace('{height}', String(initialHeight))}
           </button>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-wider">宽度 (PX)</label>
+              <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-wider">{copy.width}</label>
               <input
                 type="number"
                 value={settings.width}
@@ -84,7 +88,7 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-wider">高度 (PX)</label>
+              <label className="text-xs font-bold text-gray-500 uppercase mb-2 block tracking-wider">{copy.height}</label>
               <input
                 type="number"
                 value={settings.height}
@@ -100,8 +104,8 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-white">AI 神经放大</span>
-                <span className="text-xs text-gray-500">使用 Qwen Vision 模型增强细节</span>
+                <span className="text-sm font-semibold text-white">{copy.aiUpscale}</span>
+                <span className="text-xs text-gray-500">{copy.aiUpscaleSub}</span>
               </div>
               <button
                 onClick={() => setSettings({ ...settings, upscale: !settings.upscale })}
@@ -123,7 +127,7 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
                       : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
                     }`}
                   >
-                    {res} {res === '4K' ? 'PRO' : ''}
+                    {res} {res === '4K' ? copy.resolutionPro : ''}
                   </button>
                 ))}
               </div>
@@ -139,16 +143,16 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
               {isProcessing ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  正在处理高清导出...
+                  {copy.processing}
                 </>
               ) : (
-                '开始导出'
+                copy.start
               )}
             </button>
             <p className="text-[10px] text-gray-500 text-center mt-4 uppercase tracking-widest leading-relaxed">
-              * 4K 导出需要付费 API KEY 和已连接的计费账户
+              {copy.disclaimer}
               <br />
-              <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">了解 OpenRouter 计费</a>
+              <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{copy.learnBilling}</a>
             </p>
           </div>
         </div>
