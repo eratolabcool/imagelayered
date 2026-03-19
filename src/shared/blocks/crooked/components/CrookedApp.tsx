@@ -1181,30 +1181,31 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               <div className="rounded-[26px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <div className="grid gap-4 md:grid-cols-[88px_minmax(0,1fr)]">
                   <label className="space-y-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">{tb.numberOfLayers}</span>
-                    <div className="inline-flex w-[82px] items-center justify-center rounded-[18px] bg-[#050b17] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors hover:bg-[#081122]">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{tb.numberOfLayers}</span>
+                    <div className="inline-flex w-[82px] items-center justify-center rounded-[18px] bg-[#0b152b] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:bg-[#101d39]">
                       <input
                         type="number"
                         min="1"
                         max="20"
                         value={layerCount}
                         onChange={(e) => setLayerCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                        className="w-full bg-transparent px-2 py-3 text-center text-base font-bold text-white outline-none placeholder:text-slate-600"
+                        style={{ backgroundColor: 'transparent' }}
+                        className="w-full bg-transparent px-2 py-3 text-center text-base font-bold text-white outline-none transition-colors placeholder:text-slate-500 focus:bg-[#101d39]"
                       />
                     </div>
                   </label>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">{adv.aiModel}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{adv.aiModel}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered' })}
                         className={`rounded-[18px] px-3 py-3 text-left transition-all ${
                           advancedConfig.model === 'fal-ai/qwen-image-layered'
-                            ? 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(232,240,255,0.92))] text-[#071123] shadow-[0_14px_30px_rgba(255,255,255,0.14)]'
-                            : 'bg-[#050b17] text-slate-200 hover:bg-[#081122]'
+                            ? 'bg-blue-600/20 text-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.5)]'
+                            : 'bg-white/5 text-slate-200 hover:bg-white/10'
                         }`}
                       >
                         <span className="block text-center text-sm font-semibold">{adv.standard}</span>
@@ -1213,8 +1214,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered/lora' })}
                         className={`rounded-[18px] px-3 py-3 text-left transition-all ${
                           advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
-                            ? 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(232,240,255,0.92))] text-[#071123] shadow-[0_14px_30px_rgba(255,255,255,0.14)]'
-                            : 'bg-[#050b17] text-slate-200 hover:bg-[#081122]'
+                            ? 'bg-purple-600/20 text-purple-400 shadow-[inset_0_0_0_1px_rgba(147,51,234,0.5)]'
+                            : 'bg-white/5 text-slate-200 hover:bg-white/10'
                         }`}
                       >
                         <span className="block text-center text-sm font-semibold">{adv.lora}</span>
@@ -1225,18 +1226,19 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               </div>
 
               <label className="block space-y-2 rounded-[24px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">{adv.prompt}</span>
-                <textarea
-                  value={advancedConfig.prompt}
-                  onChange={(e) => setAdvancedConfig({ ...advancedConfig, prompt: e.target.value })}
-                  placeholder={adv.promptPlaceholder}
-                  className="min-h-[96px] w-full rounded-[18px] bg-[#050b17] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 hover:bg-[#081122] focus:bg-[#081122]"
-                />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{adv.prompt}</span>
+                  <textarea
+                    value={advancedConfig.prompt}
+                    onChange={(e) => setAdvancedConfig({ ...advancedConfig, prompt: e.target.value })}
+                    placeholder={adv.promptPlaceholder}
+                    style={{ backgroundColor: '#0b152b' }}
+                    className="min-h-[96px] w-full rounded-[18px] bg-[#0b152b] px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 hover:bg-[#101d39] focus:bg-[#101d39] border border-white/5 focus:border-blue-500/30"
+                  />
               </label>
 
               <div className="space-y-3 rounded-[24px] bg-[#0b152b]/92 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">Tools</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">Tools</span>
                   <span className="text-[11px] text-slate-500">Pick a layer action</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1252,7 +1254,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         className={`rounded-[16px] px-3 py-3 text-sm font-medium transition-all ${
                           activeTool === tool.id
                             ? 'bg-white text-[#071123] shadow-[0_14px_24px_rgba(255,255,255,0.14)]'
-                            : 'bg-white/[0.04] text-slate-300 hover:bg-white/[0.07]'
+                            : 'bg-white/5 text-slate-300 hover:bg-white/10'
                         }`}
                       >
                         <span className="[font-family:var(--font-display)]">{tool.label}</span>
@@ -1263,12 +1265,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
               {activeTool !== 'select' && activeTool !== 'move' && (
                 <label className="block space-y-2 rounded-[24px] bg-[linear-gradient(180deg,rgba(17,26,49,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">Prompt</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">Prompt</span>
                   <textarea
                     value={editInstruction}
                     onChange={(e) => setEditInstruction(e.target.value)}
                     placeholder={editPlaceholder}
-                    className="min-h-[112px] w-full rounded-[18px] bg-[#050b17] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 hover:bg-[#081122] focus:bg-[#081122]"
+                    style={{ backgroundColor: '#0b152b' }}
+                    className="min-h-[112px] w-full rounded-[18px] bg-[#0b152b] px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 hover:bg-[#101d39] focus:bg-[#101d39] shadow-[inset_0_1px_4px_rgba(0,0,0,0.1)] border border-white/5 focus:border-blue-500/30"
                   />
                 </label>
               )}
@@ -1298,7 +1301,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               </div>
 
               {!isUserLoggedIn() && (
-                <div className="rounded-[22px] bg-white/[0.04] px-4 py-3 text-sm text-slate-300">
+                <div className="rounded-[22px] bg-white/5 px-4 py-3 text-sm text-slate-300">
                   {buttons.guestQuota.replace('{count}', String(getRemainingUploads()))}
                 </div>
               )}
@@ -1380,7 +1383,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       })}
                     </div>
                   ) : (
-                    <div className="relative flex w-full max-w-xl flex-col items-center gap-4 rounded-[30px] bg-white/[0.04] p-10 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                    <div className="relative flex w-full max-w-xl flex-col items-center gap-4 rounded-[30px] bg-white/5 p-10 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                       <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,rgba(97,120,255,0.32),rgba(77,228,255,0.18))]">
                         <Icons.Upload />
                       </div>
@@ -1398,8 +1401,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               </div>
 
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="rounded-[24px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                  <p className="text-[10px] uppercase tracking-[0.34em] text-slate-500">Layers</p>
+                <div className="rounded-[24px] bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                  <p className="text-[10px] uppercase tracking-[0.34em] text-slate-400/80">Layers</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {displayedLayers.length > 0 ? displayedLayers.map((layer) => (
                       <button
@@ -1419,8 +1422,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   </div>
                 </div>
 
-                <div className="rounded-[24px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                  <p className="text-[10px] uppercase tracking-[0.34em] text-slate-500">Selection</p>
+                <div className="rounded-[24px] bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                  <p className="text-[10px] uppercase tracking-[0.34em] text-slate-400/80">Selection</p>
                   {selectedLayer ? (
                     <div className="mt-3 space-y-3">
                       <p className="text-sm font-semibold text-white [font-family:var(--font-display)]">{selectedLayer.name}</p>

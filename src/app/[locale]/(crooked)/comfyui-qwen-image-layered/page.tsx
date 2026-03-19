@@ -344,7 +344,7 @@ export default function ComfyUITutorialPage() {
                   <td className="py-3 px-4">INT</td>
                   <td className="py-3 px-4">4</td>
                   <td className="py-3 px-4">1 - 20</td>
-                  <td className="py-3 px-4">Number of layers to extract from the image</td>
+                  <td className="py-3 px-4">layers to extract from the image</td>
                 </tr>
                 <tr className="border-b border-white/5">
                   <td className="py-3 px-4 text-purple-400 font-medium">guidance_scale</td>

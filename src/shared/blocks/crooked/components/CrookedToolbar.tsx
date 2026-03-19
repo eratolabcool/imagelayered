@@ -58,7 +58,9 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
           className={`p-3 rounded-xl transition-all duration-200 group relative ${
             activeTool === tool.id
               ? 'bg-blue-600/30 text-blue-400 border border-blue-500/50'
-              : 'hover:bg-white/5 text-gray-400'
+              : isLightTheme 
+                ? 'hover:bg-gray-200 text-gray-500 hover:text-gray-900 border border-transparent'
+                : 'hover:bg-white/5 text-gray-400 hover:text-white border border-transparent'
           }`}
           title={tool.label}
         >
@@ -80,7 +82,11 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                     max="20"
                     value={layerCount}
                     onChange={(e) => setLayerCount(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg py-1 text-center text-xs text-blue-400 font-mono focus:border-blue-500/50 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className={`w-full border rounded-lg py-1 text-center text-xs font-mono outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                        isLightTheme
+                            ? 'bg-white border-gray-200 text-gray-900 focus:border-blue-500 shadow-sm'
+                            : 'bg-white/5 border-white/10 text-blue-400 focus:border-blue-500/50'
+                    }`}
                     placeholder={tb.layerCountPlaceholder}
                     title={tb.numberOfLayers}
                 />
@@ -90,7 +96,10 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                 onClick={() => onDecompose(layerCount)}
                 disabled={isProcessing}
                 className={`p-3 rounded-xl transition-all duration-200 group relative flex items-center justify-center border border-white/5 ${
-                    isProcessing ? 'opacity-50' : 'hover:bg-white/5 text-white/80'
+                    isProcessing ? 'opacity-50' : 
+                    isLightTheme 
+                      ? 'hover:bg-gray-200 text-gray-700' 
+                      : 'hover:bg-white/5 text-white/80'
                 }`}
                 title={tb.manualDecompose}
             >

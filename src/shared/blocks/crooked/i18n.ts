@@ -56,7 +56,7 @@ const fallbackCopy = {
     aiReplace: 'AI Replace',
     removeObject: 'Remove Object',
     layerCountPlaceholder: 'Count',
-    numberOfLayers: 'Number of Layers',
+    numberOfLayers: 'Layers',
     manualDecompose: 'Manual Decompose',
     autoDecompose: 'Auto Decompose',
     lightMode: 'Light Mode',
