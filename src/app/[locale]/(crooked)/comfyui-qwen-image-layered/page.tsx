@@ -1,14 +1,13 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 
-// SEO Metadata optimized for ComfyUI + Qwen Image Layered keywords
 export const metadata: Metadata = {
-  title: 'ComfyUI Qwen Image Layered Tutorial - Complete Workflow Guide',
-  description: 'Learn how to use Qwen Image Layered in ComfyUI. Step-by-step tutorial for setting up custom nodes, workflow templates, and automating image layer decomposition.',
-  keywords: 'comfyui qwen-image-layered, ComfyUI tutorial, qwen image layered ComfyUI, ComfyUI custom nodes, image layer decomposition workflow, ComfyUI qwen layered, qwen-image-layered fp8',
-  authors: [{ name: 'Qwen Image Layered Team' }],
-  creator: 'Qwen Image Layered',
-  publisher: 'Qwen Image Layered',
+  title: 'ComfyUI Image Layered Workflow | AI Layer Decomposition Tutorial',
+  description: 'Master the ComfyUI workflow for image layered tasks. Step-by-step tutorial teaches you how to install custom nodes and automate AI image layer extraction.',
+  keywords: 'comfyui image layered, image layer decomposition, custom nodes workflow, AI layer extraction, comfyui setup tutorial, automatic object separation',
+  authors: [{ name: 'Image Layered AI Team' }],
+  creator: 'Image Layered Workflow',
+  publisher: 'Image Layered Workflow',
   category: 'Tutorial',
   robots: {
     index: true,
@@ -22,29 +21,20 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://your-domain.com/comfyui-qwen-image-layered',
+    canonical: '/comfyui-qwen-image-layered',
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://your-domain.com/comfyui-qwen-image-layered',
-    title: 'ComfyUI Qwen Image Layered Tutorial - Complete Workflow Guide',
-    description: 'Learn how to use Qwen Image Layered in ComfyUI. Step-by-step tutorial for setting up custom nodes and workflows.',
-    siteName: 'Qwen Image Layered',
-    images: [
-      {
-        url: 'https://your-domain.com/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'ComfyUI Qwen Image Layered Workflow',
-      },
-    ],
+    url: '/comfyui-qwen-image-layered',
+    title: 'ComfyUI Image Layered Workflow | AI Node Tutorial',
+    description: 'Learn how to automatically extract image layers in ComfyUI. Step-by-step tutorial for setting up custom nodes.',
+    siteName: 'Image Layered Workflow',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ComfyUI Qwen Image Layered Tutorial',
-    description: 'Complete guide to using Qwen Image Layered in ComfyUI workflows',
-    images: ['https://your-domain.com/og-image.jpg'],
+    title: 'ComfyUI Layer Decomposition Node Tutorial',
+    description: 'Complete guide to building an AI image layered extraction pipeline in ComfyUI.',
   },
 };
 
@@ -52,17 +42,17 @@ export const metadata: Metadata = {
 const tutorialJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Tutorial',
-  name: 'ComfyUI Qwen Image Layered Tutorial',
-  description: 'Learn how to integrate and use Qwen Image Layered in ComfyUI workflows for automatic image layer decomposition.',
+  name: 'ComfyUI Image Layered Workflow Tutorial',
+  description: 'Learn how to integrate our AI segmentation tool in ComfyUI workflows for automatic image layer decomposition.',
   audience: {
     '@type': 'Audience',
     audienceType: 'Designers and developers using ComfyUI',
   },
   educationalLevel: 'Intermediate',
-  keywords: 'ComfyUI, Qwen Image Layered, workflow, tutorial, image layer decomposition',
+  keywords: 'ComfyUI, Image Layered, workflow, tutorial, image layer decomposition',
   author: {
     '@type': 'Organization',
-    name: 'Qwen Image Layered Team',
+    name: 'Image Layered AI Team',
   },
 };
 
@@ -132,7 +122,7 @@ export default function ComfyUITutorialPage() {
             ComfyUI + <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Qwen Image Layered</span>
           </h1>
           <p className="text-xl text-gray-400 max-w-3xl mb-8 leading-relaxed">
-            Learn how to integrate Qwen Image Layered into your ComfyUI workflows.
+            Learn how to integrate this advanced AI model into your ComfyUI workflows.
             Automate image layer decomposition with our custom nodes and templates.
           </p>
           <div className="flex flex-wrap gap-4">
@@ -174,7 +164,7 @@ export default function ComfyUITutorialPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-6">1. Setup and Installation</h2>
           <p className="text-gray-400 mb-8">
-            Getting started with Qwen Image Layered in ComfyUI requires a few simple steps.
+            Getting started with our custom layer extraction node in ComfyUI requires a few simple steps.
             Since the model runs on fal.ai cloud servers, no local GPU is needed.
           </p>
 
@@ -182,7 +172,7 @@ export default function ComfyUITutorialPage() {
             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
               <h3 className="text-xl font-semibold text-white mb-4">Step 1: Get Your API Key</h3>
               <p className="text-gray-400">
-                You will need a fal.ai API key to use Qwen Image Layered. Sign up at{' '}
+                You will need a fal.ai API key to launch the layer generation process. Sign up at{' '}
                 <a href="https://fal.ai" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">
                   fal.ai
                 </a>{' '}
@@ -208,25 +198,25 @@ export default function ComfyUITutorialPage() {
             </div>
 
             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-              <h3 className="text-xl font-semibold text-white mb-4">Step 3: Add Qwen Image Layered Node</h3>
+              <h3 className="text-xl font-semibold text-white mb-4">Step 3: Add Custom Node</h3>
               <p className="text-gray-400 mb-4">
                 Create a new Python file in your ComfyUI custom nodes directory. The node connects to
-                fal.ai API for Qwen Image Layered model inference.
+                fal.ai API for optimal model inference.
               </p>
               <p className="text-gray-400 mb-4">
                 <strong>File location:</strong> <code className="bg-white/10 px-2 py-1 rounded">ComfyUI/custom_nodes/fal_qwen_image_layered.py</code>
               </p>
               <p className="text-gray-400">
-                After installing the custom node, restart ComfyUI and you should see the Qwen Image Layered
-                node in the <code className="bg-white/10 px-2 py-1 rounded">image/analysis</code> category.
+                After installing the custom node, restart ComfyUI and you should see the new functionality
+                in the <code className="bg-white/10 px-2 py-1 rounded">image/analysis</code> category.
               </p>
             </div>
 
             <div className="p-6 rounded-2xl bg-green-900/20 border border-green-500/30">
               <h3 className="text-xl font-semibold text-green-400 mb-2">Setup Complete</h3>
               <p className="text-gray-400">
-                Once the custom node is installed and ComfyUI is restarted, you are ready to use
-                Qwen Image Layered in your workflows.
+                Once the custom node is installed and ComfyUI is restarted, you are ready to process
+                multi-layered images in your workflows.
               </p>
             </div>
           </div>
@@ -238,7 +228,7 @@ export default function ComfyUITutorialPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-6">2. Basic Workflow</h2>
           <p className="text-gray-400 mb-8">
-            Here is the recommended workflow structure for using Qwen Image Layered in ComfyUI.
+            Here is the recommended workflow structure for using this advanced segmentation node in ComfyUI.
           </p>
 
           <div className="p-6 rounded-2xl bg-white/5 border border-white/10 mb-8">
@@ -261,9 +251,9 @@ export default function ComfyUITutorialPage() {
                   2
                 </div>
                 <div>
-                  <h4 className="text-white font-medium">Qwen Image Layered Node</h4>
+                  <h4 className="text-white font-medium">Layer Extraction Node</h4>
                   <p className="text-gray-400 text-sm">
-                    Connect your image to the Qwen Image Layered node and configure parameters like
+                    Connect your image to the layer parsing node and configure parameters like
                     number of layers, guidance scale, and inference steps.
                   </p>
                 </div>
@@ -324,7 +314,7 @@ export default function ComfyUITutorialPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-6">3. Parameter Reference</h2>
           <p className="text-gray-400 mb-8">
-            Complete reference for all parameters available in the Qwen Image Layered ComfyUI node.
+            Complete reference for all parameters available in the AI layer extraction ComfyUI node.
           </p>
 
           <div className="overflow-x-auto">
@@ -406,7 +396,7 @@ export default function ComfyUITutorialPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-6">4. LoRA Model Support</h2>
           <p className="text-gray-400 mb-8">
-            Qwen Image Layered supports LoRA (Low-Rank Adaptation) models for custom style fine-tuning.
+            The AI layer extraction model supports LoRA (Low-Rank Adaptation) models for custom style fine-tuning.
             This allows you to apply specific artistic styles to your layer decomposition.
           </p>
 
@@ -521,7 +511,7 @@ export default function ComfyUITutorialPage() {
                 <p className="mb-2">If LoRA models are not applying correctly:</p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   <li>Verify the lora_model_url is a direct download link</li>
-                  <li>Ensure the LoRA model is compatible with Qwen Image Layered</li>
+                  <li>Ensure the LoRA model is compatible with this vision model</li>
                   <li>Try adjusting lora_strength to a higher value</li>
                   <li>Check that the URL ends with .safetensors or .ckpt</li>
                 </ul>
@@ -539,27 +529,27 @@ export default function ComfyUITutorialPage() {
           <div className="space-y-4">
             <details className="group rounded-xl bg-white/5 border border-white/10">
               <summary className="flex items-center justify-between p-6 cursor-pointer">
-                <h3 className="text-lg font-semibold text-white">How do I install Qwen Image Layered in ComfyUI?</h3>
+                <h3 className="text-lg font-semibold text-white">How do I install the layer extraction node in ComfyUI?</h3>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 transition-transform group-open:rotate-180">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </summary>
               <div className="px-6 pb-6 text-gray-400">
-                You can install Qwen Image Layered in ComfyUI by adding our custom node to your ComfyUI
-                custom nodes folder. The node connects directly to the fal.ai API for Qwen Image Layered
+                You can install the extraction tool in ComfyUI by adding our custom node to your ComfyUI
+                custom nodes folder. The node connects directly to the fal.ai API for multi-layer
                 model inference. See the Setup section above for detailed instructions.
               </div>
             </details>
 
             <details className="group rounded-xl bg-white/5 border border-white/10">
               <summary className="flex items-center justify-between p-6 cursor-pointer">
-                <h3 className="text-lg font-semibold text-white">What are the system requirements for ComfyUI Qwen Image Layered?</h3>
+                <h3 className="text-lg font-semibold text-white">What are the system requirements for ComfyUI image layered extraction?</h3>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 transition-transform group-open:rotate-180">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </summary>
               <div className="px-6 pb-6 text-gray-400">
-                Since Qwen Image Layered runs on fal.ai cloud servers, ComfyUI itself has minimal requirements.
+                Since the layer generation process runs on fal.ai cloud servers, ComfyUI itself has minimal requirements.
                 You need a working ComfyUI installation and an API key from fal.ai. No local GPU is required
                 for inference.
               </div>
@@ -567,13 +557,13 @@ export default function ComfyUITutorialPage() {
 
             <details className="group rounded-xl bg-white/5 border border-white/10">
               <summary className="flex items-center justify-between p-6 cursor-pointer">
-                <h3 className="text-lg font-semibold text-white">Can I use LoRA models with Qwen Image Layered in ComfyUI?</h3>
+                <h3 className="text-lg font-semibold text-white">Can I use LoRA models with the layer decomposition node in ComfyUI?</h3>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 transition-transform group-open:rotate-180">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </summary>
               <div className="px-6 pb-6 text-gray-400">
-                Yes! Qwen Image Layered supports LoRA models for custom style fine-tuning. You can load
+                Yes! The model supports LoRA modifiers for custom style fine-tuning. You can load
                 LoRA weights through the lora_model_url parameter in our ComfyUI custom node. See the
                 LoRA Support section for more details.
               </div>
