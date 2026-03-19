@@ -248,8 +248,11 @@ export function useCrookedCopy(): CrookedCopy {
       visibility: g('layerPanel.visibility', fallbackCopy.layerPanel.visibility),
       remove: g('layerPanel.remove', fallbackCopy.layerPanel.remove),
       lock: g('layerPanel.lock', fallbackCopy.layerPanel.lock),
+      unlock: g('layerPanel.unlock', fallbackCopy.layerPanel.unlock),
       duplicate: g('layerPanel.duplicate', fallbackCopy.layerPanel.duplicate),
       opacity: g('layerPanel.opacity', fallbackCopy.layerPanel.opacity),
+      moveUp: g('layerPanel.moveUp', fallbackCopy.layerPanel.moveUp),
+      moveDown: g('layerPanel.moveDown', fallbackCopy.layerPanel.moveDown),
     },
     exportModal: {
       title: g('exportModal.title', fallbackCopy.exportModal.title),

@@ -1,14 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Layer, ToolType, DecomposeResponse, ExportSettings, AdvancedDecompositionConfig } from '../types';
-import CrookedToolbar from './CrookedToolbar';
-import CrookedLayerPanel from './CrookedLayerPanel';
+import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
 import { Icons } from './Icon';
 import {
-  getGuestUsage,
   incrementUploadCount,
   isUploadLimitReached,
   getRemainingUploads,
@@ -18,10 +15,18 @@ import { useCrookedCopy } from '../i18n';
 import { toast } from 'sonner';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from '@/core/i18n/navigation';
+import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
 
-const CrookedApp: React.FC = () => {
+interface CrookedAppProps {
+  embedded?: boolean;
+  initialImage?: PreparedImagePayload | null;
+}
+
+const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage = null }) => {
   const copy = useCrookedCopy();
-  const { brand, buttons, empty, editBar, zoom: zoomCopy } = copy;
+  const { brand, buttons, empty, editBar } = copy;
+  const tb = copy.toolbar;
+  const adv = copy.advanced;
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -43,14 +48,14 @@ const CrookedApp: React.FC = () => {
   const [layerDragOffset, setLayerDragOffset] = useState({ x: 0, y: 0 });
   const [layerCount, setLayerCount] = useState<number>(5);
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
-  const [isLayerPanelCollapsed, setIsLayerPanelCollapsed] = useState(false);
+  const [editInstruction, setEditInstruction] = useState('');
 
   // Guest conversion modal state
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeModalType, setUpgradeModalType] = useState<'save' | 'export' | 'limit' | 'login'>('login');
 
   // Theme state
-  const [isLightTheme, setIsLightTheme] = useState(false);
+  const [isLightTheme, setIsLightTheme] = useState(true);
 
   // Advanced Settings State
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedDecompositionConfig>({
@@ -103,6 +108,12 @@ const CrookedApp: React.FC = () => {
     setDragOffset({ x: 0, y: 0 });
   }, []);
 
+  useEffect(() => {
+    if (initialImage && layers.length === 0) {
+      placeImageLayer(initialImage.base64, initialImage.width, initialImage.height, initialImage.name || 'Main Canvas');
+    }
+  }, [initialImage, layers.length, placeImageLayer]);
+
   // Handle Panning Logic
   const handleMouseDown = (e: React.MouseEvent) => {
     // Start panning if:
@@ -141,31 +152,6 @@ const CrookedApp: React.FC = () => {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [isSpacePressed]);
-
-  // Handle mouse wheel zoom
-  const handleWheel = useCallback((e: WheelEvent) => {
-    if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 50) {
-      // Pinch-to-zoom or large scroll gestures
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setZoom(prev => Math.max(0.1, Math.min(5, prev + delta)));
-    } else if (!e.ctrlKey && !e.metaKey) {
-      // Regular scroll - zoom in/out
-      e.preventDefault();
-      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-      setZoom(prev => Math.max(0.1, Math.min(5, prev * zoomFactor)));
-    }
-  }, []);
-
-  useEffect(() => {
-    const mainElement = mainRef.current;
-    if (mainElement) {
-      mainElement.addEventListener('wheel', handleWheel, { passive: false });
-      return () => {
-        mainElement.removeEventListener('wheel', handleWheel);
-      };
-    }
-  }, [handleWheel]);
 
   // Handle layer dragging
   const handleLayerMouseDown = (e: React.MouseEvent, layer: Layer) => {
@@ -234,65 +220,14 @@ const CrookedApp: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Guest usage check moved to action execution (smartDecompose/handleEditAction)
-
-
-    // Helper function to create a properly oriented image
-    // This handles EXIF orientation data that causes images to appear rotated
-    const createOrientedImage = (file: File): Promise<{ base64: string; width: number; height: number }> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        const img = new Image();
-
-        reader.onload = (event) => {
-          img.src = event.target?.result as string;
-
-          img.onload = () => {
-            // Create canvas to normalize image orientation
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            if (!ctx) {
-              reject(new Error('Failed to get canvas context'));
-              return;
-            }
-
-            // Set canvas to image natural dimensions
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-
-            // Draw image - canvas operations normalize EXIF orientation
-            ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight);
-
-            // Export as PNG to preserve quality
-            const orientedBase64 = canvas.toDataURL('image/png', 1.0);
-
-            resolve({
-              base64: orientedBase64,
-              width: img.naturalWidth,
-              height: img.naturalHeight
-            });
-          };
-
-          img.onerror = () => {
-            reject(new Error('Failed to load image'));
-          };
-        };
-
-        reader.onerror = () => {
-          reject(new Error('Failed to read file'));
-        };
-
-        reader.readAsDataURL(file);
-      });
-    };
-
     try {
-      const { base64: orientedBase64, width, height } = await createOrientedImage(file);
+      const prepared = await prepareImageFile(file);
+      placeImageLayer(prepared.base64, prepared.width, prepared.height, prepared.name);
 
-      placeImageLayer(orientedBase64, width, height);
-
-      console.log('[handleFileUpload] Image loaded successfully', { width, height });
+      console.log('[handleFileUpload] Image loaded successfully', {
+        width: prepared.width,
+        height: prepared.height,
+      });
     } catch (error) {
       console.error('[handleFileUpload] Error processing image:', error);
       toast.error(copy.notifications.loadImageFail);
@@ -797,13 +732,32 @@ const CrookedApp: React.FC = () => {
                     activeTool === 'replace' ? 'image-replace' :
                     'image-remove';
 
-      // Check if target.url is a valid data URI
-      if (!target.url || !target.url.startsWith('data:')) {
+      if (!target.url) {
         throw new Error('Invalid image data. Please upload a valid image.');
       }
 
-      // Convert base64 to Blob and upload
-      const base64Data = target.url.split(',')[1];
+      let imageToUpload = target.url;
+      if (!target.url.startsWith('data:')) {
+        let fetchUrl = target.url;
+        if (target.url.startsWith('http://') || target.url.startsWith('https://')) {
+          fetchUrl = `/api/storage/proxy-image?url=${encodeURIComponent(target.url)}`;
+        }
+
+        const response = await fetch(fetchUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        imageToUpload = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      const base64Data = imageToUpload.split(',')[1];
       if (!base64Data) {
         throw new Error('Invalid image format. Please try uploading again.');
       }
@@ -894,15 +848,6 @@ const CrookedApp: React.FC = () => {
     };
     setLayers(prev => [...prev, newLayer]);
     setSelectedLayerId(newLayer.id);
-  };
-
-  const toggleCollapse = (id: string) => {
-    setCollapsedLayerIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   };
 
   const handleExport = async (settings: ExportSettings) => {
@@ -1166,299 +1111,378 @@ const CrookedApp: React.FC = () => {
     }
   };
 
-  const toggleLayerVisibility = (id: string) => {
-    setLayers(prev => prev.map(l => l.id === id ? { ...l, visible: !l.visible } : l));
-  };
-
   const removeLayer = (id: string) => {
     setLayers(prev => prev.filter(l => l.id !== id));
     if (selectedLayerId === id) setSelectedLayerId(null);
   };
 
+  const selectedLayer = layers.find(layer => layer.id === selectedLayerId) ?? layers[0] ?? null;
+  const displayedLayers = layers
+    .filter(layer => {
+      if (!layer.visible) return false;
+      let current = layer;
+      while (current.parentId) {
+        if (collapsedLayerIds.has(current.parentId)) return false;
+        const parent = layers.find(parentLayer => parentLayer.id === current.parentId);
+        if (!parent) break;
+        current = parent;
+      }
+      return true;
+    })
+    .sort((a, b) => a.zIndex - b.zIndex);
+
   return (
-    <div className={`relative h-screen w-screen overflow-hidden flex ${isLightTheme ? 'bg-[#f5f6f9] text-slate-900 light-crooked' : 'bg-[#0d0d0d] text-white'}`}>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,0.08),transparent_30%),radial-gradient(circle_at_60%_80%,rgba(16,185,129,0.08),transparent_30%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.08] bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:160px_160px]" />
-      {/* Home Icon - Canvas Top Right */}
-      <a
-        href="/"
-        className={`absolute top-4 z-30 p-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all shadow-lg ${
-          isLayerPanelCollapsed ? 'right-4' : 'right-[364px]'
-        }`}
-        title={brand.backHome}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-      </a>
-
-      <div className="absolute top-6 left-6 flex items-center gap-6 z-20">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Icons.CrookedLogo />
-          </div>
-          <div>
-            <h1 className="text-xl font-black tracking-tighter text-white uppercase italic">{brand.title}</h1>
-            <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest opacity-80">{brand.tagline}</p>
-          </div>
-        </div>
-        <button
-          onClick={toggleLocale}
-          className="flex items-center gap-2 px-3 py-2 glass-panel rounded-xl border border-white/10 text-xs font-semibold text-gray-200 hover:bg-white/10 transition-all"
-          title={locale?.startsWith('zh') ? 'Switch to English' : '切换到中文'}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M2 12h20" />
-            <path d="M12 2c2.5 3 2.5 15 0 20" />
-            <path d="M7 4.5c1.6 2.2 1.6 12.8 0 15" />
-            <path d="M17 4.5c-1.6 2.2-1.6 12.8 0 15" />
-          </svg>
-          <span className="uppercase">{locale?.startsWith('zh') ? 'EN' : '中'}</span>
-        </button>
-
-        {layers.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2 glass-panel rounded-xl hover:bg-white/5 transition-all text-xs font-semibold text-gray-300 border border-white/10"
-            >
-              <Icons.Image />
-              <span>{buttons.changeImage}</span>
-            </button>
-            <button
-              onClick={() => setIsExportModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-xl hover:bg-blue-600/30 transition-all text-xs font-bold"
-            >
-              <Icons.Download />
-              <span>{buttons.exportProject}</span>
-            </button>
-            {/* Guest Upload Counter */}
-            {!isUserLoggedIn() && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 glass-panel rounded-xl border border-white/5">
-                <Icons.Star />
-                <span className="text-xs font-mono text-gray-400">
-                  {buttons.guestQuota.replace('{count}', String(getRemainingUploads()))}
-                </span>
+    <div className={`relative overflow-hidden ${embedded ? 'min-h-[900px] rounded-[32px]' : 'min-h-screen'} ${isLightTheme ? 'bg-[#f6f1e8] text-slate-900' : 'bg-[#0e1420] text-white'}`}>
+      <div className={`pointer-events-none absolute inset-0 ${isLightTheme ? 'bg-[radial-gradient(circle_at_top_left,rgba(240,122,61,0.18),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(47,109,246,0.14),transparent_24%),linear-gradient(180deg,#fffdf8,#f6f1e8)]' : 'bg-[radial-gradient(circle_at_top_left,rgba(240,122,61,0.14),transparent_28%),radial-gradient(circle_at_85%_10%,rgba(47,109,246,0.16),transparent_22%),linear-gradient(180deg,#101722,#0c121c)]'}`} />
+      <div className="relative mx-auto flex min-h-screen max-w-[1440px] flex-col gap-6 px-4 py-4 md:px-6 md:py-6">
+        <header className={`rounded-[30px] border px-5 py-4 md:px-6 ${isLightTheme ? 'border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]' : 'border-white/10 bg-[#131b28] shadow-[0_18px_50px_rgba(0,0,0,0.32)]'}`}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <Icons.CrookedLogo />
+              <div>
+                <p className={`text-xs uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-blue-200/80'}`}>{brand.tagline}</p>
+                <h1 className={`text-2xl font-black tracking-tight ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{brand.title}</h1>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <main
-        ref={mainRef}
-        onMouseDown={handleMouseDown}
-        className={`flex-1 relative flex items-center justify-center overflow-hidden canvas-container ${
-          isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'
-        }`}
-      >
-        <div
-          className="relative transition-transform duration-300 ease-out will-change-transform flex items-center justify-center"
-          style={{
-            transform: `scale(${zoom}) translate(${dragOffset.x}px, ${dragOffset.y}px)`,
-            transformOrigin: 'center center'
-          }}
-        >
-          {layers.length > 0 ? (
-            <div
-              className="relative shadow-[0_0_80px_rgba(0,0,0,0.8)] bg-black/50"
-              style={{ width: layers[0].width, height: layers[0].height }}
-            >
-              {layers.filter(l => {
-                // Check if any ancestor is collapsed
-                let current = l;
-                while (current.parentId) {
-                  if (collapsedLayerIds.has(current.parentId)) return false;
-                  const parent = layers.find(pl => pl.id === current.parentId);
-                  if (!parent) break;
-                  current = parent;
-                }
-                return l.visible;
-              }).sort((a, b) => a.zIndex - b.zIndex).map(layer => {
-                // Find the root layer (base layer) for reference
-                const isRootLayer = !layer.parentId;
-                const baseLayer = layers[0];
-
-                return (
-                  <div
-                    key={layer.id}
-                    className={`absolute pointer-events-auto transition-all duration-200 ${!layer.locked ? 'cursor-move' : 'cursor-default'} ${selectedLayerId === layer.id ? 'z-50' : ''} ${draggingLayerId === layer.id ? 'cursor-grabbing' : ''}`}
-                    style={{
-                      left: isRootLayer ? layer.x : 0,
-                      top: isRootLayer ? layer.y : 0,
-                      width: isRootLayer ? layer.width : baseLayer.width,
-                      height: isRootLayer ? layer.height : baseLayer.height,
-                      opacity: layer.opacity,
-                      zIndex: layer.zIndex,
-                      backgroundImage: `url(${layer.url})`,
-                      backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
-                      backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
-                      backgroundRepeat: 'no-repeat',
-                      // Use outline instead of ring to avoid covering the image
-                      outline: selectedLayerId === layer.id ? '2px solid rgba(59, 130, 246, 0.8)' : 'none',
-                      outlineOffset: selectedLayerId === layer.id ? '2px' : '0'
-                    }}
-                    onMouseDown={(e) => handleLayerMouseDown(e, layer)}
-                    onClick={(e) => {
-                      if (draggingLayerId !== layer.id) {
-                        e.stopPropagation();
-                        setSelectedLayerId(layer.id);
-                      }
-                    }}
-                  />
-                );
-              })}
             </div>
-          ) : (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="w-[600px] h-[400px] rounded-3xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-6 hover:bg-white/5 hover:border-blue-500/30 transition-all cursor-pointer group"
-            >
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform text-white">
-                <Icons.Upload />
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-medium text-gray-300">{empty.title}</p>
-                <p className="text-sm text-gray-500 mt-1">{empty.subtitle}</p>
-              </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {!embedded && (
+                <a
+                  href="/"
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isLightTheme ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50' : 'border-white/10 bg-white/5 text-white hover:bg-white/10'}`}
+                  title={brand.backHome}
+                >
+                  {brand.backHome}
+                </a>
+              )}
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20"
+                onClick={toggleLocale}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isLightTheme ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50' : 'border-white/10 bg-white/5 text-white hover:bg-white/10'}`}
               >
-                {buttons.changeImage}
+                {locale?.startsWith('zh') ? 'EN' : '中文'}
+              </button>
+              <button
+                onClick={() => setIsLightTheme((value) => !value)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isLightTheme ? 'border-slate-200 bg-slate-900 text-white hover:bg-slate-700' : 'border-white/10 bg-white text-slate-900 hover:bg-slate-100'}`}
+              >
+                {isLightTheme ? tb.darkMode : tb.lightMode}
               </button>
             </div>
-          )}
-        </div>
-
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 p-2 glass-panel rounded-full z-20">
-          <button onClick={() => setZoom(z => Math.max(0.05, z - 0.1))} className="p-2 hover:bg-white/5 rounded-full text-gray-400 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-          <span className="text-xs font-mono text-gray-500 min-w-[3.5rem] text-center">{Math.round(zoom * 100)}%</span>
-          <button onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="p-2 hover:bg-white/5 rounded-full text-gray-400 transition-colors">
-             <Icons.Plus />
-          </button>
-          <div className="w-px h-4 bg-white/10 mx-1" />
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                 if (layers[0]) {
-                   const availableWidth = window.innerWidth - 450;
-                   const availableHeight = window.innerHeight - 200;
-                   const scaleX = availableWidth / layers[0].width;
-                   const scaleY = availableHeight / layers[0].height;
-                   setZoom(Math.min(scaleX, scaleY, 0.9));
-                   setDragOffset({ x: 0, y: 0 });
-                 }
-              }}
-              className="px-3 py-1 text-[10px] font-bold text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors uppercase tracking-widest"
-            >
-              {buttons.fitToScreen}
-            </button>
-            <button
-              onClick={() => {
-                setZoom(1);
-                setDragOffset({ x: 0, y: 0 });
-              }}
-              className="px-3 py-1 text-[10px] font-bold text-gray-400 hover:bg-white/10 rounded-full transition-colors uppercase tracking-widest"
-            >
-              {buttons.resetView}
-            </button>
           </div>
-        </div>
-      </main>
+        </header>
 
-      <CrookedToolbar
-        activeTool={activeTool}
-        setActiveTool={setActiveTool}
-        onDecompose={(count) => smartDecompose(count)}
-        isProcessing={isProcessing}
-        layerCount={layerCount}
-        setLayerCount={setLayerCount}
-        advancedConfig={advancedConfig}
-        setAdvancedConfig={setAdvancedConfig}
-        isLightTheme={isLightTheme}
-        setIsLightTheme={setIsLightTheme}
-      />
+        <section className="grid flex-1 gap-6 lg:grid-cols-[430px_minmax(0,1fr)]">
+          <aside className={`rounded-[32px] border p-5 md:p-6 ${isLightTheme ? 'border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]' : 'border-white/10 bg-[#131b28] shadow-[0_24px_80px_rgba(0,0,0,0.34)]'}`}>
+            <div className="space-y-6">
+              <div>
+                <p className={`text-xs uppercase tracking-[0.22em] ${isLightTheme ? 'text-[#f07a3d]' : 'text-orange-200/80'}`}>Image layered workflow</p>
+                <p className={`mt-2 text-sm leading-6 ${isLightTheme ? 'text-slate-600' : 'text-slate-300'}`}>Upload first, then set layer count and run decomposition or prompt-based edits.</p>
+              </div>
 
-      {/* Collapse Toggle Button */}
-      <button
-        onClick={() => setIsLayerPanelCollapsed(!isLayerPanelCollapsed)}
-        className={`absolute top-1/2 -translate-y-1/2 z-40 p-2 rounded-l-lg glass-panel border-l-0 border-y-0 border-r border-white/20 hover:bg-white/10 transition-all ${
-          isLayerPanelCollapsed ? 'right-0' : 'right-[360px]'
-        }`}
-        title={isLayerPanelCollapsed ? buttons.showLayers : buttons.hideLayers}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="white"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className={`transition-transform ${isLayerPanelCollapsed ? 'rotate-180' : ''}`}
-        >
-          <polyline points={isLayerPanelCollapsed ? '9 18 15 12 9 6' : '15 18 9 12 15 6'} />
-        </svg>
-      </button>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className={`cursor-pointer rounded-[28px] border border-dashed p-5 transition-colors ${isLightTheme ? 'border-slate-300 bg-[#fbf8f3] hover:border-[#2f6df6] hover:bg-[#f5f8ff]' : 'border-white/15 bg-white/5 hover:bg-white/10'}`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${isLightTheme ? 'bg-slate-900 text-white' : 'bg-white/10 text-white'}`}>
+                    <Icons.Upload />
+                  </div>
+                  <div>
+                    <p className={`text-base font-semibold ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{layers.length > 0 ? buttons.changeImage : empty.title}</p>
+                    <p className={`mt-1 text-sm ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>JPG, PNG, WEBP. Upload image first.</p>
+                  </div>
+                </div>
+              </div>
 
-      <div
-        className={`absolute top-0 right-0 h-full glass-panel border-l border-white/10 transition-all duration-300 ease-in-out ${
-          isLayerPanelCollapsed ? 'w-0 opacity-0' : 'w-[360px] opacity-100'
-        }`}
-        style={{
-          overflow: isLayerPanelCollapsed ? 'hidden' : 'visible'
-        }}
-      >
-        <CrookedLayerPanel
-          layers={layers}
-          selectedLayerId={selectedLayerId}
-          onSelectLayer={setSelectedLayerId}
-          onToggleVisibility={toggleLayerVisibility}
-          onRecursiveDecompose={(id) => smartDecompose(layerCount, id)}
-          onRemoveLayer={removeLayer}
-          onUpdateLayer={handleUpdateLayer}
-          onDuplicateLayer={handleDuplicateLayer}
-          collapsedLayerIds={collapsedLayerIds}
-          onToggleCollapse={toggleCollapse}
-          layerCount={layerCount}
-          onLayerCountChange={setLayerCount}
-          onDecompose={(count) => smartDecompose(count)}
-          isProcessing={isProcessing}
-        />
+              <div className={`rounded-[24px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fcfaf6]' : 'border-white/10 bg-white/5'}`}>
+                <div className="grid gap-4 lg:grid-cols-[96px_minmax(0,1fr)]">
+                  <label className="space-y-2">
+                    <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>{tb.numberOfLayers}</span>
+                    <div className={`inline-flex w-[88px] items-center justify-center rounded-[18px] border ${isLightTheme ? 'border-slate-200 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.04)]' : 'border-white/10 bg-[#111827]'}`}>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={layerCount}
+                        onChange={(e) => setLayerCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                        className={`w-full bg-transparent px-2 py-2.5 text-center text-base font-bold outline-none ${isLightTheme ? 'text-slate-900' : 'text-white'}`}
+                      />
+                    </div>
+                  </label>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>{adv.aiModel}</span>
+                      <span className={`text-[11px] ${isLightTheme ? 'text-slate-400' : 'text-slate-500'}`}>Choose the mood of decomposition</span>
+                    </div>
+                    <div className={`inline-grid w-full grid-cols-2 gap-1 rounded-[18px] p-1 ${isLightTheme ? 'bg-[#f3eee6] border border-slate-200' : 'bg-[#0f172a] border border-white/10'}`}>
+                      <button
+                        onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered' })}
+                        className={`group rounded-[14px] px-3 py-3 text-left transition-all ${
+                          advancedConfig.model === 'fal-ai/qwen-image-layered'
+                            ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.08)]'
+                            : isLightTheme
+                              ? 'text-slate-600 hover:bg-white/60'
+                              : 'text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold">{adv.standard}</p>
+                            <p className={`mt-1 text-[11px] leading-4 ${advancedConfig.model === 'fal-ai/qwen-image-layered' ? 'text-slate-500' : isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>
+                              Clean layers
+                            </p>
+                          </div>
+                          <div className={`mt-1 h-2.5 w-2.5 rounded-full ${advancedConfig.model === 'fal-ai/qwen-image-layered' ? 'bg-[#2f6df6]' : isLightTheme ? 'bg-slate-300' : 'bg-slate-600'}`} />
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered/lora' })}
+                        className={`group rounded-[14px] px-3 py-3 text-left transition-all ${
+                          advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
+                            ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.08)]'
+                            : isLightTheme
+                              ? 'text-slate-600 hover:bg-white/60'
+                              : 'text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold">{adv.lora}</p>
+                            <p className={`mt-1 text-[11px] leading-4 ${advancedConfig.model === 'fal-ai/qwen-image-layered/lora' ? 'text-slate-500' : isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>
+                              Expressive split
+                            </p>
+                          </div>
+                          <div className={`mt-1 h-2.5 w-2.5 rounded-full ${advancedConfig.model === 'fal-ai/qwen-image-layered/lora' ? 'bg-[#f07a3d]' : isLightTheme ? 'bg-slate-300' : 'bg-slate-600'}`} />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <label className={`block space-y-2 rounded-[22px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fcfaf6]' : 'border-white/10 bg-white/5'}`}>
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>{adv.prompt}</span>
+                <textarea
+                  value={advancedConfig.prompt}
+                  onChange={(e) => setAdvancedConfig({ ...advancedConfig, prompt: e.target.value })}
+                  placeholder={adv.promptPlaceholder}
+                  className={`min-h-[92px] w-full rounded-[18px] border px-4 py-3 text-sm outline-none ${isLightTheme ? 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#2f6df6]' : 'border-white/10 bg-white/5 text-white placeholder:text-slate-500'}`}
+                />
+              </label>
+
+              <div className={`space-y-3 rounded-[22px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fcfaf6]' : 'border-white/10 bg-white/5'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Tools</span>
+                  <span className={`text-[11px] ${isLightTheme ? 'text-slate-400' : 'text-slate-500'}`}>Pick one mode before running a prompt</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'remove' as ToolType, label: tb.removeObject },
+                    { id: 'replace' as ToolType, label: tb.aiReplace },
+                    { id: 'recolor' as ToolType, label: tb.recolor },
+                    { id: 'move' as ToolType, label: tb.panView },
+                  ].map((tool) => (
+                    <button
+                      key={tool.id}
+                      onClick={() => setActiveTool(tool.id)}
+                      className={`rounded-[16px] px-3 py-2.5 text-sm font-medium transition-colors ${activeTool === tool.id ? 'bg-[#f07a3d] text-white shadow-[0_6px_16px_rgba(240,122,61,0.18)]' : isLightTheme ? 'bg-white text-slate-700 border border-slate-200' : 'bg-white/5 text-slate-300'}`}
+                    >
+                      {tool.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {activeTool !== 'select' && activeTool !== 'move' && (
+                <label className={`block space-y-2 rounded-[22px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fff7f2]' : 'border-white/10 bg-white/5'}`}>
+                  <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Prompt</span>
+                  <textarea
+                    value={editInstruction}
+                    onChange={(e) => setEditInstruction(e.target.value)}
+                    placeholder={editPlaceholder}
+                    className={`min-h-[112px] w-full rounded-[18px] border px-4 py-3 text-sm outline-none ${isLightTheme ? 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#f07a3d]' : 'border-white/10 bg-white/5 text-white placeholder:text-slate-500'}`}
+                  />
+                </label>
+              )}
+
+              <div className="grid gap-3">
+                <button
+                  onClick={() => smartDecompose(layerCount)}
+                  disabled={isProcessing || layers.length === 0}
+                  className="rounded-[18px] bg-[#2f6df6] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(47,109,246,0.18)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isProcessing ? tb.processing : tb.decomposeCallToAction.replace('{count}', String(layerCount))}
+                </button>
+                <button
+                  onClick={() => handleEditAction(editInstruction || editPlaceholder)}
+                  disabled={isProcessing || !selectedLayer || activeTool === 'move' || activeTool === 'select'}
+                  className="rounded-[18px] bg-[#f07a3d] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(240,122,61,0.18)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isProcessing ? buttons.processing : buttons.execute}
+                </button>
+                <button
+                  onClick={() => setIsExportModalOpen(true)}
+                  disabled={layers.length === 0}
+                  className={`rounded-[18px] px-4 py-3 text-[13px] font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${isLightTheme ? 'bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)]' : 'bg-white text-slate-900'}`}
+                >
+                  {buttons.exportProject}
+                </button>
+              </div>
+
+              {!isUserLoggedIn() && (
+                <div className={`rounded-[24px] border px-4 py-3 text-sm ${isLightTheme ? 'border-slate-200 bg-[#fbf8f3] text-slate-600' : 'border-white/10 bg-white/5 text-slate-300'}`}>
+                  {buttons.guestQuota.replace('{count}', String(getRemainingUploads()))}
+                </div>
+              )}
+            </div>
+          </aside>
+
+          <main className={`rounded-[32px] border p-4 md:p-6 ${isLightTheme ? 'border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]' : 'border-white/10 bg-[#111927] shadow-[0_24px_80px_rgba(0,0,0,0.34)]'}`}>
+            <div className="flex h-full flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className={`text-xs uppercase tracking-[0.28em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Preview</p>
+                  <p className={`mt-1 text-sm ${isLightTheme ? 'text-slate-600' : 'text-slate-300'}`}>{selectedLayer ? `${selectedLayer.name} · ${Math.round(zoom * 100)}%` : 'Upload an image to preview layered output.'}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setZoom((value) => Math.max(0.1, value - 0.1))} className={`rounded-full px-3 py-2 text-sm ${isLightTheme ? 'bg-slate-100 text-slate-700' : 'bg-white/5 text-white'}`}>-</button>
+                  <button onClick={() => setZoom((value) => Math.min(4, value + 0.1))} className={`rounded-full px-3 py-2 text-sm ${isLightTheme ? 'bg-slate-100 text-slate-700' : 'bg-white/5 text-white'}`}>+</button>
+                  <button
+                    onClick={() => {
+                      if (layers[0]) {
+                        const availableWidth = window.innerWidth - 560;
+                        const availableHeight = window.innerHeight - 280;
+                        setZoom(Math.min(availableWidth / layers[0].width, availableHeight / layers[0].height, 0.95));
+                        setDragOffset({ x: 0, y: 0 });
+                      }
+                    }}
+                    className={`rounded-full px-4 py-2 text-sm font-medium ${isLightTheme ? 'bg-[#fbf8f3] text-slate-700' : 'bg-white/5 text-white'}`}
+                  >
+                    {buttons.fitToScreen}
+                  </button>
+                </div>
+              </div>
+
+              <div
+                ref={mainRef}
+                onMouseDown={handleMouseDown}
+                className={`relative flex min-h-[540px] flex-1 items-center justify-center overflow-hidden rounded-[28px] border ${isLightTheme ? 'border-slate-200 bg-[linear-gradient(135deg,#fcfaf6,#f4efe6)]' : 'border-white/10 bg-[linear-gradient(135deg,#111827,#0b1220)]'} ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+              >
+                <div
+                  className="relative flex items-center justify-center transition-transform duration-300 ease-out"
+                  style={{
+                    transform: `scale(${zoom}) translate(${dragOffset.x}px, ${dragOffset.y}px)`,
+                    transformOrigin: 'center center',
+                  }}
+                >
+                  {layers.length > 0 ? (
+                    <div className="relative overflow-hidden rounded-[24px] border border-black/5 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.18)]" style={{ width: layers[0].width, height: layers[0].height }}>
+                      {displayedLayers.map((layer) => {
+                        const isRootLayer = !layer.parentId;
+                        const baseLayer = layers[0];
+
+                        return (
+                          <div
+                            key={layer.id}
+                            className={`absolute transition-all duration-200 ${selectedLayerId === layer.id ? 'z-20' : ''}`}
+                            style={{
+                              left: isRootLayer ? layer.x : 0,
+                              top: isRootLayer ? layer.y : 0,
+                              width: isRootLayer ? layer.width : baseLayer.width,
+                              height: isRootLayer ? layer.height : baseLayer.height,
+                              opacity: layer.opacity,
+                              zIndex: layer.zIndex,
+                              backgroundImage: `url(${layer.url})`,
+                              backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
+                              backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
+                              backgroundRepeat: 'no-repeat',
+                              outline: selectedLayerId === layer.id ? '2px solid rgba(47,109,246,0.95)' : 'none',
+                              outlineOffset: selectedLayerId === layer.id ? '2px' : '0',
+                            }}
+                            onMouseDown={(e) => handleLayerMouseDown(e, layer)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLayerId(layer.id);
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className={`flex w-full max-w-xl flex-col items-center gap-4 rounded-[28px] border border-dashed p-10 text-center ${isLightTheme ? 'border-slate-300 bg-[#fbf8f3]' : 'border-white/15 bg-white/5'}`}>
+                      <Icons.Upload />
+                      <h3 className={`text-2xl font-bold ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{empty.title}</h3>
+                      <p className={`max-w-md text-sm ${isLightTheme ? 'text-slate-600' : 'text-slate-400'}`}>{empty.subtitle}</p>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="rounded-full bg-[#2f6df6] px-5 py-3 text-sm font-bold text-white"
+                      >
+                        {buttons.changeImage}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_320px]">
+                <div className={`rounded-[24px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fbf8f3]' : 'border-white/10 bg-white/5'}`}>
+                  <p className={`text-xs uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Layers</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {displayedLayers.length > 0 ? displayedLayers.map((layer) => (
+                      <button
+                        key={layer.id}
+                        onClick={() => setSelectedLayerId(layer.id)}
+                        className={`rounded-full px-3 py-2 text-xs font-semibold transition-colors ${selectedLayerId === layer.id ? 'bg-[#2f6df6] text-white' : isLightTheme ? 'bg-white text-slate-700 border border-slate-200' : 'bg-[#111827] text-slate-300'}`}
+                      >
+                        {layer.name}
+                      </button>
+                    )) : (
+                      <p className={`text-sm ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>No layers yet. Upload and generate to start.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className={`rounded-[24px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fbf8f3]' : 'border-white/10 bg-white/5'}`}>
+                  <p className={`text-xs uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Selection</p>
+                  {selectedLayer ? (
+                    <div className="mt-3 space-y-3">
+                      <p className={`text-sm font-semibold ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{selectedLayer.name}</p>
+                      <label className="block space-y-2">
+                        <span className={`text-xs ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Opacity</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={selectedLayer.opacity}
+                          onChange={(e) => handleUpdateLayer(selectedLayer.id, { opacity: parseFloat(e.target.value) })}
+                          className="w-full accent-[#2f6df6]"
+                        />
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handleDuplicateLayer(selectedLayer.id)}
+                          className={`rounded-2xl px-3 py-2 text-sm font-semibold ${isLightTheme ? 'border border-slate-200 bg-white text-slate-700' : 'bg-[#111827] text-white'}`}
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          onClick={() => removeLayer(selectedLayer.id)}
+                          className="rounded-2xl bg-[#f07a3d] px-3 py-2 text-sm font-semibold text-white"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className={`mt-3 text-sm ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Select a layer to edit opacity or manage it.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </main>
+        </section>
       </div>
-
-      {selectedLayerId && activeTool !== 'select' && activeTool !== 'move' && (
-        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 w-[500px] glass-panel p-4 rounded-2xl z-30 flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-300 shadow-2xl border-blue-500/20">
-           <input
-            type="text"
-            placeholder={editPlaceholder}
-            className="flex-1 bg-transparent border-none outline-none text-sm text-black placeholder:text-gray-500 px-2"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleEditAction((e.target as HTMLInputElement).value);
-            }}
-           />
-           <button
-            onClick={(e) => {
-              const input = (e.currentTarget.previousElementSibling as HTMLInputElement).value;
-              handleEditAction(input || 'Apply edit');
-            }}
-            disabled={isProcessing}
-            className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
-           >
-             {isProcessing ? buttons.processing : buttons.execute}
-           </button>
-        </div>
-      )}
 
       <input
         type="file"
