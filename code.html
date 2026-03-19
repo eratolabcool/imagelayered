@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-variant": "#192540",
+              "outline-variant": "#40485d",
+              "surface-container-highest": "#192540",
+              "primary-dim": "#834fff",
+              "tertiary": "#ff97b8",
+              "primary-container": "#ac8eff",
+              "secondary-container": "#006875",
+              "surface": "#060e20",
+              "tertiary-container": "#fc81ab",
+              "secondary": "#00e3fd",
+              "tertiary-dim": "#ef77a0",
+              "primary-fixed-dim": "#a07dff",
+              "on-background": "#dee5ff",
+              "on-error-container": "#ffb2b9",
+              "on-surface": "#dee5ff",
+              "surface-container-high": "#141f38",
+              "error-container": "#a70138",
+              "surface-container-lowest": "#000000",
+              "surface-container": "#0f1930",
+              "secondary-fixed": "#26e6ff",
+              "outline": "#6d758c",
+              "surface-tint": "#b89fff",
+              "inverse-surface": "#faf8ff",
+              "surface-dim": "#060e20",
+              "on-tertiary-container": "#59002b",
+              "on-secondary-fixed-variant": "#005964",
+              "inverse-on-surface": "#4d556b",
+              "on-primary-fixed": "#000000",
+              "error": "#ff6e84",
+              "error-dim": "#d73357",
+              "secondary-dim": "#00d4ec",
+              "primary": "#b89fff",
+              "inverse-primary": "#6d23f9",
+              "on-secondary": "#004d57",
+              "on-surface-variant": "#a3aac4",
+              "on-tertiary": "#6a0936",
+              "surface-container-low": "#091328",
+              "on-secondary-container": "#e8fbff",
+              "surface-bright": "#1f2b49",
+              "on-tertiary-fixed": "#380019",
+              "on-primary-container": "#2a0070",
+              "on-primary": "#37008e",
+              "background": "#060e20",
+              "primary-fixed": "#ac8eff",
+              "secondary-fixed-dim": "#00d7f0",
+              "on-tertiary-fixed-variant": "#70103b",
+              "on-secondary-fixed": "#003a42",
+              "on-primary-fixed-variant": "#350088",
+              "on-error": "#490013",
+              "tertiary-fixed": "#ff8db2",
+              "tertiary-fixed-dim": "#f57ca5"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(25, 37, 64, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 no-border bg-gradient-to-b from-[#060e20] to-transparent">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-full bg-[#091328]/60 backdrop-blur-xl">
+<div class="text-2xl font-black tracking-tighter text-[#dee5ff] font-headline">
+                Luminous Layer
+            </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#b89fff] border-b-2 border-[#b89fff] pb-1" href="#">Editor</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#dee5ff]/70 hover:text-[#dee5ff] transition-colors" href="#">Templates</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#dee5ff]/70 hover:text-[#dee5ff] transition-colors" href="#">Showcase</a>
+<a class="font-['Space_Grotesk'] uppercase tracking-wider text-sm font-bold text-[#dee5ff]/70 hover:text-[#dee5ff] transition-colors" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-5 py-2 rounded-md bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline text-sm font-bold uppercase tracking-tight hover:scale-95 duration-200 ease-in-out">
+                    Get Started
+                </button>
+<div class="text-[#dee5ff]/70 hover:text-[#dee5ff] cursor-pointer transition-all">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</div>
+</nav>
+<main class="pt-24 min-h-screen">
+<!-- Hero Section -->
+<section class="relative px-8 pt-20 pb-32 flex flex-col items-center text-center overflow-hidden">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 opacity-20">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary blur-[120px] rounded-full"></div>
+</div>
+<h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tight max-w-4xl mb-6 bg-gradient-to-br from-on-surface to-on-surface-variant bg-clip-text text-transparent">
+                Effortless Image Layering with AI
+            </h1>
+<p class="text-xl md:text-2xl text-on-surface-variant max-w-2xl mb-12 font-light">
+                Upload, separate, and edit layers in seconds. Transform flat compositions into depth-rich creative assets.
+            </p>
+<div class="flex gap-4">
+<button class="bg-primary text-on-primary px-8 py-4 rounded-md font-headline font-bold uppercase tracking-widest text-sm hover:brightness-110 transition-all shadow-[0px_20px_40px_rgba(184,159,255,0.2)]">
+                    Launch Editor
+                </button>
+<button class="bg-surface-container-high text-on-surface px-8 py-4 rounded-md font-headline font-bold uppercase tracking-widest text-sm hover:bg-surface-bright transition-all">
+                    View Showcase
+                </button>
+</div>
+</section>
+<!-- Core Tool Interface -->
+<section class="px-8 pb-32 max-w-7xl mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left Sidebar: Controls -->
+<aside class="lg:col-span-4 flex flex-col gap-6">
+<div class="bg-surface-container-low p-8 rounded-xl border-none shadow-2xl">
+<h2 class="font-headline text-sm font-bold uppercase tracking-[0.2em] text-primary mb-8">Image Input</h2>
+<!-- Upload Area -->
+<div class="group relative aspect-square w-full rounded-xl bg-surface-container-high border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-all p-6 text-center">
+<span class="material-symbols-outlined text-5xl text-outline-variant group-hover:text-primary transition-colors mb-4" data-icon="cloud_upload">cloud_upload</span>
+<p class="text-on-surface font-bold mb-1">Upload Source Image</p>
+<p class="text-on-surface-variant text-xs">Drag and drop or click to browse</p>
+<p class="text-outline text-[10px] mt-4 uppercase tracking-tighter">RAW, PNG, JPG supported</p>
+</div>
+<!-- Layer Control -->
+<div class="mt-10">
+<div class="flex justify-between items-center mb-4">
+<label class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant">Layer Count</label>
+<span class="bg-surface-container-highest px-3 py-1 rounded-md text-secondary font-mono text-sm font-bold">04</span>
+</div>
+<input class="w-full h-1.5 bg-surface-container-highest rounded-full appearance-none cursor-pointer accent-primary" max="12" min="1" type="range" value="4"/>
+<div class="flex justify-between text-[10px] text-outline mt-2 font-bold">
+<span>MIN</span>
+<span>MAX</span>
+</div>
+</div>
+<button class="w-full mt-10 bg-secondary-container text-on-secondary-container py-4 rounded-md font-headline font-bold uppercase tracking-[0.15em] text-xs hover:brightness-110 transition-all">
+                            Process AI Layers
+                        </button>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border-none">
+<div class="flex items-center gap-3 text-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-headline text-[10px] font-bold uppercase tracking-widest">Global AI Settings</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-3 leading-relaxed">Precision mode active. AI will attempt to preserve textures while separating depth planes.</p>
+</div>
+</aside>
+<!-- Right Canvas: Layer Workspace -->
+<div class="lg:col-span-8">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-headline text-2xl font-bold tracking-tight text-on-surface uppercase">Layer Stack</h2>
+<p class="text-on-surface-variant text-sm mt-1">Refine and edit individual depth components.</p>
+</div>
+<div class="flex gap-2">
+<div class="flex items-center bg-surface-container-low px-4 py-2 rounded-full gap-2 text-xs font-bold text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_#00e3fd]"></span>
+                                AI ACTIVE
+                            </div>
+</div>
+</div>
+<!-- Layers Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Layer Card 1 -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300">
+<div class="h-48 w-full bg-surface-container-high overflow-hidden relative">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="Abstract vibrant purple fluid layers" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1RbzD1KJ-MB5NHSFovA9oeFtivql1K3eGFm80dj87FJpbwXITBeIKxPdED6zHTlWnAcNERIZJHBFSrHj1PR0IESBm9FE5xkIbMyI0Ue8--hq-zS4AcKA6Rtpbapp7dFY9UI_QEcFrSNoGUMOGmR-tHRULcKrGsIj4oDiA_0kxymNB2KJb6DhQELSkVeTSCVsZgiYvQkN1Nj_3n8ymxgm7SsxZq0p1W75UyYJmfomhfGsGQLyC0mdokqUJme0PKoz1exZJAJH6tgkq"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-primary uppercase tracking-tighter">01 Foreground</span>
+</div>
+</div>
+<div class="p-5">
+<div class="flex justify-between items-center mb-6">
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Remove Background">
+<span class="material-symbols-outlined text-xl" data-icon="layers_clear">layers_clear</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Watermark Removal">
+<span class="material-symbols-outlined text-xl" data-icon="ink_eraser">ink_eraser</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Object Removal">
+<span class="material-symbols-outlined text-xl" data-icon="magic_button">magic_button</span>
+</button>
+</div>
+<button class="text-[10px] font-headline font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Refine</button>
+</div>
+<button class="w-full py-2 bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-widest rounded-md transition-all">
+                                    Subdivide Further
+                                </button>
+</div>
+</div>
+<!-- Layer Card 2 -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300">
+<div class="h-48 w-full bg-surface-container-high overflow-hidden relative">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="Dark blue abstract mesh texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdZgX55hJDO0fGswkooB7-YfJLWIKSSbeEuM6qk_j8dxgb6h69iQowaRW4alWcocM3oWcdPsL0TX8vWp_sElp4TX0xEIqp7rBtQdChJMoUxZhDt3rK7Vh2WQe3JCuKirgXjQVlKUVXw_jCjynkIrysO4xg6MurGpO2sOGSrzrraOJKwjaj2YBfwyT2zFZfq1BpSy66rJQTeQ8MDudCnfhJ9ZpTtfKKwPwj2F7c1krHbh3ErN0bcMcdmZtLs0H4OLpZ994Ie_8X_ln1"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-primary uppercase tracking-tighter">02 Mid-Plane</span>
+</div>
+</div>
+<div class="p-5">
+<div class="flex justify-between items-center mb-6">
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Remove Background">
+<span class="material-symbols-outlined text-xl" data-icon="layers_clear">layers_clear</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Watermark Removal">
+<span class="material-symbols-outlined text-xl" data-icon="ink_eraser">ink_eraser</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Object Removal">
+<span class="material-symbols-outlined text-xl" data-icon="magic_button">magic_button</span>
+</button>
+</div>
+<button class="text-[10px] font-headline font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Refine</button>
+</div>
+<button class="w-full py-2 bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-widest rounded-md transition-all">
+                                    Subdivide Further
+                                </button>
+</div>
+</div>
+<!-- Layer Card 3 -->
+<div class="group relative bg-surface-container-low rounded-xl overflow-hidden hover:translate-y-[-4px] transition-all duration-300">
+<div class="h-48 w-full bg-surface-container-high overflow-hidden relative">
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="Ethereal glowing light patterns" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVGeRJf32GctBfOxHP9BVSKEn7ZVKWL1GO5I4PsG4kLlIQOKV8iIBjTiD3ofFMYH8RtE28seiSXyj_TudOphlP8S-8JmfuaC2NNSAPuShM7wI9HZYfciEvb3lOVJEAaV5eKXiKWTgtViKHNrqB28ZB7Yasw7QP7NQXpkz4ngNLIvoIx41w_HMDH3k334wySWYwF4E3RRrJdxQmyXO5Gq0R7XV79bPt9bcfjXbMD_IK7meo91ojROdoX24AwN_LJWQ0gVn6dfXLgdv-"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low to-transparent"></div>
+<div class="absolute top-4 left-4 flex gap-2">
+<span class="bg-surface-container-highest/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-primary uppercase tracking-tighter">03 Sub-Detail</span>
+</div>
+</div>
+<div class="p-5">
+<div class="flex justify-between items-center mb-6">
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Remove Background">
+<span class="material-symbols-outlined text-xl" data-icon="layers_clear">layers_clear</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Watermark Removal">
+<span class="material-symbols-outlined text-xl" data-icon="ink_eraser">ink_eraser</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors" title="Object Removal">
+<span class="material-symbols-outlined text-xl" data-icon="magic_button">magic_button</span>
+</button>
+</div>
+<button class="text-[10px] font-headline font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Refine</button>
+</div>
+<button class="w-full py-2 bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface text-xs font-bold uppercase tracking-widest rounded-md transition-all">
+                                    Subdivide Further
+                                </button>
+</div>
+</div>
+<!-- Layer Card 4 (Empty/Placeholder) -->
+<div class="border-2 border-dashed border-outline-variant/20 rounded-xl flex flex-col items-center justify-center p-8 bg-surface-container-low/30 min-h-[300px]">
+<span class="material-symbols-outlined text-3xl text-outline-variant mb-3" data-icon="add_circle">add_circle</span>
+<p class="text-[10px] font-headline font-bold uppercase tracking-[0.2em] text-outline">Generate New Layer</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full border-t border-[#40485d]/15 tonal-shift from surface to surface-container-low bg-[#060e20]">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-12 py-8 gap-4">
+<div class="text-lg font-bold text-[#dee5ff] font-headline">Luminous Layer</div>
+<div class="font-['Manrope'] text-xs tracking-normal text-[#dee5ff]/50">
+                © 2024 Luminous Layer. Precision in every pixel.
+            </div>
+<div class="flex gap-8">
+<a class="font-['Manrope'] text-xs tracking-normal text-[#dee5ff]/50 hover:text-[#00e3fd] transition-colors" href="#">Privacy Policy</a>
+<a class="font-['Manrope'] text-xs tracking-normal text-[#dee5ff]/50 hover:text-[#00e3fd] transition-colors" href="#">Terms of Service</a>
+<a class="font-['Manrope'] text-xs tracking-normal text-[#dee5ff]/50 hover:text-[#00e3fd] transition-colors" href="#">API Docs</a>
+<a class="font-['Manrope'] text-xs tracking-normal text-[#dee5ff]/50 hover:text-[#00e3fd] transition-colors" href="#">Support</a>
+</div>
+</div>
+</footer>
+</body></html>

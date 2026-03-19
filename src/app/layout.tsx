@@ -1,6 +1,6 @@
 import '@/config/style/global.css';
 
-import { JetBrains_Mono, Merriweather, Noto_Sans_Mono } from 'next/font/google';
+import { JetBrains_Mono, Manrope, Merriweather, Noto_Sans_Mono, Space_Grotesk } from 'next/font/google';
 import { getLocale, setRequestLocale } from 'next-intl/server';
 import NextTopLoader from 'nextjs-toploader';
 
@@ -42,6 +42,20 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'optional',
   preload: false,
   adjustFontFallback: true,
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+  preload: true,
+});
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+  preload: true,
 });
 
 export default async function RootLayout({
@@ -114,7 +128,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${notoSansMono.variable} ${merriweather.variable} ${jetbrainsMono.variable}`}
+      className={`${notoSansMono.variable} ${merriweather.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} ${manrope.variable}`}
       suppressHydrationWarning
     >
       <head>

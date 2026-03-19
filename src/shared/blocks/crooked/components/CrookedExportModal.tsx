@@ -47,14 +47,14 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-slate-900 shadow-[0_30px_100px_rgba(15,23,42,0.18)] animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+      <div className="w-full max-w-md rounded-[30px] bg-[rgba(20,31,56,0.92)] p-8 text-white shadow-[0_30px_100px_rgba(0,0,0,0.45)] animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h2 className="flex items-center gap-3 text-2xl font-bold text-white">
             <Icons.Download />
             {copy.title}
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-900 transition-colors">
+          <button onClick={onClose} className="text-slate-400 transition-colors hover:text-white">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
@@ -63,10 +63,10 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
           {/* Original Size Button */}
           <button
             onClick={handleUseOriginalSize}
-            className={`w-full py-3 rounded-xl text-sm font-bold border transition-all ${
+            className={`w-full rounded-xl py-3 text-sm font-bold transition-all ${
               settings.useOriginalSize
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                ? 'bg-[linear-gradient(135deg,rgba(137,162,255,0.24),rgba(77,228,255,0.18))] text-cyan-50'
+                : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.08]'
             }`}
           >
             {settings.useOriginalSize
@@ -76,25 +76,25 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase mb-2 block tracking-wider">{copy.width}</label>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">{copy.width}</label>
               <input
                 type="number"
                 value={settings.width}
                 onChange={(e) => setSettings({ ...settings, width: parseInt(e.target.value) || 0, useOriginalSize: false })}
                 disabled={settings.useOriginalSize}
-                className={`w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-blue-500 transition-colors ${
+                className={`w-full rounded-xl bg-white/[0.05] px-4 py-3 text-white outline-none transition-colors focus:bg-white/[0.08] ${
                   settings.useOriginalSize ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase mb-2 block tracking-wider">{copy.height}</label>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">{copy.height}</label>
               <input
                 type="number"
                 value={settings.height}
                 onChange={(e) => setSettings({ ...settings, height: parseInt(e.target.value) || 0, useOriginalSize: false })}
                 disabled={settings.useOriginalSize}
-                className={`w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none focus:border-blue-500 transition-colors ${
+                className={`w-full rounded-xl bg-white/[0.05] px-4 py-3 text-white outline-none transition-colors focus:bg-white/[0.08] ${
                   settings.useOriginalSize ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               />
@@ -102,16 +102,16 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between rounded-2xl bg-white/[0.05] p-4">
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-slate-900">{copy.aiUpscale}</span>
-                <span className="text-xs text-slate-500">{copy.aiUpscaleSub}</span>
+                <span className="text-sm font-semibold text-white">{copy.aiUpscale}</span>
+                <span className="text-xs text-slate-400">{copy.aiUpscaleSub}</span>
               </div>
               <button
                 onClick={() => setSettings({ ...settings, upscale: !settings.upscale })}
-                className={`relative w-12 h-6 rounded-full transition-colors ${settings.upscale ? 'bg-blue-600' : 'bg-white/10'}`}
+                className={`relative h-6 w-12 rounded-full transition-colors ${settings.upscale ? 'bg-cyan-400' : 'bg-white/10'}`}
               >
-                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.upscale ? 'left-7' : 'left-1'}`} />
+                <div className={`absolute top-1 h-4 w-4 rounded-full bg-[#071123] transition-all ${settings.upscale ? 'left-7' : 'left-1'}`} />
               </button>
             </div>
 
@@ -121,10 +121,10 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
                   <button
                     key={res}
                     onClick={() => setSettings({ ...settings, resolution: res })}
-                    className={`py-3 rounded-xl text-xs font-bold border transition-all ${
+                    className={`rounded-xl py-3 text-xs font-bold transition-all ${
                       settings.resolution === res
-                      ? 'bg-blue-50 border-blue-300 text-blue-700'
-                      : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                      ? 'bg-[linear-gradient(135deg,rgba(137,162,255,0.24),rgba(77,228,255,0.18))] text-cyan-50'
+                      : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.08]'
                     }`}
                   >
                     {res} {res === '4K' ? copy.resolutionPro : ''}
@@ -138,21 +138,21 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
              <button
               onClick={handleExport}
               disabled={isProcessing}
-              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] py-4 font-bold text-[#071123] transition-all shadow-xl shadow-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isProcessing ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#071123]/20 border-t-[#071123]" />
                   {copy.processing}
                 </>
               ) : (
                 copy.start
               )}
             </button>
-            <p className="text-[10px] text-slate-500 text-center mt-4 uppercase tracking-widest leading-relaxed">
+            <p className="mt-4 text-center text-[10px] uppercase tracking-widest leading-relaxed text-slate-500">
               {copy.disclaimer}
               <br />
-              <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{copy.learnBilling}</a>
+              <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:underline">{copy.learnBilling}</a>
             </p>
           </div>
         </div>

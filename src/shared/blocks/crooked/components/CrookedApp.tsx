@@ -54,9 +54,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeModalType, setUpgradeModalType] = useState<'save' | 'export' | 'limit' | 'login'>('login');
 
-  // Theme state
-  const [isLightTheme, setIsLightTheme] = useState(true);
-
   // Advanced Settings State
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedDecompositionConfig>({
     prompt: '',
@@ -1132,23 +1129,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     .sort((a, b) => a.zIndex - b.zIndex);
 
   return (
-    <div className={`relative overflow-hidden ${embedded ? 'min-h-[900px] rounded-[32px]' : 'min-h-screen'} ${isLightTheme ? 'bg-[#f6f1e8] text-slate-900' : 'bg-[#0e1420] text-white'}`}>
-      <div className={`pointer-events-none absolute inset-0 ${isLightTheme ? 'bg-[radial-gradient(circle_at_top_left,rgba(240,122,61,0.18),transparent_28%),radial-gradient(circle_at_85%_12%,rgba(47,109,246,0.14),transparent_24%),linear-gradient(180deg,#fffdf8,#f6f1e8)]' : 'bg-[radial-gradient(circle_at_top_left,rgba(240,122,61,0.14),transparent_28%),radial-gradient(circle_at_85%_10%,rgba(47,109,246,0.16),transparent_22%),linear-gradient(180deg,#101722,#0c121c)]'}`} />
-      <div className="relative mx-auto flex min-h-screen max-w-[1440px] flex-col gap-6 px-4 py-4 md:px-6 md:py-6">
-        <header className={`rounded-[30px] border px-5 py-4 md:px-6 ${isLightTheme ? 'border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]' : 'border-white/10 bg-[#131b28] shadow-[0_18px_50px_rgba(0,0,0,0.32)]'}`}>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <Icons.CrookedLogo />
-              <div>
-                <p className={`text-xs uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-blue-200/80'}`}>{brand.tagline}</p>
-                <h1 className={`text-2xl font-black tracking-tight ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{brand.title}</h1>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
+    <div className={`relative overflow-hidden ${embedded ? 'rounded-[36px]' : 'min-h-screen'} bg-[#060e20] text-white [font-family:var(--font-body)]`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.26),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(255,92,138,0.18),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(68,217,255,0.12),transparent_28%),linear-gradient(180deg,#081121_0%,#060e20_46%,#050b17_100%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:72px_72px]" />
+      <div className={`relative mx-auto flex ${embedded ? 'min-h-[920px]' : 'min-h-screen'} max-w-[1460px] flex-col gap-6 px-4 py-4 md:px-6 md:py-6`}>
+        <header className="rounded-[30px] bg-[rgba(20,31,56,0.72)] px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-[22px] md:px-6">
+          <div className="flex flex-wrap items-center justify-end gap-2">
               {!embedded && (
                 <a
                   href="/"
-                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isLightTheme ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50' : 'border-white/10 bg-white/5 text-white hover:bg-white/10'}`}
+                  className="rounded-full bg-white/6 px-4 py-2 text-sm font-medium text-white/78 transition-colors hover:bg-white/10"
                   title={brand.backHome}
                 >
                   {brand.backHome}
@@ -1156,124 +1146,98 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
               <button
                 onClick={toggleLocale}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isLightTheme ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50' : 'border-white/10 bg-white/5 text-white hover:bg-white/10'}`}
+                className="rounded-full bg-white/6 px-4 py-2 text-sm font-medium text-white/88 transition-colors hover:bg-white/10"
               >
                 {locale?.startsWith('zh') ? 'EN' : '中文'}
               </button>
-              <button
-                onClick={() => setIsLightTheme((value) => !value)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${isLightTheme ? 'border-slate-200 bg-slate-900 text-white hover:bg-slate-700' : 'border-white/10 bg-white text-slate-900 hover:bg-slate-100'}`}
-              >
-                {isLightTheme ? tb.darkMode : tb.lightMode}
-              </button>
-            </div>
           </div>
         </header>
 
-        <section className="grid flex-1 gap-6 lg:grid-cols-[430px_minmax(0,1fr)]">
-          <aside className={`rounded-[32px] border p-5 md:p-6 ${isLightTheme ? 'border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]' : 'border-white/10 bg-[#131b28] shadow-[0_24px_80px_rgba(0,0,0,0.34)]'}`}>
-            <div className="space-y-6">
-              <div>
-                <p className={`text-xs uppercase tracking-[0.22em] ${isLightTheme ? 'text-[#f07a3d]' : 'text-orange-200/80'}`}>Image layered workflow</p>
-                <p className={`mt-2 text-sm leading-6 ${isLightTheme ? 'text-slate-600' : 'text-slate-300'}`}>Upload first, then set layer count and run decomposition or prompt-based edits.</p>
+        <section className="grid flex-1 gap-6 lg:grid-cols-[390px_minmax(0,1fr)]">
+          <aside className="rounded-[34px] bg-[rgba(20,31,56,0.78)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px] md:p-6">
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <p className="text-[10px] uppercase tracking-[0.38em] text-cyan-100/55">Generate layered image</p>
+                <p className="max-w-sm text-sm leading-7 text-slate-300">
+                  Upload a source image, define the stack depth, then decompose or edit layers with a short instruction.
+                </p>
               </div>
 
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`cursor-pointer rounded-[28px] border border-dashed p-5 transition-colors ${isLightTheme ? 'border-slate-300 bg-[#fbf8f3] hover:border-[#2f6df6] hover:bg-[#f5f8ff]' : 'border-white/15 bg-white/5 hover:bg-white/10'}`}
+                className="group cursor-pointer rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-300 hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${isLightTheme ? 'bg-slate-900 text-white' : 'bg-white/10 text-white'}`}>
+                  <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,rgba(93,106,255,0.3),rgba(73,223,255,0.18))] text-white shadow-[0_16px_34px_rgba(83,108,255,0.24)]">
                     <Icons.Upload />
                   </div>
                   <div>
-                    <p className={`text-base font-semibold ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{layers.length > 0 ? buttons.changeImage : empty.title}</p>
-                    <p className={`mt-1 text-sm ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>JPG, PNG, WEBP. Upload image first.</p>
+                    <p className="text-base font-semibold text-white [font-family:var(--font-display)]">{layers.length > 0 ? buttons.changeImage : empty.title}</p>
+                    <p className="mt-1 text-sm text-slate-400">PNG, JPG, WEBP. Start with a single source frame.</p>
                   </div>
                 </div>
               </div>
 
-              <div className={`rounded-[24px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fcfaf6]' : 'border-white/10 bg-white/5'}`}>
-                <div className="grid gap-4 lg:grid-cols-[96px_minmax(0,1fr)]">
+              <div className="rounded-[26px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <div className="grid gap-4 md:grid-cols-[88px_minmax(0,1fr)]">
                   <label className="space-y-2">
-                    <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>{tb.numberOfLayers}</span>
-                    <div className={`inline-flex w-[88px] items-center justify-center rounded-[18px] border ${isLightTheme ? 'border-slate-200 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.04)]' : 'border-white/10 bg-[#111827]'}`}>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">{tb.numberOfLayers}</span>
+                    <div className="inline-flex w-[82px] items-center justify-center rounded-[18px] bg-[#050b17] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors hover:bg-[#081122]">
                       <input
                         type="number"
                         min="1"
                         max="20"
                         value={layerCount}
                         onChange={(e) => setLayerCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                        className={`w-full bg-transparent px-2 py-2.5 text-center text-base font-bold outline-none ${isLightTheme ? 'text-slate-900' : 'text-white'}`}
+                        className="w-full bg-transparent px-2 py-3 text-center text-base font-bold text-white outline-none placeholder:text-slate-600"
                       />
                     </div>
                   </label>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                      <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>{adv.aiModel}</span>
-                      <span className={`text-[11px] ${isLightTheme ? 'text-slate-400' : 'text-slate-500'}`}>Choose the mood of decomposition</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">{adv.aiModel}</span>
                     </div>
-                    <div className={`inline-grid w-full grid-cols-2 gap-1 rounded-[18px] p-1 ${isLightTheme ? 'bg-[#f3eee6] border border-slate-200' : 'bg-[#0f172a] border border-white/10'}`}>
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered' })}
-                        className={`group rounded-[14px] px-3 py-3 text-left transition-all ${
+                        className={`rounded-[18px] px-3 py-3 text-left transition-all ${
                           advancedConfig.model === 'fal-ai/qwen-image-layered'
-                            ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.08)]'
-                            : isLightTheme
-                              ? 'text-slate-600 hover:bg-white/60'
-                              : 'text-slate-300'
+                            ? 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(232,240,255,0.92))] text-[#071123] shadow-[0_14px_30px_rgba(255,255,255,0.14)]'
+                            : 'bg-[#050b17] text-slate-200 hover:bg-[#081122]'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold">{adv.standard}</p>
-                            <p className={`mt-1 text-[11px] leading-4 ${advancedConfig.model === 'fal-ai/qwen-image-layered' ? 'text-slate-500' : isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>
-                              Clean layers
-                            </p>
-                          </div>
-                          <div className={`mt-1 h-2.5 w-2.5 rounded-full ${advancedConfig.model === 'fal-ai/qwen-image-layered' ? 'bg-[#2f6df6]' : isLightTheme ? 'bg-slate-300' : 'bg-slate-600'}`} />
-                        </div>
+                        <span className="block text-center text-sm font-semibold">{adv.standard}</span>
                       </button>
                       <button
                         onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered/lora' })}
-                        className={`group rounded-[14px] px-3 py-3 text-left transition-all ${
+                        className={`rounded-[18px] px-3 py-3 text-left transition-all ${
                           advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
-                            ? 'bg-white text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.08)]'
-                            : isLightTheme
-                              ? 'text-slate-600 hover:bg-white/60'
-                              : 'text-slate-300'
+                            ? 'bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(232,240,255,0.92))] text-[#071123] shadow-[0_14px_30px_rgba(255,255,255,0.14)]'
+                            : 'bg-[#050b17] text-slate-200 hover:bg-[#081122]'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold">{adv.lora}</p>
-                            <p className={`mt-1 text-[11px] leading-4 ${advancedConfig.model === 'fal-ai/qwen-image-layered/lora' ? 'text-slate-500' : isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>
-                              Expressive split
-                            </p>
-                          </div>
-                          <div className={`mt-1 h-2.5 w-2.5 rounded-full ${advancedConfig.model === 'fal-ai/qwen-image-layered/lora' ? 'bg-[#f07a3d]' : isLightTheme ? 'bg-slate-300' : 'bg-slate-600'}`} />
-                        </div>
+                        <span className="block text-center text-sm font-semibold">{adv.lora}</span>
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <label className={`block space-y-2 rounded-[22px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fcfaf6]' : 'border-white/10 bg-white/5'}`}>
-                <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>{adv.prompt}</span>
+              <label className="block space-y-2 rounded-[24px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">{adv.prompt}</span>
                 <textarea
                   value={advancedConfig.prompt}
                   onChange={(e) => setAdvancedConfig({ ...advancedConfig, prompt: e.target.value })}
                   placeholder={adv.promptPlaceholder}
-                  className={`min-h-[92px] w-full rounded-[18px] border px-4 py-3 text-sm outline-none ${isLightTheme ? 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#2f6df6]' : 'border-white/10 bg-white/5 text-white placeholder:text-slate-500'}`}
+                  className="min-h-[96px] w-full rounded-[18px] bg-[#050b17] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 hover:bg-[#081122] focus:bg-[#081122]"
                 />
               </label>
 
-              <div className={`space-y-3 rounded-[22px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fcfaf6]' : 'border-white/10 bg-white/5'}`}>
+              <div className="space-y-3 rounded-[24px] bg-[#0b152b]/92 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <div className="flex items-center justify-between gap-3">
-                  <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Tools</span>
-                  <span className={`text-[11px] ${isLightTheme ? 'text-slate-400' : 'text-slate-500'}`}>Pick one mode before running a prompt</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">Tools</span>
+                  <span className="text-[11px] text-slate-500">Pick a layer action</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -1282,71 +1246,77 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     { id: 'recolor' as ToolType, label: tb.recolor },
                     { id: 'move' as ToolType, label: tb.panView },
                   ].map((tool) => (
-                    <button
-                      key={tool.id}
-                      onClick={() => setActiveTool(tool.id)}
-                      className={`rounded-[16px] px-3 py-2.5 text-sm font-medium transition-colors ${activeTool === tool.id ? 'bg-[#f07a3d] text-white shadow-[0_6px_16px_rgba(240,122,61,0.18)]' : isLightTheme ? 'bg-white text-slate-700 border border-slate-200' : 'bg-white/5 text-slate-300'}`}
-                    >
-                      {tool.label}
-                    </button>
-                  ))}
+                      <button
+                        key={tool.id}
+                        onClick={() => setActiveTool(tool.id)}
+                        className={`rounded-[16px] px-3 py-3 text-sm font-medium transition-all ${
+                          activeTool === tool.id
+                            ? 'bg-white text-[#071123] shadow-[0_14px_24px_rgba(255,255,255,0.14)]'
+                            : 'bg-white/[0.04] text-slate-300 hover:bg-white/[0.07]'
+                        }`}
+                      >
+                        <span className="[font-family:var(--font-display)]">{tool.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
               {activeTool !== 'select' && activeTool !== 'move' && (
-                <label className={`block space-y-2 rounded-[22px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fff7f2]' : 'border-white/10 bg-white/5'}`}>
-                  <span className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Prompt</span>
+                <label className="block space-y-2 rounded-[24px] bg-[linear-gradient(180deg,rgba(17,26,49,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-500">Prompt</span>
                   <textarea
                     value={editInstruction}
                     onChange={(e) => setEditInstruction(e.target.value)}
                     placeholder={editPlaceholder}
-                    className={`min-h-[112px] w-full rounded-[18px] border px-4 py-3 text-sm outline-none ${isLightTheme ? 'border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#f07a3d]' : 'border-white/10 bg-white/5 text-white placeholder:text-slate-500'}`}
+                    className="min-h-[112px] w-full rounded-[18px] bg-[#050b17] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 hover:bg-[#081122] focus:bg-[#081122]"
                   />
                 </label>
               )}
 
-              <div className="grid gap-3">
+              <div className="grid gap-3 pt-1">
                 <button
                   onClick={() => smartDecompose(layerCount)}
                   disabled={isProcessing || layers.length === 0}
-                  className="rounded-[18px] bg-[#2f6df6] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(47,109,246,0.18)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-[18px] bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-4 py-3 text-[13px] font-semibold text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.22)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isProcessing ? tb.processing : tb.decomposeCallToAction.replace('{count}', String(layerCount))}
                 </button>
                 <button
                   onClick={() => handleEditAction(editInstruction || editPlaceholder)}
                   disabled={isProcessing || !selectedLayer || activeTool === 'move' || activeTool === 'select'}
-                  className="rounded-[18px] bg-[#f07a3d] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_10px_24px_rgba(240,122,61,0.18)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-[18px] bg-[linear-gradient(135deg,#ff86b2,#b48dff)] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_18px_36px_rgba(180,141,255,0.18)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isProcessing ? buttons.processing : buttons.execute}
                 </button>
                 <button
                   onClick={() => setIsExportModalOpen(true)}
                   disabled={layers.length === 0}
-                  className={`rounded-[18px] px-4 py-3 text-[13px] font-semibold transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${isLightTheme ? 'bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)]' : 'bg-white text-slate-900'}`}
+                  className="rounded-[18px] bg-white/8 px-4 py-3 text-[13px] font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {buttons.exportProject}
                 </button>
               </div>
 
               {!isUserLoggedIn() && (
-                <div className={`rounded-[24px] border px-4 py-3 text-sm ${isLightTheme ? 'border-slate-200 bg-[#fbf8f3] text-slate-600' : 'border-white/10 bg-white/5 text-slate-300'}`}>
+                <div className="rounded-[22px] bg-white/[0.04] px-4 py-3 text-sm text-slate-300">
                   {buttons.guestQuota.replace('{count}', String(getRemainingUploads()))}
                 </div>
               )}
             </div>
           </aside>
 
-          <main className={`rounded-[32px] border p-4 md:p-6 ${isLightTheme ? 'border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]' : 'border-white/10 bg-[#111927] shadow-[0_24px_80px_rgba(0,0,0,0.34)]'}`}>
+          <main className="rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px] md:p-6">
             <div className="flex h-full flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className={`text-xs uppercase tracking-[0.28em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Preview</p>
-                  <p className={`mt-1 text-sm ${isLightTheme ? 'text-slate-600' : 'text-slate-300'}`}>{selectedLayer ? `${selectedLayer.name} · ${Math.round(zoom * 100)}%` : 'Upload an image to preview layered output.'}</p>
+                  <p className="text-[10px] uppercase tracking-[0.38em] text-cyan-100/55">Workspace preview</p>
+                  <p className="mt-2 text-sm text-slate-300">
+                    {selectedLayer ? `${selectedLayer.name} · ${Math.round(zoom * 100)}%` : 'Upload an image to begin building the layer stack.'}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setZoom((value) => Math.max(0.1, value - 0.1))} className={`rounded-full px-3 py-2 text-sm ${isLightTheme ? 'bg-slate-100 text-slate-700' : 'bg-white/5 text-white'}`}>-</button>
-                  <button onClick={() => setZoom((value) => Math.min(4, value + 0.1))} className={`rounded-full px-3 py-2 text-sm ${isLightTheme ? 'bg-slate-100 text-slate-700' : 'bg-white/5 text-white'}`}>+</button>
+                  <button onClick={() => setZoom((value) => Math.max(0.1, value - 0.1))} className="rounded-full bg-white/6 px-3 py-2 text-sm text-white">-</button>
+                  <button onClick={() => setZoom((value) => Math.min(4, value + 0.1))} className="rounded-full bg-white/6 px-3 py-2 text-sm text-white">+</button>
                   <button
                     onClick={() => {
                       if (layers[0]) {
@@ -1356,7 +1326,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         setDragOffset({ x: 0, y: 0 });
                       }
                     }}
-                    className={`rounded-full px-4 py-2 text-sm font-medium ${isLightTheme ? 'bg-[#fbf8f3] text-slate-700' : 'bg-white/5 text-white'}`}
+                    className="rounded-full bg-white/6 px-4 py-2 text-sm font-medium text-white"
                   >
                     {buttons.fitToScreen}
                   </button>
@@ -1366,8 +1336,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               <div
                 ref={mainRef}
                 onMouseDown={handleMouseDown}
-                className={`relative flex min-h-[540px] flex-1 items-center justify-center overflow-hidden rounded-[28px] border ${isLightTheme ? 'border-slate-200 bg-[linear-gradient(135deg,#fcfaf6,#f4efe6)]' : 'border-white/10 bg-[linear-gradient(135deg,#111827,#0b1220)]'} ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                className={`relative flex min-h-[560px] flex-1 items-center justify-center overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(95,116,255,0.16),transparent_28%),linear-gradient(180deg,#0c1730,#091328)] ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
               >
+                <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:48px_48px]" />
                 <div
                   className="relative flex items-center justify-center transition-transform duration-300 ease-out"
                   style={{
@@ -1376,7 +1347,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   }}
                 >
                   {layers.length > 0 ? (
-                    <div className="relative overflow-hidden rounded-[24px] border border-black/5 bg-white shadow-[0_30px_100px_rgba(15,23,42,0.18)]" style={{ width: layers[0].width, height: layers[0].height }}>
+                    <div className="relative overflow-hidden rounded-[26px] bg-white shadow-[0_36px_120px_rgba(0,0,0,0.45)]" style={{ width: layers[0].width, height: layers[0].height }}>
                       {displayedLayers.map((layer) => {
                         const isRootLayer = !layer.parentId;
                         const baseLayer = layers[0];
@@ -1396,7 +1367,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                               backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
                               backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
                               backgroundRepeat: 'no-repeat',
-                              outline: selectedLayerId === layer.id ? '2px solid rgba(47,109,246,0.95)' : 'none',
+                              outline: selectedLayerId === layer.id ? '2px solid rgba(113,190,255,0.92)' : 'none',
                               outlineOffset: selectedLayerId === layer.id ? '2px' : '0',
                             }}
                             onMouseDown={(e) => handleLayerMouseDown(e, layer)}
@@ -1409,13 +1380,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       })}
                     </div>
                   ) : (
-                    <div className={`flex w-full max-w-xl flex-col items-center gap-4 rounded-[28px] border border-dashed p-10 text-center ${isLightTheme ? 'border-slate-300 bg-[#fbf8f3]' : 'border-white/15 bg-white/5'}`}>
-                      <Icons.Upload />
-                      <h3 className={`text-2xl font-bold ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{empty.title}</h3>
-                      <p className={`max-w-md text-sm ${isLightTheme ? 'text-slate-600' : 'text-slate-400'}`}>{empty.subtitle}</p>
+                    <div className="relative flex w-full max-w-xl flex-col items-center gap-4 rounded-[30px] bg-white/[0.04] p-10 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,rgba(97,120,255,0.32),rgba(77,228,255,0.18))]">
+                        <Icons.Upload />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white [font-family:var(--font-display)]">{empty.title}</h3>
+                      <p className="max-w-md text-sm leading-7 text-slate-400">{empty.subtitle}</p>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="rounded-full bg-[#2f6df6] px-5 py-3 text-sm font-bold text-white"
+                        className="rounded-full bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-5 py-3 text-sm font-bold text-[#071123]"
                       >
                         {buttons.changeImage}
                       </button>
@@ -1425,30 +1398,34 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               </div>
 
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_320px]">
-                <div className={`rounded-[24px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fbf8f3]' : 'border-white/10 bg-white/5'}`}>
-                  <p className={`text-xs uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Layers</p>
+                <div className="rounded-[24px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  <p className="text-[10px] uppercase tracking-[0.34em] text-slate-500">Layers</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {displayedLayers.length > 0 ? displayedLayers.map((layer) => (
                       <button
                         key={layer.id}
                         onClick={() => setSelectedLayerId(layer.id)}
-                        className={`rounded-full px-3 py-2 text-xs font-semibold transition-colors ${selectedLayerId === layer.id ? 'bg-[#2f6df6] text-white' : isLightTheme ? 'bg-white text-slate-700 border border-slate-200' : 'bg-[#111827] text-slate-300'}`}
+                        className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
+                          selectedLayerId === layer.id
+                            ? 'bg-white text-[#071123] shadow-[0_12px_24px_rgba(255,255,255,0.12)]'
+                            : 'bg-[#0b152b] text-slate-300 hover:bg-[#101d39]'
+                        }`}
                       >
                         {layer.name}
                       </button>
                     )) : (
-                      <p className={`text-sm ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>No layers yet. Upload and generate to start.</p>
+                      <p className="text-sm text-slate-400">No layers yet. Upload and generate to start.</p>
                     )}
                   </div>
                 </div>
 
-                <div className={`rounded-[24px] border p-4 ${isLightTheme ? 'border-slate-200 bg-[#fbf8f3]' : 'border-white/10 bg-white/5'}`}>
-                  <p className={`text-xs uppercase tracking-[0.24em] ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Selection</p>
+                <div className="rounded-[24px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                  <p className="text-[10px] uppercase tracking-[0.34em] text-slate-500">Selection</p>
                   {selectedLayer ? (
                     <div className="mt-3 space-y-3">
-                      <p className={`text-sm font-semibold ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{selectedLayer.name}</p>
+                      <p className="text-sm font-semibold text-white [font-family:var(--font-display)]">{selectedLayer.name}</p>
                       <label className="block space-y-2">
-                        <span className={`text-xs ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Opacity</span>
+                        <span className="text-xs text-slate-400">Opacity</span>
                         <input
                           type="range"
                           min="0"
@@ -1456,26 +1433,26 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                           step="0.01"
                           value={selectedLayer.opacity}
                           onChange={(e) => handleUpdateLayer(selectedLayer.id, { opacity: parseFloat(e.target.value) })}
-                          className="w-full accent-[#2f6df6]"
+                          className="w-full accent-[#8ca6ff]"
                         />
                       </label>
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           onClick={() => handleDuplicateLayer(selectedLayer.id)}
-                          className={`rounded-2xl px-3 py-2 text-sm font-semibold ${isLightTheme ? 'border border-slate-200 bg-white text-slate-700' : 'bg-[#111827] text-white'}`}
+                          className="rounded-2xl bg-[#0b152b] px-3 py-2 text-sm font-semibold text-white"
                         >
                           Duplicate
                         </button>
                         <button
                           onClick={() => removeLayer(selectedLayer.id)}
-                          className="rounded-2xl bg-[#f07a3d] px-3 py-2 text-sm font-semibold text-white"
+                          className="rounded-2xl bg-[linear-gradient(135deg,#ff86b2,#b48dff)] px-3 py-2 text-sm font-semibold text-white"
                         >
                           Delete
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className={`mt-3 text-sm ${isLightTheme ? 'text-slate-500' : 'text-slate-400'}`}>Select a layer to edit opacity or manage it.</p>
+                    <p className="mt-3 text-sm text-slate-400">Select a layer to edit opacity or manage it.</p>
                   )}
                 </div>
               </div>
