@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "多角度产品图生成器 | ProductViews",
-    "description": "一次上传即可生成多角度产品图。ProductViews 自动生成正面、侧面、背面和 3/4 角度的产品照片，无需拍摄。",
-    "keywords": "产品视图生成, 多角度产品图, 3/4 视角, 正侧背产品照片, 电商产品图, AI 产品摄影, 无需拍摄产品图"
+    "title": "免费 AI 图像分层编辑器 - 自动图层分解 | Qwen Image Layered",
+    "description": "基于 Qwen Image Layered 模型的免费 AI 图像分层编辑器。自动将图像分解为 RGBA 图层，分离视觉元素，并利用 AI 进行编辑。最佳的免费 Photoshop 替代方案，用于自动图层分离和图像分割。",
+    "keywords": "图像分层编辑器, AI 图层分解, RGBA 图层, 自动图像分割, 免费 Photoshop 替代, 图像图层分离, AI 图像编辑, 基于图层的编辑, 去除背景, 图像蒙版"
   },
   "page": {
     "show_sections": [
