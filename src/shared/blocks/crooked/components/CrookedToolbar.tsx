@@ -16,6 +16,8 @@ interface ToolbarProps {
   setAdvancedConfig: (config: AdvancedDecompositionConfig) => void;
   isLightTheme: boolean;
   setIsLightTheme: (light: boolean) => void;
+  isZoomScrollEnabled: boolean;
+  setIsZoomScrollEnabled: (enabled: boolean) => void;
 }
 
 const CrookedToolbar: React.FC<ToolbarProps> = ({
@@ -28,7 +30,9 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
   advancedConfig,
   setAdvancedConfig,
   isLightTheme,
-  setIsLightTheme
+  setIsLightTheme,
+  isZoomScrollEnabled,
+  setIsZoomScrollEnabled
 }) => {
   const copy = useCrookedCopy();
   const tb = copy.toolbar;
@@ -373,7 +377,24 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                         }`} />
                     </button>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mt-2">
+                    <label className={`text-[10px] font-bold uppercase ${
+                      isLightTheme ? 'text-gray-700' : 'text-gray-500'
+                    }`}>Scroll to Zoom</label>
+                    <button
+                        onClick={() => setIsZoomScrollEnabled(!isZoomScrollEnabled)}
+                        className={`w-8 h-4 rounded-full relative transition-colors ${
+                          isZoomScrollEnabled
+                            ? isLightTheme ? 'bg-blue-600' : 'bg-blue-600'
+                            : isLightTheme ? 'bg-gray-400' : 'bg-white/10'
+                        }`}
+                    >
+                        <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${
+                          isZoomScrollEnabled ? 'left-4.5' : 'left-0.5'
+                        }`} />
+                    </button>
+                </div>
+                <div className="flex items-center justify-between mt-2">
                     <label className={`text-[10px] font-bold uppercase ${
                       isLightTheme ? 'text-gray-700' : 'text-gray-500'
                     }`}>{adv.languageToggle.replace('{lang}', advancedConfig.autoCaptionLanguageEn ? 'EN' : 'ZH')}</label>
