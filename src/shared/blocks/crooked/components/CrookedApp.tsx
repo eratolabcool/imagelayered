@@ -783,18 +783,19 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       const imageUrl = uploadData.data.urls[0];
 
-      // Call AI generate for editing
+      // Call AI generate for editing using fal.ai seedream model
       const genRes = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mediaType: 'image',
           scene,
-          provider: 'openrouter',
-          model: 'qwen/qwen3-vl-8b-instruct',
+          provider: 'fal',
+          model: 'fal-ai/bytedance/seedream/v4.5/edit',
           prompt: instruction,
           options: {
-            image_input: [imageUrl],
+            image_url: imageUrl,
+            sync_mode: true,
           },
         }),
       });
@@ -1266,31 +1267,43 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               {activeTool !== 'select' && activeTool !== 'move' && (
                 <label className="block space-y-2 rounded-[24px] bg-[linear-gradient(180deg,rgba(17,26,49,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">Prompt</span>
-                  <textarea
-                    value={editInstruction}
-                    onChange={(e) => setEditInstruction(e.target.value)}
-                    placeholder={editPlaceholder}
-                    style={{ backgroundColor: '#0b152b' }}
-                    className="min-h-[112px] w-full rounded-[18px] bg-[#0b152b] px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 hover:bg-[#101d39] focus:bg-[#101d39] shadow-[inset_0_1px_4px_rgba(0,0,0,0.1)] border border-white/5 focus:border-blue-500/30"
-                  />
+                  <div className="relative">
+                    <textarea
+                      value={editInstruction}
+                      onChange={(e) => setEditInstruction(e.target.value)}
+                      placeholder={editPlaceholder}
+                      style={{ backgroundColor: '#0b152b' }}
+                      className="min-h-[112px] w-full rounded-[18px] bg-[#0b152b] px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 hover:bg-[#101d39] focus:bg-[#101d39] shadow-[inset_0_1px_4px_rgba(0,0,0,0.1)] border border-white/5 focus:border-blue-500/30 pr-28"
+                    />
+                    {/* Generate Button - Bottom Right */}
+                    <button
+                      onClick={() => handleEditAction(editInstruction || editPlaceholder)}
+                      disabled={isProcessing || !editInstruction.trim()}
+                      className={`absolute bottom-3 right-3 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        isProcessing || !editInstruction.trim()
+                          ? 'bg-white/10 text-white/30 cursor-not-allowed'
+                          : 'bg-[linear-gradient(135deg,#ff86b2,#b48dff)] text-white shadow-[0_14px_24px_rgba(180,141,255,0.18)] hover:shadow-[0_18px_36px_rgba(180,141,255,0.28)]'
+                      }`}
+                    >
+                      {isProcessing ? 'Processing...' : 'Generate'}
+                    </button>
+                  </div>
                 </label>
               )}
 
               <div className="grid gap-3 pt-1">
-                <button
-                  onClick={() => smartDecompose(layerCount)}
-                  disabled={isProcessing || layers.length === 0}
-                  className="rounded-[18px] bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-4 py-3 text-[13px] font-semibold text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.22)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isProcessing ? tb.processing : tb.decomposeCallToAction.replace('{count}', String(layerCount))}
-                </button>
-                <button
-                  onClick={() => handleEditAction(editInstruction || editPlaceholder)}
-                  disabled={isProcessing || !selectedLayer || activeTool === 'move' || activeTool === 'select'}
-                  className="rounded-[18px] bg-[linear-gradient(135deg,#ff86b2,#b48dff)] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_18px_36px_rgba(180,141,255,0.18)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isProcessing ? buttons.processing : buttons.execute}
-                </button>
+                {/* Decompose Button - Only show when no layers exist yet */}
+                {layers.length <= 1 && (
+                  <button
+                    onClick={() => smartDecompose(layerCount)}
+                    disabled={isProcessing || layers.length === 0}
+                    className="rounded-[18px] bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-4 py-3 text-[13px] font-semibold text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.22)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isProcessing ? tb.processing : tb.decomposeCallToAction.replace('{count}', String(layerCount))}
+                  </button>
+                )}
+
+                {/* Export Button - Always show */}
                 <button
                   onClick={() => setIsExportModalOpen(true)}
                   disabled={layers.length === 0}

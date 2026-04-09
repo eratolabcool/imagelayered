@@ -147,6 +147,32 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate result for image editing scenes
+    // For recolor/replace/remove, we must have an image in the result
+    if (['image-recolor', 'image-replace', 'image-remove'].includes(scene)) {
+      const hasImage = result.taskInfo?.images?.length > 0;
+      if (!hasImage && result.taskStatus === 'SUCCESS') {
+        console.error('[generate] Image editing task completed but no image returned:', {
+          scene,
+          taskInfo: result.taskInfo,
+          taskResult: result.taskResult
+        });
+        throw new Error(`Image editing failed: no image generated for scene ${scene}`);
+      }
+    }
+
+    // Validate result for decomposition
+    if (scene === 'image-decomposition' && result.taskStatus === 'SUCCESS') {
+      const hasLayers = result.taskInfo?.images?.length > 0;
+      if (!hasLayers) {
+        console.error('[generate] Decomposition completed but no layers returned:', {
+          taskInfo: result.taskInfo,
+          taskResult: result.taskResult
+        });
+        throw new Error('Image decomposition failed: no layers generated');
+      }
+    }
+
     // create ai task
     const newAITask: NewAITask = {
       id: getUuid(),
