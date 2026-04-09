@@ -4,6 +4,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
+import CollapsibleLeftSidebar from './CollapsibleLeftSidebar';
+import CollapsibleRightSidebar from './CollapsibleRightSidebar';
 import { Icons } from './Icon';
 import {
   incrementUploadCount,
@@ -25,8 +27,6 @@ interface CrookedAppProps {
 const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage = null }) => {
   const copy = useCrookedCopy();
   const { brand, buttons, empty, editBar } = copy;
-  const tb = copy.toolbar;
-  const adv = copy.advanced;
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -49,6 +49,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [layerCount, setLayerCount] = useState<number>(5);
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [editInstruction, setEditInstruction] = useState('');
+
+  // Sidebar collapse states
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
 
   // Guest conversion modal state
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -77,12 +81,30 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   }, [activeTool, editBar]);
   const placeImageLayer = useCallback((base64: string, width: number, height: number, name: string = 'Main Canvas') => {
     const isMobile = window.innerWidth < 768;
-    const availableWidth = isMobile ? window.innerWidth - 20 : window.innerWidth - 450;
-    const availableHeight = window.innerHeight - 200;
+    // Calculate available space considering both sidebars
+    // Left sidebar: 320px (w-80) when expanded, 64px (w-16) when collapsed
+    // Right sidebar: 384px (w-96) when expanded, 64px (w-16) when collapsed
+    // Gap: 16px between each section
+    const sidebarWidth = 720; // Both sidebars expanded
+    const padding = 100; // Additional padding for header and margins
+    const availableWidth = isMobile
+      ? window.innerWidth - 20
+      : window.innerWidth - sidebarWidth - padding;
+    const availableHeight = window.innerHeight - 250; // Header + padding
 
     const scaleX = availableWidth / width;
     const scaleY = availableHeight / height;
-    const initialScale = Math.min(scaleX, scaleY, 0.9);
+    const initialScale = Math.min(scaleX, scaleY, 0.95);
+
+    console.log('[placeImageLayer] Calculated initial scale:', {
+      availableWidth,
+      availableHeight,
+      imageWidth: width,
+      imageHeight: height,
+      scaleX,
+      scaleY,
+      initialScale
+    });
 
     const newLayer: Layer = {
       id: crypto.randomUUID(),
@@ -829,25 +851,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     }
   };
 
-  const handleUpdateLayer = (id: string, updates: Partial<Layer>) => {
-    setLayers(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
-  };
-
-  const handleDuplicateLayer = (id: string) => {
-    const target = layers.find(l => l.id === id);
-    if (!target) return;
-    const newLayer: Layer = {
-      ...target,
-      id: crypto.randomUUID(),
-      name: `${target.name} Copy`,
-      x: target.x + 20,
-      y: target.y + 20,
-      zIndex: layers.length + 1
-    };
-    setLayers(prev => [...prev, newLayer]);
-    setSelectedLayerId(newLayer.id);
-  };
-
   const handleExport = async (settings: ExportSettings) => {
     // ========================================
     // GUEST EXPORT CONVERSION TRIGGER
@@ -1109,11 +1112,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     }
   };
 
-  const removeLayer = (id: string) => {
-    setLayers(prev => prev.filter(l => l.id !== id));
-    if (selectedLayerId === id) setSelectedLayerId(null);
-  };
-
   const selectedLayer = layers.find(layer => layer.id === selectedLayerId) ?? layers[0] ?? null;
   const displayedLayers = layers
     .filter(layer => {
@@ -1154,173 +1152,28 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           </div>
         </header>
 
-        <section className="grid flex-1 gap-6 lg:grid-cols-[390px_minmax(0,1fr)]">
-          <aside className="rounded-[34px] bg-[rgba(20,31,56,0.78)] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px] md:p-6">
-            <div className="space-y-5">
-              <div className="space-y-3">
-                <p className="text-[10px] uppercase tracking-[0.38em] text-cyan-100/55">Generate layered image</p>
-                <p className="max-w-sm text-sm leading-7 text-slate-300">
-                  Upload a source image, define the stack depth, then decompose or edit layers with a short instruction.
-                </p>
-              </div>
+        {/* Three-column layout: Left Sidebar | Canvas | Right Sidebar */}
+        <section className="grid flex-1 gap-4 grid-cols-[auto_1fr_auto]">
 
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="group cursor-pointer rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-300 hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,rgba(93,106,255,0.3),rgba(73,223,255,0.18))] text-white shadow-[0_16px_34px_rgba(83,108,255,0.24)]">
-                    <Icons.Upload />
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold text-white [font-family:var(--font-display)]">{layers.length > 0 ? buttons.changeImage : empty.title}</p>
-                    <p className="mt-1 text-sm text-slate-400">PNG, JPG, WEBP. Start with a single source frame.</p>
-                  </div>
-                </div>
-              </div>
+          {/* Left Sidebar - Settings (Collapsible) */}
+          <CollapsibleLeftSidebar
+            isCollapsed={isLeftSidebarCollapsed}
+            onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
+            layers={layers}
+            layerCount={layerCount}
+            setLayerCount={setLayerCount}
+            advancedConfig={advancedConfig}
+            setAdvancedConfig={setAdvancedConfig}
+            fileInputRef={fileInputRef}
+            onUploadClick={() => fileInputRef.current?.click()}
+            onDecompose={smartDecompose}
+            onExport={() => setIsExportModalOpen(true)}
+            isProcessing={isProcessing}
+            canDecompose={layers.length <= 1}
+            canExport={layers.length > 0}
+          />
 
-              <div className="rounded-[26px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <div className="grid gap-4 md:grid-cols-[88px_minmax(0,1fr)]">
-                  <label className="space-y-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{tb.numberOfLayers}</span>
-                    <div className="inline-flex w-[82px] items-center justify-center rounded-[18px] bg-[#0b152b] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all hover:bg-[#101d39]">
-                      <input
-                        type="number"
-                        min="1"
-                        max="20"
-                        value={layerCount}
-                        onChange={(e) => setLayerCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                        style={{ backgroundColor: 'transparent' }}
-                        className="w-full bg-transparent px-2 py-3 text-center text-base font-bold text-white outline-none transition-colors placeholder:text-slate-500 focus:bg-[#101d39]"
-                      />
-                    </div>
-                  </label>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{adv.aiModel}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered' })}
-                        className={`rounded-[18px] px-3 py-3 text-left transition-all ${
-                          advancedConfig.model === 'fal-ai/qwen-image-layered'
-                            ? 'bg-blue-600/20 text-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.5)]'
-                            : 'bg-white/5 text-slate-200 hover:bg-white/10'
-                        }`}
-                      >
-                        <span className="block text-center text-sm font-semibold">{adv.standard}</span>
-                      </button>
-                      <button
-                        onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered/lora' })}
-                        className={`rounded-[18px] px-3 py-3 text-left transition-all ${
-                          advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
-                            ? 'bg-purple-600/20 text-purple-400 shadow-[inset_0_0_0_1px_rgba(147,51,234,0.5)]'
-                            : 'bg-white/5 text-slate-200 hover:bg-white/10'
-                        }`}
-                      >
-                        <span className="block text-center text-sm font-semibold">{adv.lora}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <label className="block space-y-2 rounded-[24px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{adv.prompt}</span>
-                  <textarea
-                    value={advancedConfig.prompt}
-                    onChange={(e) => setAdvancedConfig({ ...advancedConfig, prompt: e.target.value })}
-                    placeholder={adv.promptPlaceholder}
-                    style={{ backgroundColor: '#0b152b' }}
-                    className="min-h-[96px] w-full rounded-[18px] bg-[#0b152b] px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 hover:bg-[#101d39] focus:bg-[#101d39] border border-white/5 focus:border-blue-500/30"
-                  />
-              </label>
-
-              <div className="space-y-3 rounded-[24px] bg-[#0b152b]/92 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">Tools</span>
-                  <span className="text-[11px] text-slate-500">Pick a layer action</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'remove' as ToolType, label: tb.removeObject },
-                    { id: 'replace' as ToolType, label: tb.aiReplace },
-                    { id: 'recolor' as ToolType, label: tb.recolor },
-                    { id: 'move' as ToolType, label: tb.panView },
-                  ].map((tool) => (
-                      <button
-                        key={tool.id}
-                        onClick={() => setActiveTool(tool.id)}
-                        className={`rounded-[16px] px-3 py-3 text-sm font-medium transition-all ${
-                          activeTool === tool.id
-                            ? 'bg-white text-[#071123] shadow-[0_14px_24px_rgba(255,255,255,0.14)]'
-                            : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                        }`}
-                      >
-                        <span className="[font-family:var(--font-display)]">{tool.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-              {activeTool !== 'select' && activeTool !== 'move' && (
-                <label className="block space-y-2 rounded-[24px] bg-[linear-gradient(180deg,rgba(17,26,49,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">Prompt</span>
-                  <div className="relative">
-                    <textarea
-                      value={editInstruction}
-                      onChange={(e) => setEditInstruction(e.target.value)}
-                      placeholder={editPlaceholder}
-                      style={{ backgroundColor: '#0b152b' }}
-                      className="min-h-[112px] w-full rounded-[18px] bg-[#0b152b] px-4 py-3 text-sm text-white outline-none transition-all placeholder:text-slate-500 hover:bg-[#101d39] focus:bg-[#101d39] shadow-[inset_0_1px_4px_rgba(0,0,0,0.1)] border border-white/5 focus:border-blue-500/30 pr-28"
-                    />
-                    {/* Generate Button - Bottom Right */}
-                    <button
-                      onClick={() => handleEditAction(editInstruction || editPlaceholder)}
-                      disabled={isProcessing || !editInstruction.trim()}
-                      className={`absolute bottom-3 right-3 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                        isProcessing || !editInstruction.trim()
-                          ? 'bg-white/10 text-white/30 cursor-not-allowed'
-                          : 'bg-[linear-gradient(135deg,#ff86b2,#b48dff)] text-white shadow-[0_14px_24px_rgba(180,141,255,0.18)] hover:shadow-[0_18px_36px_rgba(180,141,255,0.28)]'
-                      }`}
-                    >
-                      {isProcessing ? 'Processing...' : 'Generate'}
-                    </button>
-                  </div>
-                </label>
-              )}
-
-              <div className="grid gap-3 pt-1">
-                {/* Decompose Button - Only show when no layers exist yet */}
-                {layers.length <= 1 && (
-                  <button
-                    onClick={() => smartDecompose(layerCount)}
-                    disabled={isProcessing || layers.length === 0}
-                    className="rounded-[18px] bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-4 py-3 text-[13px] font-semibold text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.22)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isProcessing ? tb.processing : tb.decomposeCallToAction.replace('{count}', String(layerCount))}
-                  </button>
-                )}
-
-                {/* Export Button - Always show */}
-                <button
-                  onClick={() => setIsExportModalOpen(true)}
-                  disabled={layers.length === 0}
-                  className="rounded-[18px] bg-white/8 px-4 py-3 text-[13px] font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {buttons.exportProject}
-                </button>
-              </div>
-
-              {!isUserLoggedIn() && (
-                <div className="rounded-[22px] bg-white/5 px-4 py-3 text-sm text-slate-300">
-                  {buttons.guestQuota.replace('{count}', String(getRemainingUploads()))}
-                </div>
-              )}
-            </div>
-          </aside>
-
+          {/* Main Canvas Area */}
           <main className="rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px] md:p-6">
             <div className="flex h-full flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1336,8 +1189,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   <button
                     onClick={() => {
                       if (layers[0]) {
-                        const availableWidth = window.innerWidth - 560;
-                        const availableHeight = window.innerHeight - 280;
+                        const sidebarWidth = 720; // Both sidebars
+                        const padding = 100;
+                        const availableWidth = window.innerWidth - sidebarWidth - padding;
+                        const availableHeight = window.innerHeight - 250;
                         setZoom(Math.min(availableWidth / layers[0].width, availableHeight / layers[0].height, 0.95));
                         setDragOffset({ x: 0, y: 0 });
                       }
@@ -1412,68 +1267,47 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   )}
                 </div>
               </div>
-
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="rounded-[24px] bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                  <p className="text-[10px] uppercase tracking-[0.34em] text-slate-400/80">Layers</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {displayedLayers.length > 0 ? displayedLayers.map((layer) => (
-                      <button
-                        key={layer.id}
-                        onClick={() => setSelectedLayerId(layer.id)}
-                        className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
-                          selectedLayerId === layer.id
-                            ? 'bg-white text-[#071123] shadow-[0_12px_24px_rgba(255,255,255,0.12)]'
-                            : 'bg-[#0b152b] text-slate-300 hover:bg-[#101d39]'
-                        }`}
-                      >
-                        {layer.name}
-                      </button>
-                    )) : (
-                      <p className="text-sm text-slate-400">No layers yet. Upload and generate to start.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="rounded-[24px] bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                  <p className="text-[10px] uppercase tracking-[0.34em] text-slate-400/80">Selection</p>
-                  {selectedLayer ? (
-                    <div className="mt-3 space-y-3">
-                      <p className="text-sm font-semibold text-white [font-family:var(--font-display)]">{selectedLayer.name}</p>
-                      <label className="block space-y-2">
-                        <span className="text-xs text-slate-400">Opacity</span>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={selectedLayer.opacity}
-                          onChange={(e) => handleUpdateLayer(selectedLayer.id, { opacity: parseFloat(e.target.value) })}
-                          className="w-full accent-[#8ca6ff]"
-                        />
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => handleDuplicateLayer(selectedLayer.id)}
-                          className="rounded-2xl bg-[#0b152b] px-3 py-2 text-sm font-semibold text-white"
-                        >
-                          Duplicate
-                        </button>
-                        <button
-                          onClick={() => removeLayer(selectedLayer.id)}
-                          className="rounded-2xl bg-[linear-gradient(135deg,#ff86b2,#b48dff)] px-3 py-2 text-sm font-semibold text-white"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-slate-400">Select a layer to edit opacity or manage it.</p>
-                  )}
-                </div>
-              </div>
             </div>
           </main>
+
+          {/* Right Sidebar - Layers Panel (Collapsible) */}
+          <CollapsibleRightSidebar
+            isCollapsed={isRightSidebarCollapsed}
+            onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
+            layers={layers}
+            selectedLayerId={selectedLayerId}
+            onToggleLayerVisibility={(id) => {
+              setLayers(prev => prev.map(l =>
+                l.id === id ? { ...l, visible: !l.visible } : l
+              ));
+            }}
+            onDeleteLayer={(id) => {
+              setLayers(prev => prev.filter(l => l.id !== id));
+              if (selectedLayerId === id) {
+                setSelectedLayerId(null);
+              }
+            }}
+            onSelectLayer={(id) => {
+              setSelectedLayerId(id);
+              const layer = layers.find(l => l.id === id);
+              if (layer && !layer.visible) {
+                // Auto-show layer when selected
+                setLayers(prev => prev.map(l =>
+                  l.id === id ? { ...l, visible: true } : l
+                ));
+              }
+            }}
+            onUpdateLayer={(id, updates) => {
+              setLayers(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
+            }}
+            activeTool={activeTool}
+            setActiveTool={setActiveTool}
+            editInstruction={editInstruction}
+            setEditInstruction={setEditInstruction}
+            onGenerateEdit={() => handleEditAction(editInstruction || editPlaceholder)}
+            isProcessing={isProcessing}
+          />
+
         </section>
       </div>
 
