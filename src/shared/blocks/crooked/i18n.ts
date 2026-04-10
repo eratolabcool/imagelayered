@@ -49,6 +49,21 @@ const fallbackCopy = {
   zoom: {
     reset: 'Reset View',
   },
+  workspace: {
+    preview: 'Workspace preview',
+    uploadHint: 'Upload an image to begin building the layer stack.',
+  },
+  sidebar: {
+    expand: 'Expand sidebar',
+    collapse: 'Collapse sidebar',
+    expandPrompt: 'Expand to enter prompt',
+    selectTool: 'Select Tool',
+    recolorTool: 'Recolor Tool',
+    replaceTool: 'Replace Tool',
+    removeTool: 'Remove Tool',
+    show: 'Show',
+    hide: 'Hide',
+  },
   toolbar: {
     selection: 'Selection',
     panView: 'Pan View',
@@ -85,6 +100,8 @@ const fallbackCopy = {
     languageToggle: 'Language: {lang}',
     switch: 'Switch',
     apply: 'Apply',
+    sidebarSettings: 'Settings',
+    supportedFormats: 'PNG, JPG, WEBP',
   },
   layerPanel: {
     title: 'Layers',
@@ -100,6 +117,9 @@ const fallbackCopy = {
     opacity: 'Opacity',
     moveUp: 'Bring Forward',
     moveDown: 'Send Backward',
+    editTools: 'Edit Tools',
+    prompt: 'Prompt',
+    generate: 'Go',
   },
   exportModal: {
     title: 'Export Image',
@@ -202,6 +222,21 @@ export function useCrookedCopy(): CrookedCopy {
     zoom: {
       reset: g('zoom.reset', fallbackCopy.zoom.reset),
     },
+    workspace: {
+      preview: g('workspace.preview', fallbackCopy.workspace.preview),
+      uploadHint: g('workspace.uploadHint', fallbackCopy.workspace.uploadHint),
+    },
+    sidebar: {
+      expand: g('sidebar.expand', fallbackCopy.sidebar.expand),
+      collapse: g('sidebar.collapse', fallbackCopy.sidebar.collapse),
+      expandPrompt: g('sidebar.expandPrompt', fallbackCopy.sidebar.expandPrompt),
+      selectTool: g('sidebar.selectTool', fallbackCopy.sidebar.selectTool),
+      recolorTool: g('sidebar.recolorTool', fallbackCopy.sidebar.recolorTool),
+      replaceTool: g('sidebar.replaceTool', fallbackCopy.sidebar.replaceTool),
+      removeTool: g('sidebar.removeTool', fallbackCopy.sidebar.removeTool),
+      show: g('sidebar.show', fallbackCopy.sidebar.show),
+      hide: g('sidebar.hide', fallbackCopy.sidebar.hide),
+    },
     toolbar: {
       selection: g('toolbar.selection', fallbackCopy.toolbar.selection),
       panView: g('toolbar.panView', fallbackCopy.toolbar.panView),
@@ -238,6 +273,8 @@ export function useCrookedCopy(): CrookedCopy {
       languageToggle: g('advanced.languageToggle', fallbackCopy.advanced.languageToggle),
       switch: g('advanced.switch', fallbackCopy.advanced.switch),
       apply: g('advanced.apply', fallbackCopy.advanced.apply),
+      sidebarSettings: g('advanced.sidebarSettings', fallbackCopy.advanced.sidebarSettings),
+      supportedFormats: g('advanced.supportedFormats', fallbackCopy.advanced.supportedFormats),
     },
     layerPanel: {
       title: g('layerPanel.title', fallbackCopy.layerPanel.title),
@@ -253,6 +290,9 @@ export function useCrookedCopy(): CrookedCopy {
       opacity: g('layerPanel.opacity', fallbackCopy.layerPanel.opacity),
       moveUp: g('layerPanel.moveUp', fallbackCopy.layerPanel.moveUp),
       moveDown: g('layerPanel.moveDown', fallbackCopy.layerPanel.moveDown),
+      editTools: g('layerPanel.editTools', fallbackCopy.layerPanel.editTools),
+      prompt: g('layerPanel.prompt', fallbackCopy.layerPanel.prompt),
+      generate: g('layerPanel.generate', fallbackCopy.layerPanel.generate),
     },
     exportModal: {
       title: g('exportModal.title', fallbackCopy.exportModal.title),

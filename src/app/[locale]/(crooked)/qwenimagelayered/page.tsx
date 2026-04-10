@@ -3,15 +3,15 @@ import { Metadata } from 'next';
 import CrookedAppWrapper from './CrookedAppWrapper';
 
 export const metadata: Metadata = {
-  title: 'Qwen Image Layered | Online AI Image Decomposition Tool',
-  description: 'Upload your image and instantly split it into editable transparent layers. Use our AI image layered workspace for effortless object removal, replacement, and recoloring workflows.',
-  keywords: 'qwen image layered, image layer decomposition, split image into layers, AI image editor, automatic layer extraction',
+  title: 'AI Image Layering Tool | Split Photos into Layers',
+  description: 'Free online tool to automatically split images into editable layers. Perfect for product photos, design, and marketing. Export in PNG, PSD, JPG formats.',
+  keywords: 'image layering, AI image editor, split image layers, product photo editor, background removal, transparent layers, PSD export',
   alternates: {
     canonical: '/qwenimagelayered',
   },
   openGraph: {
-    title: 'Qwen Image Layered | Free Online Tool',
-    description: 'Instantly split images into editable layers using advanced AI. Simplify your design workflow with automatic extraction.',
+    title: 'AI Image Layering Tool - Free Online',
+    description: 'Automatically split images into editable layers. Perfect for e-commerce, design, and marketing. Export in PNG, PSD formats.',
     type: 'website',
     url: '/qwenimagelayered',
     siteName: 'Image Layered AI',

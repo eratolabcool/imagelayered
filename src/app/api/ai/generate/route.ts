@@ -1,5 +1,5 @@
 import { envConfigs } from '@/config';
-import { AIMediaType } from '@/extensions/ai';
+import { AIMediaType, AITaskStatus } from '@/extensions/ai';
 import { getUuid } from '@/shared/lib/hash';
 import { respData, respErr } from '@/shared/lib/resp';
 import { createAITask, NewAITask } from '@/shared/models/ai_task';
@@ -150,8 +150,8 @@ export async function POST(request: Request) {
     // Validate result for image editing scenes
     // For recolor/replace/remove, we must have an image in the result
     if (['image-recolor', 'image-replace', 'image-remove'].includes(scene)) {
-      const hasImage = result.taskInfo?.images?.length > 0;
-      if (!hasImage && result.taskStatus === 'SUCCESS') {
+      const hasImage = (result.taskInfo?.images?.length ?? 0) > 0;
+      if (!hasImage && result.taskStatus === AITaskStatus.SUCCESS) {
         console.error('[generate] Image editing task completed but no image returned:', {
           scene,
           taskInfo: result.taskInfo,
@@ -162,8 +162,8 @@ export async function POST(request: Request) {
     }
 
     // Validate result for decomposition
-    if (scene === 'image-decomposition' && result.taskStatus === 'SUCCESS') {
-      const hasLayers = result.taskInfo?.images?.length > 0;
+    if (scene === 'image-decomposition' && result.taskStatus === AITaskStatus.SUCCESS) {
+      const hasLayers = (result.taskInfo?.images?.length ?? 0) > 0;
       if (!hasLayers) {
         console.error('[generate] Decomposition completed but no layers returned:', {
           taskInfo: result.taskInfo,

@@ -41,15 +41,16 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
   const tb = copy.toolbar;
   const adv = copy.advanced;
   const empty = copy.empty;
+  const sidebar = copy.sidebar;
 
   if (isCollapsed) {
     return (
-      <div className="w-16 flex flex-col items-center gap-4 py-4 rounded-[34px] bg-[rgba(20,31,56,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px]">
+      <div className="flex flex-col items-center gap-4 py-4 rounded-[34px] bg-[rgba(20,31,56,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px]">
         {/* Toggle Button */}
         <button
           onClick={onToggle}
           className="p-2 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors"
-          title="Expand sidebar"
+          title={sidebar.expand}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 15 12"></polyline>
@@ -79,14 +80,14 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
   }
 
   return (
-    <div className="w-80 flex flex-col gap-4 py-4 px-4 rounded-[34px] bg-[rgba(20,31,56,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px]">
+    <div className="flex flex-col gap-4 py-4 px-4 rounded-[34px] bg-[rgba(20,31,56,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px]">
       {/* Header with Toggle Button */}
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-cyan-100/55">Settings</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-cyan-100/55">{adv.sidebarSettings}</span>
         <button
           onClick={onToggle}
           className="p-2 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors"
-          title="Collapse sidebar"
+          title={sidebar.collapse}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 12"></polyline>
@@ -107,7 +108,7 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-white">{layers.length > 0 ? copy.buttons.changeImage : empty.title}</p>
-            <p className="mt-0.5 text-[10px] text-slate-400">PNG, JPG, WEBP</p>
+            <p className="mt-0.5 text-[10px] text-slate-400">{adv.supportedFormats}</p>
           </div>
         </div>
       </div>
@@ -123,7 +124,7 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
               max="20"
               value={layerCount}
               onChange={(e) => setLayerCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-              className="w-full rounded-xl bg-[#0b152b] px-3 py-2 text-center text-base font-bold text-white outline-none transition-all hover:bg-[#101d39] focus:bg-[#101d39]"
+              className="w-full rounded-xl bg-white px-3 py-2 text-center text-base font-bold text-[#0b152b] outline-none transition-all hover:bg-gray-50 focus:bg-gray-50 border border-gray-200"
             />
           </label>
         </div>

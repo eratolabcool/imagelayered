@@ -3,7 +3,8 @@
     "allow": [
       "Read(//Users/melis/Documents/GitHub/crooked/**)",
       "Bash(pnpm dev:*)",
-      "Bash(xargs ps:*)"
+      "Bash(xargs ps:*)",
+      "Read(//private/tmp/**)"
     ]
   }
 }

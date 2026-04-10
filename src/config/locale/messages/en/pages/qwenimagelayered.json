@@ -32,6 +32,21 @@
     "zoom": {
       "reset": "Reset View"
     },
+    "workspace": {
+      "preview": "Workspace preview",
+      "uploadHint": "Upload an image to begin building the layer stack."
+    },
+    "sidebar": {
+      "expand": "Expand sidebar",
+      "collapse": "Collapse sidebar",
+      "expandPrompt": "Expand to enter prompt",
+      "selectTool": "Select Tool",
+      "recolorTool": "Recolor Tool",
+      "replaceTool": "Replace Tool",
+      "removeTool": "Remove Tool",
+      "show": "Show",
+      "hide": "Hide"
+    },
     "toolbar": {
       "selection": "Selection",
       "panView": "Pan View",
@@ -67,7 +82,9 @@
       "cfgNormalization": "CFG Normalization",
       "languageToggle": "Language: {lang}",
       "switch": "Switch",
-      "apply": "Apply"
+      "apply": "Apply",
+      "sidebarSettings": "Settings",
+      "supportedFormats": "PNG, JPG, WEBP"
     },
     "layerPanel": {
       "title": "Layers",
@@ -82,7 +99,10 @@
       "duplicate": "Duplicate",
       "opacity": "Opacity",
       "moveUp": "Bring Forward",
-      "moveDown": "Send Backward"
+      "moveDown": "Send Backward",
+      "editTools": "Edit Tools",
+      "prompt": "Prompt",
+      "generate": "Go"
     },
     "exportModal": {
       "title": "Export Image",

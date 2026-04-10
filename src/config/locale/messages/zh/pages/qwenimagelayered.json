@@ -32,6 +32,21 @@
     "zoom": {
       "reset": "重置视图"
     },
+    "workspace": {
+      "preview": "工作区预览",
+      "uploadHint": "上传图片开始构建图层"
+    },
+    "sidebar": {
+      "expand": "展开侧边栏",
+      "collapse": "折叠侧边栏",
+      "expandPrompt": "展开输入提示词",
+      "selectTool": "选择工具",
+      "recolorTool": "重新上色工具",
+      "replaceTool": "AI 替换工具",
+      "removeTool": "移除物体工具",
+      "show": "显示",
+      "hide": "隐藏"
+    },
     "toolbar": {
       "selection": "选择",
       "panView": "平移视图",
@@ -67,7 +82,9 @@
       "cfgNormalization": "CFG 归一化",
       "languageToggle": "字幕语言：{lang}",
       "switch": "切换",
-      "apply": "应用"
+      "apply": "应用",
+      "sidebarSettings": "设置",
+      "supportedFormats": "PNG、JPG、WEBP"
     },
     "layerPanel": {
       "title": "图层",
@@ -82,7 +99,10 @@
       "duplicate": "复制",
       "opacity": "不透明度",
       "moveUp": "上移一层",
-      "moveDown": "下移一层"
+      "moveDown": "下移一层",
+      "editTools": "编辑工具",
+      "prompt": "提示词",
+      "generate": "生成"
     },
     "exportModal": {
       "title": "导出图片",

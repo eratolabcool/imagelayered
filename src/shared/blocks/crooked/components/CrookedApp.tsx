@@ -15,8 +15,6 @@ import {
 } from '@/shared/lib/guest-usage';
 import { useCrookedCopy } from '../i18n';
 import { toast } from 'sonner';
-import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from '@/core/i18n/navigation';
 import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
 
 interface CrookedAppProps {
@@ -26,14 +24,7 @@ interface CrookedAppProps {
 
 const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage = null }) => {
   const copy = useCrookedCopy();
-  const { brand, buttons, empty, editBar } = copy;
-  const locale = useLocale();
-  const router = useRouter();
-  const pathname = usePathname();
-  const toggleLocale = useCallback(() => {
-    const next = locale?.startsWith('zh') ? 'en' : 'zh';
-    router.replace(pathname, { locale: next });
-  }, [locale, router, pathname]);
+  const { brand, buttons, empty, editBar, workspace } = copy;
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolType>('select');
@@ -50,9 +41,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [editInstruction, setEditInstruction] = useState('');
 
-  // Sidebar collapse states
-  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+  // Sidebar collapse states - 默认折叠
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(true);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
 
   // Guest conversion modal state
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -81,29 +72,40 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   }, [activeTool, editBar]);
   const placeImageLayer = useCallback((base64: string, width: number, height: number, name: string = 'Main Canvas') => {
     const isMobile = window.innerWidth < 768;
-    // Calculate available space considering both sidebars
-    // Left sidebar: 320px (w-80) when expanded, 64px (w-16) when collapsed
-    // Right sidebar: 384px (w-96) when expanded, 64px (w-16) when collapsed
-    // Gap: 16px between each section
-    const sidebarWidth = 720; // Both sidebars expanded
-    const padding = 100; // Additional padding for header and margins
+
+    // 根据侧边栏实际状态计算宽度
+    const leftSidebarWidth = isLeftSidebarCollapsed ? 64 : 320;  // w-16 vs w-80
+    const rightSidebarWidth = isRightSidebarCollapsed ? 64 : 384; // w-16 vs w-96
+    const gaps = 16 * 2; // gap-4 on both sides
+    const sidebarWidth = leftSidebarWidth + rightSidebarWidth + gaps;
+
+    const headerHeight = 100;
+    const padding = 60; // 减小padding，给图片更多空间
     const availableWidth = isMobile
-      ? window.innerWidth - 20
+      ? window.innerWidth - 40
       : window.innerWidth - sidebarWidth - padding;
-    const availableHeight = window.innerHeight - 250; // Header + padding
+    const availableHeight = window.innerHeight - headerHeight - padding;
 
     const scaleX = availableWidth / width;
     const scaleY = availableHeight / height;
-    const initialScale = Math.min(scaleX, scaleY, 0.95);
+    const initialScale = Math.min(scaleX, scaleY, 0.75); // 更保守的缩放
 
-    console.log('[placeImageLayer] Calculated initial scale:', {
+    console.log('[placeImageLayer] Layout calculation:', {
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+      leftSidebarWidth,
+      rightSidebarWidth,
+      sidebarWidth,
       availableWidth,
       availableHeight,
       imageWidth: width,
       imageHeight: height,
       scaleX,
       scaleY,
-      initialScale
+      initialScale,
+      isMobile,
+      leftCollapsed: isLeftSidebarCollapsed,
+      rightCollapsed: isRightSidebarCollapsed
     });
 
     const newLayer: Layer = {
@@ -125,13 +127,58 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     setSelectedLayerId(newLayer.id);
     setZoom(initialScale);
     setDragOffset({ x: 0, y: 0 });
-  }, []);
+  }, []); // 移除依赖，避免侧边栏状态变化时重复创建
 
   useEffect(() => {
     if (initialImage && layers.length === 0) {
       placeImageLayer(initialImage.base64, initialImage.width, initialImage.height, initialImage.name || 'Main Canvas');
     }
   }, [initialImage, layers.length, placeImageLayer]);
+
+  // 监听侧边栏状态变化，重新计算图片缩放，确保始终在可视区域内
+  useEffect(() => {
+    if (layers.length > 0) {
+      const isMobile = window.innerWidth < 768;
+      const leftSidebarWidth = isLeftSidebarCollapsed ? 64 : 320;
+      const rightSidebarWidth = isRightSidebarCollapsed ? 64 : 384;
+      const gaps = 16 * 2;
+      const sidebarWidth = leftSidebarWidth + rightSidebarWidth + gaps;
+      const padding = 60;
+      const headerHeight = 100;
+      const availableWidth = isMobile
+        ? window.innerWidth - 40
+        : window.innerWidth - sidebarWidth - padding;
+      const availableHeight = window.innerHeight - headerHeight - padding;
+
+      const baseLayer = layers[0];
+      const scaleX = availableWidth / baseLayer.width;
+      const scaleY = availableHeight / baseLayer.height;
+      const newScale = Math.min(scaleX, scaleY, 0.75);
+
+      // 只在缩放比例差异较大时才调整，避免频繁重绘
+      if (Math.abs(newScale - zoom) > 0.05) {
+        setZoom(newScale);
+        setDragOffset({ x: 0, y: 0 });
+      }
+    }
+  }, [isLeftSidebarCollapsed, isRightSidebarCollapsed, layers, zoom]);
+
+  // 从 sessionStorage 读取上传的图片（用于从首页跳转）
+  useEffect(() => {
+    if (layers.length === 0) {
+      try {
+        const savedImage = sessionStorage.getItem('uploadedImage');
+        if (savedImage) {
+          const parsed = JSON.parse(savedImage);
+          placeImageLayer(parsed.base64, parsed.width, parsed.height, parsed.name || 'Uploaded Image');
+          // 清除 sessionStorage，避免重复加载
+          sessionStorage.removeItem('uploadedImage');
+        }
+      } catch (error) {
+        console.error('[CrookedApp] Failed to load image from sessionStorage:', error);
+      }
+    }
+  }, [layers.length, placeImageLayer]);
 
   // Handle Panning Logic
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -640,7 +687,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       // Helper function to load image and get its natural dimensions
       const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
           img.onload = () => {
@@ -1128,10 +1175,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     .sort((a, b) => a.zIndex - b.zIndex);
 
   return (
-    <div className={`relative overflow-hidden ${embedded ? 'rounded-[36px]' : 'min-h-screen'} bg-[#060e20] text-white [font-family:var(--font-body)]`}>
+    <div className={`relative w-full overflow-hidden ${embedded ? 'rounded-[36px]' : 'min-h-screen'} bg-[#060e20] text-white [font-family:var(--font-body)]`}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.26),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(255,92,138,0.18),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(68,217,255,0.12),transparent_28%),linear-gradient(180deg,#081121_0%,#060e20_46%,#050b17_100%)]" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:72px_72px]" />
-      <div className={`relative mx-auto flex ${embedded ? 'min-h-[920px]' : 'min-h-screen'} max-w-[1460px] flex-col gap-6 px-4 py-4 md:px-6 md:py-6`}>
+      <div className={`relative w-full flex ${embedded ? 'min-h-[920px]' : 'min-h-screen'} flex-col gap-6 px-4 py-4 md:px-6 md:py-6`}>
         <header className="rounded-[30px] bg-[rgba(20,31,56,0.72)] px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-[22px] md:px-6">
           <div className="flex flex-wrap items-center justify-end gap-2">
               {!embedded && (
@@ -1143,64 +1190,47 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   {brand.backHome}
                 </a>
               )}
-              <button
-                onClick={toggleLocale}
-                className="rounded-full bg-white/6 px-4 py-2 text-sm font-medium text-white/88 transition-colors hover:bg-white/10"
-              >
-                {locale?.startsWith('zh') ? 'EN' : '中文'}
-              </button>
           </div>
         </header>
 
         {/* Three-column layout: Left Sidebar | Canvas | Right Sidebar */}
-        <section className="grid flex-1 gap-4 grid-cols-[auto_1fr_auto]">
+        <section className="relative flex-1 min-h-0">
 
-          {/* Left Sidebar - Settings (Collapsible) */}
-          <CollapsibleLeftSidebar
-            isCollapsed={isLeftSidebarCollapsed}
-            onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
-            layers={layers}
-            layerCount={layerCount}
-            setLayerCount={setLayerCount}
-            advancedConfig={advancedConfig}
-            setAdvancedConfig={setAdvancedConfig}
-            fileInputRef={fileInputRef}
-            onUploadClick={() => fileInputRef.current?.click()}
-            onDecompose={smartDecompose}
-            onExport={() => setIsExportModalOpen(true)}
-            isProcessing={isProcessing}
-            canDecompose={layers.length <= 1}
-            canExport={layers.length > 0}
-          />
+          {/* Left Sidebar - Settings (Fixed Position) */}
+          <div className={`fixed left-4 top-1/2 -translate-y-1/2 z-20 transition-all duration-300 ${isLeftSidebarCollapsed ? 'w-16' : 'w-80'}`}>
+            <CollapsibleLeftSidebar
+              isCollapsed={isLeftSidebarCollapsed}
+              onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
+              layers={layers}
+              layerCount={layerCount}
+              setLayerCount={setLayerCount}
+              advancedConfig={advancedConfig}
+              setAdvancedConfig={setAdvancedConfig}
+              fileInputRef={fileInputRef}
+              onUploadClick={() => fileInputRef.current?.click()}
+              onDecompose={smartDecompose}
+              onExport={() => setIsExportModalOpen(true)}
+              isProcessing={isProcessing}
+              canDecompose={layers.length <= 1}
+              canExport={layers.length > 0}
+            />
+          </div>
 
-          {/* Main Canvas Area */}
-          <main className="rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px] md:p-6">
+          {/* Main Canvas Area - with margins for fixed sidebars */}
+          <main
+            className={`rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px] md:p-6 min-h-0 transition-all duration-300`}
+            style={{
+              marginLeft: `${isLeftSidebarCollapsed ? 80 : 336}px`,
+              marginRight: `${isRightSidebarCollapsed ? 80 : 400}px`
+            }}
+          >
             <div className="flex h-full flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.38em] text-cyan-100/55">Workspace preview</p>
+                  <p className="text-[10px] uppercase tracking-[0.38em] text-cyan-100/55">{workspace.preview}</p>
                   <p className="mt-2 text-sm text-slate-300">
-                    {selectedLayer ? `${selectedLayer.name} · ${Math.round(zoom * 100)}%` : 'Upload an image to begin building the layer stack.'}
+                    {selectedLayer ? selectedLayer.name : workspace.uploadHint}
                   </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setZoom((value) => Math.max(0.1, value - 0.1))} className="rounded-full bg-white/6 px-3 py-2 text-sm text-white">-</button>
-                  <button onClick={() => setZoom((value) => Math.min(4, value + 0.1))} className="rounded-full bg-white/6 px-3 py-2 text-sm text-white">+</button>
-                  <button
-                    onClick={() => {
-                      if (layers[0]) {
-                        const sidebarWidth = 720; // Both sidebars
-                        const padding = 100;
-                        const availableWidth = window.innerWidth - sidebarWidth - padding;
-                        const availableHeight = window.innerHeight - 250;
-                        setZoom(Math.min(availableWidth / layers[0].width, availableHeight / layers[0].height, 0.95));
-                        setDragOffset({ x: 0, y: 0 });
-                      }
-                    }}
-                    className="rounded-full bg-white/6 px-4 py-2 text-sm font-medium text-white"
-                  >
-                    {buttons.fitToScreen}
-                  </button>
                 </div>
               </div>
 
@@ -1211,12 +1241,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               >
                 <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:48px_48px]" />
                 <div
-                  className="relative flex items-center justify-center transition-transform duration-300 ease-out"
-                  style={{
-                    transform: `scale(${zoom}) translate(${dragOffset.x}px, ${dragOffset.y}px)`,
-                    transformOrigin: 'center center',
-                  }}
+                  className="relative flex items-center justify-center"
                 >
+                  <div
+                    className="transition-transform duration-300 ease-out"
+                    style={{
+                      transform: `scale(${zoom}) translate(${dragOffset.x}px, ${dragOffset.y}px)`,
+                      transformOrigin: 'center center',
+                    }}
+                  >
                   {layers.length > 0 ? (
                     <div className="relative overflow-hidden rounded-[26px] bg-white shadow-[0_36px_120px_rgba(0,0,0,0.45)]" style={{ width: layers[0].width, height: layers[0].height }}>
                       {displayedLayers.map((layer) => {
@@ -1265,13 +1298,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       </button>
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
             </div>
           </main>
 
-          {/* Right Sidebar - Layers Panel (Collapsible) */}
-          <CollapsibleRightSidebar
+          {/* Right Sidebar - Layers Panel (Fixed Position) */}
+          <div className={`fixed right-4 top-1/2 -translate-y-1/2 z-20 transition-all duration-300 ${isRightSidebarCollapsed ? 'w-16' : 'w-96'}`}>
+            <CollapsibleRightSidebar
             isCollapsed={isRightSidebarCollapsed}
             onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
             layers={layers}
@@ -1307,11 +1342,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             onGenerateEdit={() => handleEditAction(editInstruction || editPlaceholder)}
             isProcessing={isProcessing}
           />
+          </div>
 
         </section>
-      </div>
 
-      <input
+        <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileUpload}
@@ -1346,6 +1381,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             <p className="text-sm text-gray-400 mt-2 font-mono uppercase tracking-widest">{buttons.processingOverlaySubtitle}</p>
         </div>
       )}
+      </div>
     </div>
   );
 };
