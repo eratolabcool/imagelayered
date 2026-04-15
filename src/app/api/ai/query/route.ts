@@ -16,8 +16,8 @@ import { getAIService } from '@/shared/services/ai';
 
 // 🚀 强制动态渲染（防止缓存导致状态不一致）
 export const dynamic = 'force-dynamic';
-// 🚀 使用 Edge Runtime（更快的冷启动，更低的 CPU 消耗）
-export const runtime = 'edge';
+// 🚀 使用 Node.js Runtime（需要数据库连接）
+export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   try {

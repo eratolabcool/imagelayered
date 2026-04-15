@@ -112,7 +112,7 @@ async function diagnoseUserCredits(userId: string) {
   console.log('\n⚠️  异常记录检查:');
 
   // 检查是否有剩余积分小于0的记录
-  const negativeRecords = allCredits.filter(r => (r.remainingCredits || 0) < 0);
+  const negativeRecords = allCredits.filter((r: any) => (r.remainingCredits || 0) < 0);
   if (negativeRecords.length > 0) {
     console.log(`  ❌ 发现 ${negativeRecords.length} 条剩余积分小于0的记录:`);
     for (const record of negativeRecords) {
@@ -124,7 +124,7 @@ async function diagnoseUserCredits(userId: string) {
 
   // 检查是否有消费记录的剩余积分不为0
   const consumeWithRemaining = allCredits.filter(
-    r => r.transactionType === 'consume' && (r.remainingCredits || 0) !== 0
+    (r: any) => r.transactionType === 'consume' && (r.remainingCredits || 0) !== 0
   );
   if (consumeWithRemaining.length > 0) {
     console.log(`  ⚠️  发现 ${consumeWithRemaining.length} 条消费记录有非零剩余积分:`);
@@ -134,8 +134,8 @@ async function diagnoseUserCredits(userId: string) {
   }
 
   // 检查是否有重复的 transactionNo
-  const transactionNos = allCredits.map(r => r.transactionNo);
-  const duplicates = transactionNos.filter((item, index) => transactionNos.indexOf(item) !== index);
+  const transactionNos = allCredits.map((r: any) => r.transactionNo);
+  const duplicates = transactionNos.filter((item: any, index: number) => transactionNos.indexOf(item) !== index);
   if (duplicates.length > 0) {
     console.log(`  ❌ 发现重复的 transactionNo: ${[...new Set(duplicates)].join(', ')}`);
   } else {

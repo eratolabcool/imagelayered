@@ -28,8 +28,8 @@ async function fixUserCredits(userId: string, dryRun = true) {
     .orderBy(desc(credit.createdAt));
 
   // 2. 分离 grant 和 consume 记录
-  const grants = allCredits.filter(r => r.transactionType === 'grant');
-  const consumes = allCredits.filter(r => r.transactionType === 'consume');
+  const grants = allCredits.filter((r: any) => r.transactionType === 'grant');
+  const consumes = allCredits.filter((r: any) => r.transactionType === 'consume');
 
   console.log(`📊 找到 ${grants.length} 条授予记录, ${consumes.length} 条消费记录\n`);
 
