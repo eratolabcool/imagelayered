@@ -7,6 +7,18 @@ import { consumeCredits, getRemainingCredits } from '@/shared/models/credit';
 import { getUserInfo } from '@/shared/models/user';
 import { getAIService } from '@/shared/services/ai';
 
+/**
+ * [INPUT]: 依赖配置、AI类型、UUID生成、响应工具、AI任务模型、积分模型、用户模型、AI服务
+ * [OUTPUT]: 对外提供 POST 接口创建 AI 任务
+ * [POS]: API路由层的 AI 任务创建处理器，被前端调用生成内容
+ * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ */
+
+// 🚀 强制动态渲染（需要实时创建任务）
+export const dynamic = 'force-dynamic';
+// 🚀 使用 Node.js Runtime（需要数据库连接）
+export const runtime = 'nodejs';
+
 export async function POST(request: Request) {
   try {
     let { provider, mediaType, model, prompt, options, scene } =

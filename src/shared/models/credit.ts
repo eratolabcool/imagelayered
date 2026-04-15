@@ -50,14 +50,30 @@ export function calculateCreditExpirationTime({
     return null;
   }
 
-  const expiresAt = new Date();
+  // Defensive check: ensure current date is valid
+  if (isNaN(now.getTime())) {
+    console.error('[calculateCreditExpirationTime] Invalid current date, defaulting to never expire');
+    return null;
+  }
+
+  const expiresAt = new Date(now);
 
   if (currentPeriodEnd) {
     // For subscription: credits expire at the end of current period
+    if (isNaN(currentPeriodEnd.getTime())) {
+      console.error('[calculateCreditExpirationTime] Invalid currentPeriodEnd, defaulting to never expire');
+      return null;
+    }
     expiresAt.setTime(currentPeriodEnd.getTime());
   } else {
     // For one-time payment: use configured validity days
     expiresAt.setDate(now.getDate() + creditsValidDays);
+  }
+
+  // Validate result
+  if (isNaN(expiresAt.getTime())) {
+    console.error('[calculateCreditExpirationTime] Calculated expiration is invalid, defaulting to never expire');
+    return null;
   }
 
   return expiresAt;
@@ -299,6 +315,12 @@ export async function consumeCredits({
 export async function getRemainingCredits(userId: string): Promise<number> {
   const currentTime = new Date();
 
+  // Validate current time
+  if (isNaN(currentTime.getTime())) {
+    console.error('[getRemainingCredits] Invalid current time');
+    return 0;
+  }
+
   const [result] = await db()
     .select({
       total: sum(credit.remainingCredits),
@@ -312,7 +334,11 @@ export async function getRemainingCredits(userId: string): Promise<number> {
         gt(credit.remainingCredits, 0),
         or(
           isNull(credit.expiresAt), // Never expires
-          gt(credit.expiresAt, currentTime) // Not yet expired
+          and(
+            sql`${credit.expiresAt} IS NOT NULL`,
+            sql`CAST(${credit.expiresAt} AS INTEGER) != 0`, // Exclude NaN (stored as 0 in SQLite)
+            gt(credit.expiresAt, currentTime)
+          )
         )
       )
     );

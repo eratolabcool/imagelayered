@@ -556,19 +556,25 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
         console.log('[smartDecompose] Task is pending, starting polling...');
         console.log('[smartDecompose] Database task ID:', dbTaskId);
-        const POLL_INTERVAL = 2000; // 2 seconds
-        const MAX_POLL_TIME = 300000; // 5 minutes max (image decomposition can take a while)
+
+        // 🚀 智能轮询优化：图像分解使用指数退避策略
+        const INITIAL_INTERVAL = 2000; // 2秒
+        const MAX_INTERVAL = 10000; // 10秒
+        const BACKOFF_MULTIPLIER = 1.5;
+        const MAX_POLL_TIME = 300000; // 5 minutes max
         const startTime = Date.now();
         let pollCount = 0;
+        let currentInterval = INITIAL_INTERVAL;
+        let shouldContinue = true;
 
-        while (Date.now() - startTime < MAX_POLL_TIME) {
+        while (shouldContinue && Date.now() - startTime < MAX_POLL_TIME) {
           pollCount++;
           const elapsed = Date.now() - startTime;
 
-          // Wait before polling
-          await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+          // Wait before polling (使用动态间隔)
+          await new Promise(resolve => setTimeout(resolve, currentInterval));
 
-          console.log(`[smartDecompose] Poll #${pollCount} (${Math.floor(elapsed / 1000)}s elapsed)`);
+          console.log(`[smartDecompose] Poll #${pollCount} (${Math.floor(elapsed / 1000)}s elapsed, interval: ${currentInterval}ms)`);
 
           const queryRes = await fetch('/api/ai/query', {
             method: 'POST',
@@ -670,6 +676,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           // Log status every 5 polls to avoid too much output
           if (pollCount % 5 === 0) {
             console.log(`[smartDecompose] Still polling... (${Math.floor(elapsed / 1000)}s elapsed, status: ${task.status})`);
+          }
+
+          // 🎯 智能退避：如果任务仍在处理中，增加间隔
+          if (task.status === 'PENDING' || task.status === 'PROCESSING' || task.status === 'pending') {
+            const nextInterval = Math.min(
+              currentInterval * BACKOFF_MULTIPLIER,
+              MAX_INTERVAL
+            );
+            currentInterval = nextInterval;
           }
         }
 

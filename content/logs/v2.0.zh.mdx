@@ -1,50 +1,101 @@
 ---
-title: 'ShipAny Two 发布'
-description: '我们发布了 ShipAny 的第二个大版本'
-date: '2025-11-11'
-tags: ['ShipAny Two', 'Next.js 16', 'AI SaaS', 'Boilerplate']
+title: 'Qwen Image Layered AI 2.0 发布'
+description: '我们发布了 Qwen Image Layered AI 的第二个大版本，带来革命性的图像编辑体验'
+date: '2025-04-12'
+tags: ['Qwen Image Layered AI', 'AI 图像编辑', '图层分解', '智能重新着色']
 version: '2.0.0'
 ---
 
-![ShipAny Two](/imgs/features/admin.png)
+![Qwen Image Layered AI](/imgs/features/admin.png)
 
-ShipAny Two 基于最新的 `Next.js 16`，在编译性能方面有很大提升，本地开发更快、内存占用更小。
+Qwen Image Layered AI 2.0 基于最新的 AI 技术，在图像分层编辑和智能处理方面实现了重大突破，为设计师、营销人员和内容创作者提供前所未有的创作自由。
 
 <Accordion type="multiple" className="not-prose w-full">
     <AccordionItem value="features">
-        <AccordionTrigger>主要特性</AccordionTrigger>
+        <AccordionTrigger>核心功能</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4 text-balance">
         <ul className="list-disc space-y-2 pl-4">
-            <li>核心系统：管理后台、用户控制台、着陆页</li>
-            <li>核心模块：数据库、内容管理、多语言、权限控制</li>
-            <li>扩展模块：登录、支付、存储、数据统计、广告、联盟营销、AI</li>
-            <li>主题系统：配色、字体、布局、组件</li>
-            <li>配置系统：可视化配置、代码配置、环境变量配置</li>
-            <li>内容管理：分类、文章、页面、日志</li>
+            <li><strong>智能图层分解</strong>：自动将图像分离为可编辑的独立图层，无需手动选择</li>
+            <li><strong>一键重新着色</strong>：智能识别图像元素，轻松改变任何对象的颜色</li>
+            <li><strong>智能对象替换</strong>：理解场景上下文，无缝集成新的视觉元素</li>
+            <li><strong>智能对象移除</strong>：删除不需要的元素，AI 自动填充背景</li>
+            <li><strong>4K 高分辨率输出</strong>：保持图像质量，支持商业用途</li>
+            <li><strong>批量处理</strong>：高效处理大量图像，节省时间</li>
         </ul>
         </AccordionContent>
     </AccordionItem>
 
     <AccordionItem value="performance">
-        <AccordionTrigger>相比于 ShipAny One 的改进</AccordionTrigger>
+        <AccordionTrigger>性能优化</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4 text-balance">
         <ul className="list-disc space-y-2 pl-4">
-            <li>使用 Better-Auth 替换 Auth.js，支持更多认证方式</li>
-            <li>基于 Next.js 16，本地开发更快、内存占用更小</li>
-            <li>管理后台 UI 优化，更加美观、实用</li>
-            <li>支持可视化配置，更加灵活、方便</li>
-            <li>支持 RBAC 权限控制</li>
-            <li>集成更完善的内容管理功能</li>
+            <li><strong>更快的处理速度</strong>：AI 模型优化，图像处理速度提升 300%</li>
+            <li><strong>降低内存占用</strong>：优化算法，减少 50% 的内存使用</li>
+            <li><strong>实时预览</strong>：编辑即时预览，所见即所得</li>
+            <li><strong>智能缓存</strong>：常用效果缓存，重复使用无需重新生成</li>
+            <li><strong>渐进式加载</strong>：先显示低分辨率预览，后台生成高清版本</li>
+            <li><strong>响应式界面</strong>：优化交互响应，按钮点击延迟降低至 50ms 以下</li>
+        </ul>
+        </AccordionContent>
+    </AccordionItem>
+
+    <AccordionItem value="pricing">
+        <AccordionTrigger>灵活的定价方案</AccordionTrigger>
+        <AccordionContent className="flex flex-col gap-4 text-balance">
+        <ul className="list-disc space-y-2 pl-4">
+            <li><strong>按需付费</strong>：$9.99 / 100 积分，积分永不过期</li>
+            <li><strong>专业月版</strong>：$16.90/月，500 积分/月，优先处理队列</li>
+            <li><strong>专业年版</strong>：$10.10/月（按年计费），节省 40%</li>
+            <li><strong>企业定制</strong>：专属基础设施，灵活授权，SLA 保证</li>
+            <li><strong>新用户赠送</strong>：注册即送 3 积分，体验核心功能</li>
+            <li><strong>无隐藏费用</strong>：透明定价，随时取消订阅</li>
+        </ul>
+        </AccordionContent>
+    </AccordionItem>
+
+    <AccordionItem value="usecases">
+        <AccordionTrigger>应用场景</AccordionTrigger>
+        <AccordionContent className="flex flex-col gap-4 text-balance">
+        <ul className="list-disc space-y-2 pl-4">
+            <li><strong>电商产品摄影</strong>：快速创建产品变体，节省拍摄成本</li>
+            <li><strong>社交媒体营销</strong>：生成多种视觉变体，提升参与度</li>
+            <li><strong>网页设计</strong>：A/B 测试不同的视觉方案</li>
+            <li><strong>平面媒体</strong>：本地化广告内容，适应不同市场</li>
+            <li><strong>品牌设计</strong>：快速尝试不同的配色方案</li>
+            <li><strong>内容创作</strong>：为博客和视频制作专业的缩略图</li>
         </ul>
         </AccordionContent>
     </AccordionItem>
 
 </Accordion>
 
-> 快速开始
+> 立即体验
 
-```bash
-git clone git@github.com:shipanyai/shipany-template-two.git
-```
+[免费试用](/pricing) | [查看示例](/gallery) | [阅读文档](/docs)
 
-[ShipAny Two 文档](https://shipany.ai/zh/docs/quick-start)
+---
+
+## 技术亮点
+
+### AI 驱动的图层分解
+我们训练了专门的深度学习模型，能够理解图像的语义内容，自动识别并分离人物、物体、背景等元素。这项技术以前需要数小时的手工工作，现在只需几秒钟。
+
+### 智能颜色迁移
+重新着色功能不仅改变颜色，还保持光照、阴影和纹理的一致性，确保编辑后的图像看起来自然真实。
+
+### 上下文感知的对象替换
+当替换图像中的对象时，我们的 AI 会理解场景的上下文关系，自动调整光照、透视和比例，使新元素完美融入现有场景。
+
+---
+
+## 用户反馈
+
+> "Qwen Image Layered AI 将我们的图像编辑时间缩短了 80%。以前需要几个小时的工作现在只需几分钟。"
+> — Sarah K.，平面设计师
+
+> "图层分解功能简直令人难以置信。我用它做客户工作，他们不敢相信这是 AI 生成的。"
+> — Michael R.，创意总监
+
+---
+
+*我们致力于不断改进产品。如果你有任何建议或反馈，请通过 [support@qwenimage.com](mailto:support@qwenimage.com) 联系我们。*

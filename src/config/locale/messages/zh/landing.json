@@ -30,13 +30,13 @@
           "icon": "RiRobot2Line",
           "children": [
             {
-              "title": "Qwen Image Layered Vision Editor",
-              "description": "AI-powered layer decomposition & image editing powered by Qwen",
+              "title": "Qwen 图像分层编辑器",
+              "description": "基于 Qwen AI 的智能图层分解和图像编辑",
               "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
             }
-            
-            
+
+
           ]
         },
         {
@@ -88,7 +88,7 @@
     "show_theme": true,
     "show_locale": true,
     "topbanner": {
-      "text": "Professional AI-powered image editing with Qwen Vision Layered Model. Decompose, recolor, replace, and remove objects with precision.</a>"
+      "text": "使用 <span class='text-blue-300 font-bold'>Qwen 视觉分层模型</span> 进行专业 AI 图像编辑。精准分解、重新着色、替换和移除对象。"
     }
   },
   "footer": {
@@ -110,17 +110,12 @@
           "title": "关于我们",
           "children": [
             {
-              "title": "功能亮点",
+              "title": "功能",
               "url": "/#features",
               "target": "_self"
             },
             {
-              "title": "案例展示",
-              "url": "/showcases",
-              "target": "_self"
-            },
-            {
-              "title": "价格",
+              "title": "定价",
               "url": "/pricing",
               "target": "_self"
             }
@@ -175,8 +170,14 @@
         {
           "title": "邮箱",
           "icon": "Mail",
-          "url": "mailto:support@your-domain.com",
+          "url": "mailto:support@image-layered.app",
           "target": "_self"
+        },
+        {
+          "title": "GitHub",
+          "icon": "Github",
+          "url": "https://github.com/QwenLM/Qwen-Image-Layered",
+          "target": "_blank"
         }
       ]
     },

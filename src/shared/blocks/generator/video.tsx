@@ -458,20 +458,56 @@ export function VideoGenerator({
 
     tick();
 
-    const interval = setInterval(async () => {
+    // 🚀 智能轮询优化：视频生成使用更长的间隔
+    const INITIAL_INTERVAL = 5000; // 5秒（视频生成慢，初始可以慢一点）
+    const MAX_INTERVAL = 30000; // 30秒
+    const BACKOFF_MULTIPLIER = 1.5;
+    let currentInterval = INITIAL_INTERVAL;
+    let pollCount = 0;
+    const MAX_POLL_COUNT = 40; // 视频生成最多轮询40次（20分钟）
+
+    const pollWithBackoff = async (): Promise<void> => {
       if (cancelled || !taskId) {
-        clearInterval(interval);
         return;
       }
-      const completed = await pollTaskStatus(taskId);
-      if (completed) {
-        clearInterval(interval);
+
+      pollCount++;
+      if (pollCount > MAX_POLL_COUNT) {
+        console.warn('[VideoGenerator] Max poll count reached, stopping');
+        setTaskStatus(AITaskStatus.FAILED);
+        return;
       }
-    }, POLL_INTERVAL);
+
+      try {
+        const completed = await pollTaskStatus(taskId);
+
+        if (completed) {
+          cancelled = true;
+          return;
+        }
+
+        // 🎯 指数退避
+        const nextInterval = Math.min(
+          currentInterval * BACKOFF_MULTIPLIER,
+          MAX_INTERVAL
+        );
+        currentInterval = nextInterval;
+
+        if (!cancelled) {
+          setTimeout(pollWithBackoff, nextInterval);
+        }
+      } catch (error) {
+        console.error('[VideoGenerator] Poll error:', error);
+        if (!cancelled) {
+          setTimeout(pollWithBackoff, MAX_INTERVAL);
+        }
+      }
+    };
+
+    pollWithBackoff();
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
     };
   }, [taskId, isGenerating, pollTaskStatus]);
 

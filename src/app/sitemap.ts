@@ -31,12 +31,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
-      url: '/showcases',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    },
-    {
       url: '/docs',
       lastModified: currentDate,
       changeFrequency: 'daily' as const,
@@ -74,22 +68,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.95,
     },
     {
-      url: '/ai-image-generator',
+      url: '/activity',
       lastModified: currentDate,
       changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: '/ai-music-generator',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: '/ai-video-generator',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
+      priority: 0.7,
     },
   ];
 

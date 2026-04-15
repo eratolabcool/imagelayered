@@ -7,6 +7,18 @@ import {
 import { getUserInfo } from '@/shared/models/user';
 import { getAIService } from '@/shared/services/ai';
 
+/**
+ * [INPUT]: 依赖 respData/respErr 工具、AI任务模型、用户模型、AI服务
+ * [OUTPUT]: 对外提供 POST 接口查询 AI 任务状态
+ * [POS]: API路由层的 AI 任务查询处理器，被客户端轮询调用
+ * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+ */
+
+// 🚀 强制动态渲染（防止缓存导致状态不一致）
+export const dynamic = 'force-dynamic';
+// 🚀 使用 Edge Runtime（更快的冷启动，更低的 CPU 消耗）
+export const runtime = 'edge';
+
 export async function POST(req: Request) {
   try {
     const { taskId } = await req.json();

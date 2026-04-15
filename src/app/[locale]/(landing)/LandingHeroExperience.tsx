@@ -408,28 +408,28 @@ export default function LandingHeroExperience() {
               {
                 "@type": "WebSite",
                 "name": "AI Image Layering Tool",
-                "url": "https://shipany.com",
+                "url": "https://image-layered.app",
                 "description": "Professional AI-powered image layering tool for e-commerce, graphic design, and digital marketing. Automatically separate image elements into editable layers.",
                 "potentialAction": {
                   "@type": "SearchAction",
-                  "target": "https://shipany.com/search?q={search_term_string}",
+                  "target": "https://image-layered.app/search?q={search_term_string}",
                   "query-input": "required name=search_term_string"
                 }
               },
               {
                 "@type": "Organization",
-                "name": "ShipAny",
-                "url": "https://shipany.com",
-                "logo": "https://shipany.com/logo.png",
+                "name": "Image Layered",
+                "url": "https://image-layered.app",
+                "logo": "https://image-layered.app/logo.png",
                 "description": "Leading provider of AI-powered image processing and layering tools for professionals and businesses.",
                 "sameAs": [
-                  "https://twitter.com/shipany",
-                  "https://github.com/shipany"
+                  "https://twitter.com/image-layered",
+                  "https://github.com/image-layered"
                 ],
                 "contactPoint": {
                   "@type": "ContactPoint",
                   "contactType": "customer service",
-                  "email": "support@shipany.com"
+                  "email": "[EMAIL_ADDRESS]"
                 }
               }
             ]

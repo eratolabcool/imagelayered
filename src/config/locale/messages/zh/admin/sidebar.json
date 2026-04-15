@@ -1,10 +1,10 @@
 {
   "header": {
     "brand": {
-      "title": "ShipAny Two",
+      "title": "Qwen Image Layered 管理后台",
       "logo": {
         "src": "/logo.png",
-        "alt": "ShipAny Two"
+        "alt": "Qwen Image Layered 管理后台"
       },
       "url": "/admin"
     },

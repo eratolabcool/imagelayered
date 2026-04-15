@@ -441,34 +441,65 @@ export function ImageGenerator({
       return;
     }
 
+    // 🚀 智能轮询优化：使用指数退避策略
     let cancelled = false;
+    let pollCount = 0;
+    const MAX_POLL_COUNT = 100; // 防止无限轮询
+    const INITIAL_INTERVAL = 2000; // 2秒
+    const MAX_INTERVAL = 15000; // 15秒
+    const BACKOFF_MULTIPLIER = 1.3;
+    let currentInterval = INITIAL_INTERVAL;
 
-    const tick = async () => {
-      if (!taskId) {
+    const pollWithBackoff = async (): Promise<void> => {
+      if (cancelled || !taskId) {
         return;
       }
-      const completed = await pollTaskStatus(taskId);
-      if (completed) {
-        cancelled = true;
+
+      pollCount++;
+      if (pollCount > MAX_POLL_COUNT) {
+        console.warn('[ImageGenerator] Max poll count reached, stopping');
+        setTaskStatus(AITaskStatus.FAILED);
+        return;
+      }
+
+      try {
+        const completed = await pollTaskStatus(taskId);
+
+        if (completed) {
+          cancelled = true;
+          return;
+        }
+
+        // 🎯 指数退避：逐渐增加轮询间隔
+        const nextInterval = Math.min(
+          currentInterval * BACKOFF_MULTIPLIER,
+          MAX_INTERVAL
+        );
+        currentInterval = nextInterval;
+
+        console.log(
+          `[ImageGenerator] Poll #${pollCount}, next interval: ${nextInterval}ms`
+        );
+
+        // 安排下一次轮询
+        if (!cancelled) {
+          setTimeout(pollWithBackoff, nextInterval);
+        }
+      } catch (error) {
+        console.error('[ImageGenerator] Poll error:', error);
+
+        // 出错时使用最大间隔重试
+        if (!cancelled) {
+          setTimeout(pollWithBackoff, MAX_INTERVAL);
+        }
       }
     };
 
-    tick();
-
-    const interval = setInterval(async () => {
-      if (cancelled || !taskId) {
-        clearInterval(interval);
-        return;
-      }
-      const completed = await pollTaskStatus(taskId);
-      if (completed) {
-        clearInterval(interval);
-      }
-    }, POLL_INTERVAL);
+    // 立即执行第一次轮询
+    pollWithBackoff();
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
     };
   }, [taskId, isGenerating, pollTaskStatus]);
 

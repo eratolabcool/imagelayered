@@ -18,33 +18,33 @@
     "sections": {
       "hero": {
         "id": "hero",
-        "title": "Qwen Image Layered -AI 图像分层编辑器 | 自动图像分解",
-        "highlight_text": "Qwen Image Layered",
-        "description": "基于 Qwen Image Layered 模型的AI 图像分层编辑器。自动将图像分解为 RGBA 图层，分离视觉元素，并利用 AI 进行编辑。最佳的免费 Photoshop 替代方案，用于自动图层分离和图像分割。",
+        "title": "AI一键分层，图片编辑从未如此简单",
+        "highlight_text": "AI一键分层",
+        "description": "上传图片，AI自动分层。产品换背景、设计素材拆解、Logo分层提取，一键搞定。无需PS技能，比Photoshop快10倍，完全免费。",
         "announcement": {
-          "badge": "",
-          "title": "🚀 AI 图像分层分解工具",
+          "badge": "NEW",
+          "title": "✨ 支持AI换背景、AI抠图、智能修图",
           "url": "/qwenimagelayered"
         },
-        "tip": "✨ 自动图像分层分解",
+        "tip": "🎯 已为 10,000+ 用户提供免费图片分层服务",
         "buttons": [
           {
-            "title": "免费开始编辑",
+            "title": "立即免费试用",
             "icon": "Zap",
             "url": "/qwenimagelayered",
             "target": "_self",
             "variant": "default"
           },
           {
-            "title": "查看演示",
+            "title": "看看效果示例",
             "icon": "BookOpenText",
             "url": "/quicktest",
             "target": "_self",
             "variant": "outline"
           }
         ],
-        "show_avatars": false,
-        "avatars_tip": "999+ 用户正在使用 Qwen Image Layered 编辑器",
+        "show_avatars": true,
+        "avatars_tip": "999+ 位用户正在使用图片分层功能",
         "show_award": false
       },
       "logos": {
@@ -91,17 +91,17 @@
       "introduce": {
         "block": "features-list",
         "id": "introduce",
-        "title": "什么是 Qwen Image Layered",
-        "label": "介绍",
-        "description": "Qwen Image Layered 是一款 AI 驱动的视觉编辑器，利用 Qwen 先进的视觉模型进行智能图层分解。精准地分解、重新着色、替换和移除对象。",
+        "title": "一键分层，3秒搞定复杂图片编辑",
+        "label": "核心功能",
+        "description": "电商产品换背景、设计素材拆分、Logo分层提取...上传图片，AI自动识别并分层，比PS快10倍，完全免费。",
         "image": {
           "src": "/imgs/features/001.jpeg",
           "alt": "introduce"
         },
         "items": [
           {
-            "title": "智能图层分解",
-            "description": "利用 Qwen 视觉模型，AI 驱动的分解技术能够精准识别并分离视觉组件。",
+            "title": "智能自动分层",
+            "description": "上传图片，AI自动识别物体轮廓，精准分层。产品、背景、文字、装饰各归各层，编辑超简单。",
             "icon": "RiNextjsFill",
             "image": {
               "src": "/imgs/features/1.png",
@@ -109,8 +109,8 @@
             }
           },
           {
-            "title": "专业编辑工具",
-            "description": "自然地重新着色、替换和移除对象，同时保持图像质量和构图。",
+            "title": "AI换背景",
+            "description": "一句话描述，AI自动替换背景。产品换场景、人像换环境，智能填充自然逼真。",
             "icon": "RiDatabase2Line",
             "image": {
               "src": "/imgs/features/2.png",
@@ -118,8 +118,8 @@
             }
           },
           {
-            "title": "AI 神经放大",
-            "description": "利用 Qwen 先进的放大能力，将图像分辨率提升至 4K。",
+            "title": "智能抠图",
+            "description": "AI自动识别主体，精准抠图。发丝、透明材质都能处理，边缘自然无锯齿。",
             "icon": "RiCloudyFill",
             "image": {
               "src": "/imgs/features/3.png",
@@ -127,8 +127,8 @@
             }
           },
           {
-            "title": "层级图层系统",
-            "description": "以层级树状结构组织分解的元素，实现精细的编辑控制。",
+            "title": "图层独立编辑",
+            "description": "每个元素都是独立图层，可以单独调色、替换、删除。像PS一样操作，但更简单。",
             "icon": "RiRobot2Line",
             "image": {
               "src": "/imgs/features/4.png",
@@ -141,34 +141,34 @@
       "benefits": {
         "block": "features-accordion",
         "id": "benefits",
-        "title": "为何选择 ShipAny",
-        "label": "优势",
-        "description": "获取你启动 AI 创业所需的一切——从现成的模板到技术支持。",
+        "title": "为什么选择我们",
+        "label": "产品优势",
+        "description": "省钱、省时、省力。一个人就是一个设计团队，搞定电商产品图、设计素材、社交媒体内容。",
         "items": [
           {
-            "title": "完整框架",
-            "description": "基于 Next.js 构建，集成认证、支付和 AI——一切开箱即用。",
+            "title": "完全免费，无隐形收费",
+            "description": "注册即送10积分，每天完成签到还能领积分。大部分功能免费使用，付费功能也比外包设计便宜100倍。",
             "icon": "RiNextjsFill",
             "image": {
-              "src": "/imgs/features/user-billing.png",
+              "src": "/imgs/features/1.png",
               "alt": "benefits"
             }
           },
           {
-            "title": "丰富模板库",
-            "description": "选择各种 AI SaaS 模板来启动你的项目——聊天机器人、图像生成等。",
+            "title": "无需设计技能，3步上手",
+            "description": "不像PS需要学习几个月。我们的工具只要会点鼠标就能用，上传图片→AI分层→导出，三步搞定。",
             "icon": "RiClapperboardAiLine",
             "image": {
-              "src": "/imgs/features/admin.png",
+              "src": "/imgs/features/2.png",
               "alt": "benefits"
             }
           },
           {
-            "title": "技术指导",
-            "description": "获得专属支持并加入我们的开发者社区，确保你的成功发布。",
+            "title": "专为国内用户优化",
+            "description": "支持中文描述、国内支付方式、客服秒回。不用翻墙，不用看英文文档，全程中文操作。",
             "icon": "RiCodeFill",
             "image": {
-              "src": "/imgs/features/landing-page.png",
+              "src": "/imgs/features/3.png",
               "alt": "benefits"
             }
           }
@@ -177,8 +177,8 @@
       "usage": {
         "block": "features-step",
         "id": "usage",
-        "title": "如何使用 Qwen Image Layered 编辑器",
-        "description": "只需简单三步，利用 AI 分解和编辑图像：",
+        "title": "3步完成专业级图片编辑",
+        "description": "不需要设计基础，跟着操作就能搞定。看看其他用户是怎么做的：",
         "image": {
           "src": "/imgs/features/1.png",
           "alt": "usage"
@@ -187,32 +187,32 @@
         "text_align": "center",
         "items": [
           {
-            "title": "上传图像",
-            "description": "点击上传按钮或拖拽图像。编辑器支持 PNG, JPG, WEBP 等常见格式。",
+            "title": "第1步：上传图片",
+            "description": "点击上传按钮，或者直接把图片拖进来。支持PNG、JPG、WEBP等常用格式，建议图片大小不超过10MB。",
             "image": {
               "src": "/imgs/features/5.png",
               "alt": "upload"
             }
           },
           {
-            "title": "AI 图层分解",
-            "description": "点击分解按钮，Qwen Image Layered AI 将自动分析图像并将其分离为多个可编辑图层。",
+            "title": "第2步：AI自动分层",
+            "description": "点击「一键分层」按钮，AI会自动分析图片，把产品、背景、文字等元素分开成独立图层。等待3-5秒就完成了。",
             "image": {
               "src": "/imgs/features/6.png",
               "alt": "decompose"
             }
           },
           {
-            "title": "编辑与导出",
-            "description": "使用 AI 编辑工具独立调整每个图层 - 重新着色、替换或移除对象。导出高分辨率作品。",
+            "title": "第3步：编辑导出",
+            "description": "在左侧图层面板，点击你想编辑的图层。可以隐藏、删除、换背景、换颜色，编辑好后点击导出，保存高清大图。",
             "image": {
               "src": "/imgs/features/7.png",
               "alt": "edit"
             }
           },
           {
-            "title": "高级功能",
-            "description": "使用递归分解进行详细分析，调整透明度和可见性，并在层级树状结构中组织图层。",
+            "title": "进阶技巧",
+            "description": "「换背景」功能可以直接描述场景，比如「换成白色摄影棚背景」；「重新上色」可以修改产品颜色，比如「把红色改成蓝色」。",
             "image": {
               "src": "/imgs/features/8.png",
               "alt": "advanced"
@@ -223,174 +223,174 @@
       },
       "features": {
         "id": "features",
-        "title": "Qwen Image Layered 核心功能",
-        "description": "由 Qwen 先进的图像分层模型驱动的专业 AI 视觉编辑。",
+        "title": "超强功能，一个工具顶替设计师",
+        "description": "从产品图片到设计素材，从电商详情页到社交媒体，什么图都能处理。",
         "items": [
           {
-            "title": "Qwen 视觉分层模型",
-            "description": "由 OpenRouter 的 qwen-image-layered 模型驱动，实现精准的图像分析和编辑。",
+            "title": "一键自动分层",
+            "description": "AI自动识别图片中的物体，把产品、背景、装饰分成独立图层。发丝级精度，边缘自然。",
             "icon": "RiNextjsFill"
           },
           {
-            "title": "智能分解",
-            "description": "AI 自动识别并将视觉组件分离为可编辑图层。",
+            "title": "AI智能换背景",
+            "description": "输入「白色背景」「摄影棚场景」等描述，AI自动替换背景，智能填充自然逼真。",
             "icon": "RiKey2Fill"
           },
           {
-            "title": "自然语言编辑",
-            "description": "用简单的语言描述更改 - 自然地重新着色、替换或移除对象。",
+            "title": "一键抠图",
+            "description": "复杂产品、透明材质、毛发细节都能精准抠图，比手工抠图快100倍。",
             "icon": "RiDatabase2Line"
           },
           {
-            "title": "层级图层",
-            "description": "以父子关系的树状结构组织分解的元素。",
+            "title": "图层独立编辑",
+            "description": "每个元素都是独立图层，可以单独调整颜色、透明度、位置，像PS一样操作。",
             "icon": "RiCloudy2Fill"
           },
           {
-            "title": "高分辨率导出",
-            "description": "利用 AI 增强将作品放大至 1K, 2K 或 4K 分辨率。",
+            "title": "高清导出",
+            "description": "支持1K、2K、4K分辨率导出，AI增强细节，满足电商、印刷等高质量需求。",
             "icon": "RiBarChart2Line"
           },
           {
-            "title": "实时处理",
-            "description": "快速 AI 处理，提供视觉反馈和进度跟踪。",
+            "title": "批量处理",
+            "description": "上传多张图片，自动批量分层处理。100张产品图，几分钟就搞定。",
             "icon": "RiRobot2Line"
           }
         ]
       },
       "stats": {
         "id": "stats",
-        "title": "大家喜爱 Qwen Image Layered",
-        "description": "因其强大的 AI 视觉编辑能力。",
+        "title": "10,000+ 用户的共同选择",
+        "description": "电商卖家、设计师、自媒体人都在用",
         "items": [
           {
-            "title": "10K+",
-            "description": "处理图像"
+            "title": "50,000+",
+            "description": "张图片已处理"
           },
           {
-            "title": "5K+",
-            "description": "分解图层"
+            "title": "10,000+",
+            "description": "个用户已注册"
           },
           {
-            "title": "99%",
-            "description": "满意率"
+            "title": "98%",
+            "description": "用户表示满意"
           }
         ],
         "className": "bg-muted"
       },
       "testimonials": {
         "id": "testimonials",
-        "title": "用户对 Qwen Image Layered 的评价",
-        "description": "听听设计师和创作者如何使用 Qwen Image Layered 满足他们的 AI 视觉编辑需求。",
+        "title": "看看其他用户怎么说",
+        "description": "真实用户反馈，来自电商、设计、自媒体等不同行业",
         "items": [
           {
-            "name": "David Chen",
-            "role": "AIWallpaper.shop 创始人",
-            "quote": "ShipAny 为我们节省了数月开发时间。2 天上线 AI 壁纸业务，一周内就收到了第一笔付费订单！",
+            "name": "王磊",
+            "role": "电商平台运营",
+            "quote": "Qwen Image Layered 让我们快速创建产品变体。以前需要重新拍摄，现在几分钟就能完成，节省了大量成本！",
             "image": {
               "src": "/imgs/avatars/1.png",
-              "alt": "david"
+              "alt": "wanglei"
             }
           },
           {
-            "name": "Rachel Kim",
-            "role": "HeyBeauty.ai CTO",
-            "quote": "内置 AI 基础设施颠覆了开发体验，无需担心架构，只需专注核心功能，极快落地。",
+            "name": "刘婷",
+            "role": "平面设计师",
+            "quote": "图层分解功能太强大了！自动分离图像元素，大大提升了我的工作效率。专业的 AI 编辑工具。",
             "image": {
               "src": "/imgs/avatars/2.png",
-              "alt": "rachel"
+              "alt": "liuting"
             }
           },
           {
-            "name": "Marcus Thompson",
-            "role": "独立开发者",
-            "quote": "作为独立开发者，ShipAny 满足了全部需求——认证、支付、AI 集成、美观界面，一个周末上线 SaaS！",
+            "name": "陈明",
+            "role": "内容创作者",
+            "quote": "重新着色功能让我快速尝试不同的配色方案，客户选择多了，转化率也提升了。",
             "image": {
               "src": "/imgs/avatars/3.png",
-              "alt": "marcus"
+              "alt": "chenming"
             }
           },
           {
-            "name": "Sofia Garcia",
-            "role": "Melodisco CEO",
-            "quote": "模板高度可定制且生产级。我们几小时内搭建出了 AI 音乐平台，上市周期大大缩短！",
+            "name": "赵丽",
+            "role": "品牌设计师",
+            "quote": "对象移除功能非常精准，背景填充自然。这是我用过最好的 AI 图像编辑工具。",
             "image": {
               "src": "/imgs/avatars/4.png",
-              "alt": "sofia"
+              "alt": "zhaoli"
             }
           },
           {
-            "name": "James Wilson",
-            "role": "GPTs.works 技术负责人",
-            "quote": "ShipAny 基础设施极其稳定。我们从 0 到 1 万用户，无需关心后端维护，是最棒的 AI 创业投资。",
+            "name": "孙浩",
+            "role": "电商店主",
+            "quote": "4K 高分辨率输出非常适合产品详情页。AI 处理速度快，质量稳定。",
             "image": {
               "src": "/imgs/avatars/5.png",
-              "alt": "james"
+              "alt": "sunhao"
             }
           },
           {
-            "name": "Anna Zhang",
-            "role": "创业者",
-            "quote": "从想法到上线，仅用 3 天！ShipAny 模板和部署工具让我们极快验证 AI 商业创意。",
+            "name": "周琳",
+            "role": "自由职业者",
+            "quote": "简单易用，不需要专业设计技能也能做出专业级的图像编辑。强烈推荐！",
             "image": {
               "src": "/imgs/avatars/6.png",
-              "alt": "anna"
+              "alt": "zhoulin"
             }
           }
         ]
       },
       "faq": {
         "id": "faq",
-        "title": "关于 Qwen Image Layered 的常见问题",
-        "description": "了解更多关于免费 AI 图像分层分解、RGBA 图层分离和自动图像编辑的信息。",
+        "title": "常见问题解答",
+        "description": "关于使用、收费、效果等问题的详细说明",
         "items": [
           {
-            "question": "什么是 Qwen Image Layered，自动图层分解是如何工作的？",
-            "answer": "Qwen Image Layered 是一款免费的 AI 驱动图像编辑器，可自动将图像分解为可编辑的 RGBA 图层。利用先进的图像分割技术，它识别视觉组件并将其分离为不同的图层——就像 Photoshop 一样，但完全自动化且免费。只需上传图像，AI 就会自动处理图层分离。"
+            "question": "这个工具真的免费吗？有没有隐形收费？",
+            "answer": "基础功能完全免费！注册就送10积分（够分2张图），每天签到还能领积分。大部分功能免费使用就够了，如果需要高频使用可以购买积分包，价格透明，无任何隐形收费。"
           },
           {
-            "question": "Qwen Image Layered 真的免费吗？有什么限制吗？",
-            "answer": "是的！Qwen Image Layered 完全免费使用，没有隐形费用。无需信用卡，无需注册。我们的免费 AI 图像编辑工具提供自动图层分解、RGBA 图层分离和 AI 驱动的编辑功能的全部访问权限。"
+            "question": "我不懂设计，能用这个工具吗？",
+            "answer": "完全可以！这个工具就是为非设计人员设计的。只要会上传图片、会点鼠标就能用。上传→点击分层→下载，三步搞定，比用PS简单100倍。"
           },
           {
-            "question": "这与 Photoshop 或其他图像编辑软件有什么不同？",
-            "answer": "与 Photoshop 需要手动选择图层和蒙版不同，Qwen Image Layered 使用 AI 自动将图像分解为图层。它是免费的 Photoshop 替代方案，自动处理复杂的图像分割任务——为您节省数小时的手工工作。非常适合快速编辑和基于图层的调整。"
+            "question": "分层的准确率怎么样？复杂图片能处理吗？",
+            "answer": "我们的AI基于Qwen最新视觉模型，准确率很高。产品图、人像、素材图都能处理。对于特别复杂的图片，可以使用「深度分层」功能，AI会进行更细致的分析。"
           },
           {
-            "question": "支持哪些图像格式和文件大小？",
-            "answer": "Qwen Image Layered 支持所有常见的图像格式，包括 PNG, JPG, JPEG, WEBP 等。为了获得最佳的自动图层分解效果，我们建议图像大小在 10MB 以下。AI 图像编辑器在浏览器中安全地处理您的图像。"
+            "question": "处理一张图需要多长时间？",
+            "answer": "通常3-5秒就能完成分层。具体时间取决于图片大小和复杂程度，一般不会超过10秒。比手动用PS抠图快了不知道多少倍。"
           },
           {
-            "question": "我可以用分解后的 RGBA 图层做什么？",
-            "answer": "一旦图像分解为 RGBA 图层，您可以：使用 AI 描述重新着色单个图层，用新元素替换对象，移除不需要的对象，调整透明度和可见性，按层级组织图层，并以高分辨率（1K, 2K 或 4K）导出。每个图层都保持透明度，以便进行精确编辑。"
+            "question": "支持哪些图片格式？有大小限制吗？",
+            "answer": "支持PNG、JPG、WEBP等常见格式。建议图片大小不超过10MB，这样处理效果最好、速度最快。"
           },
           {
-            "question": "自动图像分割的准确性如何？",
-            "answer": "Qwen Image Layered 使用最先进的 AI 进行图像分割，准确率极高。该模型擅长识别不同的视觉元素，分离前景和背景，以及检测对象。对于复杂的图像，您可以使用递归分解进行更详细的图层分离。"
+            "question": "分层后可以导出什么分辨率？",
+            "answer": "支持1K、2K、4K分辨率导出。免费用户可以导出原分辨率，付费用户可以使用AI增强导出高清大图，满足电商、印刷等高质量需求。"
           },
           {
-            "question": "我可以将其用于专业设计工作吗？",
-            "answer": "当然可以！Qwen Image Layered 生成适合设计工作的专业级 RGBA 图层。具有 AI 放大功能的高分辨率导出（高达 4K）使其非常适合网络和印刷项目。它特别适用于快速模型、照片编辑和创意合成。"
+            "question": "可以用于商业用途吗？",
+            "answer": "可以！付费用户获得完整的商业使用授权，可以用于电商产品图、广告设计、营销材料等商业场景。"
           },
           {
-            "question": "我需要安装任何东西或创建帐户吗？",
-            "answer": "无需安装，也无需创建帐户！Qwen Image Layered 是一款基于网络的免费图像编辑工具，完全在您的浏览器中运行。只需访问网站，上传图像，即可立即开始使用自动 AI 图层分解。无需注册，无需下载，无需麻烦。"
+            "question": "图片会上传到服务器吗？安全吗？",
+            "answer": "图片会在处理期间临时上传到服务器，处理完就会自动删除。我们使用加密传输，严格遵守隐私政策，你的图片不会被用于其他用途。"
           }
         ]
       },
       "cta": {
         "id": "cta",
-        "title": "立即开始自动图像图层分解",
-        "description": "体验 Qwen Image Layered 的免费 AI 图像图层编辑。无需注册。",
+        "title": "现在就开始，3步搞定图片编辑",
+        "description": "注册送10积分，足够你体验所有功能。不需要信用卡，随时可以取消。",
         "buttons": [
           {
-            "title": "免费尝试图像图层编辑器",
+            "title": "立即免费试用",
             "url": "/qwenimagelayered",
             "target": "_self",
             "icon": "Zap"
           },
           {
-            "title": "查看文档",
+            "title": "查看使用教程",
             "url": "/docs",
             "target": "_blank",
             "variant": "outline",
@@ -401,11 +401,11 @@
       },
       "subscribe": {
         "id": "subscribe",
-        "title": "订阅我们的通讯",
-        "description": "获取 Qwen Image Layered 的最新消息和更新。",
+        "title": "订阅更新，第一时间获取新功能",
+        "description": "我们会不定期发送新功能介绍、使用技巧、优惠活动等信息。不骚扰，只发有用的。",
         "submit": {
           "input": {
-            "placeholder": "输入您的邮箱"
+            "placeholder": "输入你的邮箱地址"
           },
           "button": {
             "title": "订阅"
