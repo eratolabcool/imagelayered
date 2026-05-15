@@ -2,10 +2,10 @@
   "header": {
     "id": "header",
     "brand": {
-      "title": "Qwen Image Layered",
+      "title": "Image Layered",
       "logo": {
         "src": "/logo.png",
-        "alt": "Qwen Image Layered AI Vision Editor",
+        "alt": "Image Layered AI Poster Editor",
         "width": 100,
         "height": 100
       },
@@ -29,8 +29,8 @@
           "icon": "RiRobot2Line",
           "children": [
             {
-              "title": "Qwen Image Layered Vision Editor",
-              "description": "AI-powered layer decomposition & image editing powered by Qwen",
+              "title": "AI Photoshop for Posters",
+              "description": "Upload a poster, split it into editable layers, and edit any object by prompt",
               "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
             }
@@ -86,17 +86,17 @@
     "show_theme": true,
     "show_locale": true,
     "topbanner": {
-      "text": "Professional AI-powered image editing with <span class='text-blue-300 font-bold'>Qwen Vision Layered Model</span>. Decompose, recolor, replace, and remove objects with precision."
+      "text": "Turn flat posters into <span class='text-blue-300 font-bold'>editable AI layers</span>. Decompose, replace products, rewrite text, and export polished visuals."
     }
   },
   "footer": {
     "id": "footer",
     "brand": {
-      "title": "Qwen Image Layered",
-      "description": "Qwen Image Layered is an AI-powered vision editor with smart layer decomposition. Professional image editing with Qwen's advanced vision model.",
+      "title": "Image Layered",
+      "description": "Image Layered turns flat posters and product images into editable AI layers, then lets you edit selected objects by prompt.",
       "logo": {
         "src": "/logo.png",
-        "alt": "Qwen Image Layered AI Vision Editor",
+        "alt": "Image Layered AI Poster Editor",
         "width": 1024,
         "height": 1024
       },

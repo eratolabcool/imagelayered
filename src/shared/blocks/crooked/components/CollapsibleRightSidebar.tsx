@@ -43,6 +43,7 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
   const tb = copy.toolbar;
   const editBar = copy.editBar;
   const sidebar = copy.sidebar;
+  const workflow = copy.workflow;
 
   const editPlaceholder =
     activeTool === 'recolor' ? editBar.recolorPlaceholder :
@@ -53,7 +54,7 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
   return (
     <>
       {isCollapsed ? (
-        <div className="flex flex-col items-center gap-2 py-3 rounded-[34px] bg-[rgba(20,31,56,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px] overflow-y-auto max-h-[calc(100vh-120px)] custom-scrollbar">
+        <div className="flex flex-col items-center gap-2 overflow-y-auto rounded-[26px] bg-[rgba(15,25,48,0.84)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] max-h-[calc(100vh-150px)] custom-scrollbar">
           {/* Toggle Button */}
           <button
             onClick={onToggle}
@@ -68,7 +69,7 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
           </button>
 
           {/* Layer Count */}
-          <div className="text-[9px] font-semibold text-slate-400 px-1">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-sm font-black tabular-nums text-cyan-100">
             {layers.length}
           </div>
 
@@ -146,7 +147,7 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-4 py-4 px-4 rounded-[34px] bg-[rgba(20,31,56,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px]">
+        <div className="flex max-h-[calc(100vh-150px)] flex-col gap-4 overflow-y-auto rounded-[28px] bg-[rgba(15,25,48,0.84)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] custom-scrollbar">
           {/* Header with Toggle Button */}
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-cyan-100/55">{layerPanel.title}</span>
@@ -164,14 +165,14 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
           </div>
 
           {/* Layers - Photoshop Style */}
-          <div className="flex-1 space-y-2 overflow-y-auto max-h-[40vh] custom-scrollbar">
+          <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
             {layers.map((layer) => (
               <div
                 key={layer.id}
                 onClick={() => onSelectLayer(layer.id)}
-                className={`relative rounded-xl p-3 transition-all cursor-pointer border ${
+                className={`relative rounded-2xl p-3 transition-all cursor-pointer border ${
                   selectedLayerId === layer.id
-                    ? 'bg-blue-600/20 border-blue-500/50'
+                    ? 'bg-cyan-300/12 border-cyan-300/35 shadow-[0_12px_30px_rgba(34,211,238,0.08)]'
                     : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10'
                 }`}
               >
@@ -194,7 +195,7 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
                   </button>
 
                   {/* Layer Thumbnail */}
-                  <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-black/20 flex-shrink-0 border border-white/10">
+                  <div className="relative h-14 w-14 rounded-xl overflow-hidden bg-[linear-gradient(135deg,#111827,#020617)] flex-shrink-0 border border-white/10">
                     <img
                       src={layer.url}
                       alt={layer.name}
@@ -204,10 +205,19 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
 
                   {/* Layer Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-white truncate">{layer.name}</p>
-                    <p className="text-[10px] text-slate-400">
-                      {Math.round(layer.width)}×{Math.round(layer.height)}
-                    </p>
+                    <p className="text-sm font-semibold text-white truncate">{layer.name}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] text-slate-400 tabular-nums">
+                        {Math.round(layer.width)}×{Math.round(layer.height)}
+                      </span>
+                      {layer.parentId && (
+                        <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
+                          layer.maskUrl ? 'bg-emerald-400/12 text-emerald-200' : 'bg-white/8 text-slate-400'
+                        }`}>
+                          {layer.maskUrl ? workflow.maskReady : workflow.noMask}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Delete Button */}
@@ -244,7 +254,7 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
             ))}
 
             {layers.length === 0 && (
-              <div className="text-center py-8 text-slate-400">
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 py-8 text-center text-slate-400">
                 <div className="mx-auto mb-2 h-8 w-8 opacity-50">
                   <Icons.Layer />
                 </div>
@@ -254,13 +264,13 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
           </div>
 
           {/* Edit Tools */}
-          <div className="space-y-3 pt-3 border-t border-white/10">
+          <div className="space-y-3 border-t border-white/10 pt-3">
             {/* Tool Selection */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{layerPanel.editTools}</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   {
                     id: 'select' as ToolType,
@@ -279,9 +289,9 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
                   <button
                     key={tool.id}
                     onClick={() => setActiveTool(tool.id)}
-                    className={`flex flex-col items-center gap-2 rounded-xl p-4 text-sm transition-all min-h-[100px] ${
+                    className={`flex min-h-[82px] flex-col items-center justify-center gap-2 rounded-2xl p-3 text-sm transition-all ${
                       activeTool === tool.id
-                        ? 'bg-purple-600/20 text-purple-400 border-2 border-purple-500/50'
+                        ? 'bg-[linear-gradient(135deg,rgba(255,134,178,0.18),rgba(180,141,255,0.2))] text-pink-100 border border-pink-300/30'
                         : 'bg-white/5 text-slate-300 hover:bg-white/10 border-2 border-transparent'
                     }`}
                     title={tool.label}
@@ -295,7 +305,7 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
 
             {/* Prompt Input - Only show when edit tool is selected */}
             {activeTool !== 'select' && activeTool !== 'move' && layers.length > 0 && (
-              <label className="block space-y-2 rounded-xl bg-[linear-gradient(180deg,rgba(17,26,49,0.96),rgba(9,19,40,0.92))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <label className="block space-y-2 rounded-2xl bg-[linear-gradient(180deg,rgba(17,26,49,0.96),rgba(9,19,40,0.92))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{layerPanel.prompt}</span>
                 <div className="relative">
                   <textarea

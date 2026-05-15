@@ -2,10 +2,10 @@
   "sidebar": {
     "header": {
       "brand": {
-        "title": "Qwen Image Layered 对话",
+        "title": "Image Layered 对话",
         "logo": {
           "src": "/logo.png",
-          "alt": "Qwen Image Layered 对话"
+          "alt": "Image Layered 对话"
         },
         "url": "/chat"
       },

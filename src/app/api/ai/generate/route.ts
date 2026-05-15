@@ -3,6 +3,7 @@ import { AIMediaType, AITaskStatus } from '@/extensions/ai';
 import { getUuid } from '@/shared/lib/hash';
 import { respData, respErr } from '@/shared/lib/resp';
 import { createAITask, NewAITask } from '@/shared/models/ai_task';
+import { getAllConfigs } from '@/shared/models/config';
 import { consumeCredits, getRemainingCredits } from '@/shared/models/credit';
 import { getUserInfo } from '@/shared/models/user';
 import { getAIService } from '@/shared/services/ai';
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     let { provider, mediaType, model, prompt, options, scene } =
       await request.json();
 
-    if (!provider || !mediaType || !model) {
+    if (!mediaType) {
       throw new Error('invalid params');
     }
 
@@ -32,7 +33,22 @@ export async function POST(request: Request) {
       throw new Error('prompt or options is required');
     }
 
-    const aiService = await getAIService();
+    const configs = await getAllConfigs();
+    const aiService = await getAIService(configs);
+
+    if (mediaType === AIMediaType.IMAGE) {
+      if (scene === 'image-decomposition') {
+        provider = provider || configs.layer_decomposition_provider || 'fal';
+        model = model || configs.layer_decomposition_model || 'fal-ai/qwen-image-layered';
+      } else if (['image-recolor', 'image-replace', 'image-remove'].includes(scene)) {
+        provider = provider || configs.poster_edit_provider || 'fal';
+        model = model || configs.poster_edit_model || 'openai/gpt-image-2/edit';
+      }
+    }
+
+    if (!provider || !model) {
+      throw new Error('invalid params');
+    }
 
     // check generate type
     if (!aiService.getMediaTypes().includes(mediaType)) {

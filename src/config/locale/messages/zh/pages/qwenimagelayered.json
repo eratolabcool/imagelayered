@@ -1,15 +1,23 @@
 {
   "page": {
     "slug": "qwenimagelayered",
-    "title": "AI Photoshop for Posters - 可编辑图层",
-    "description": "终极 AI 海报编辑器。将平面图片分解为可编辑图层，替换物体，并使用专业 AI 视觉模型重新设计。",
-    "keywords": "AI Photoshop, 海报编辑器, 图层分解, Qwen Image Layered, 图像编辑"
+    "title": "Image Layered - 海报级 AI Photoshop",
+    "description": "上传任意海报，自动拆成可编辑 AI 图层，使用 GPT Image 2 编辑选中元素，并导出重新设计后的海报。",
+    "keywords": "AI Photoshop, 海报编辑器, 可编辑AI图层, 图层分解, GPT Image编辑, 商品图编辑, 图像蒙版"
   },
   "tool": {
     "brand": {
-      "title": "AI Photoshop",
-      "tagline": "AI 可编辑图层",
+      "title": "Image Layered",
+      "tagline": "海报级 AI Photoshop",
       "backHome": "返回首页"
+    },
+    "workflow": {
+      "upload": "上传海报",
+      "decompose": "自动分层",
+      "edit": "提示词编辑",
+      "editingEngine": "Qwen 分层 + GPT Image 编辑",
+      "maskReady": "已生成蒙版",
+      "noMask": "无蒙版"
     },
     "buttons": {
       "changeImage": "更换图片",
@@ -25,8 +33,8 @@
       "processingOverlaySubtitle": "正在将图像分解为图层..."
     },
     "empty": {
-      "title": "上传图片到 Qwen Image Layered",
-      "subtitle": "开始多图层的 AI 编辑体验",
+      "title": "上传海报开始编辑",
+      "subtitle": "先自动拆层，再选中任意元素用提示词修改",
       "cta": "上传图片"
     },
     "zoom": {
@@ -110,13 +118,13 @@
       "originalSizeSelected": "✓ 原始尺寸（{width}x{height}）",
       "width": "宽度 (PX)",
       "height": "高度 (PX)",
-      "aiUpscale": "AI 神经放大",
-      "aiUpscaleSub": "使用 Qwen Vision 增强细节",
+      "aiUpscale": "海报级导出",
+      "aiUpscaleSub": "导出可用于发布的高清合成图",
       "resolutionPro": "PRO",
       "start": "开始导出",
       "processing": "正在处理高清导出...",
-      "disclaimer": "* 4K 导出需要付费 API KEY 和计费账户",
-      "learnBilling": "了解 OpenRouter 计费"
+      "disclaimer": "* 高级导出和 AI 编辑可能消耗积分",
+      "learnBilling": "查看价格"
     },
     "upgrade": {
       "viewPackages": "查看积分套餐",

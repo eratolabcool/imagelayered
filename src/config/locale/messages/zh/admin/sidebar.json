@@ -1,10 +1,10 @@
 {
   "header": {
     "brand": {
-      "title": "Qwen Image Layered 管理后台",
+      "title": "Image Layered 管理后台",
       "logo": {
         "src": "/logo.png",
-        "alt": "Qwen Image Layered 管理后台"
+        "alt": "Image Layered 管理后台"
       },
       "url": "/admin"
     },

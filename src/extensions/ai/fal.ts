@@ -489,6 +489,34 @@ export class FalProvider implements AIProvider {
       return input;
     }
 
+    if (model === 'openai/gpt-image-2/edit') {
+      const imageUrls =
+        options?.image_urls ||
+        options?.image_input ||
+        (options?.image_url ? [options.image_url] : []);
+
+      const input: any = {
+        prompt,
+        image_urls: imageUrls,
+        image_size: options?.image_size || 'auto',
+        quality: options?.quality || 'high',
+        num_images: options?.num_images || 1,
+        output_format: options?.output_format || 'png',
+      };
+
+      if (options?.sync_mode !== undefined) {
+        input.sync_mode = options.sync_mode;
+      }
+      if (options?.mask_url) {
+        input.mask_url = options.mask_url;
+      }
+      if (options?.openai_api_key) {
+        input.openai_api_key = options.openai_api_key;
+      }
+
+      return input;
+    }
+
     // Default formatting for other models
     let input: any = {
       prompt,
@@ -499,9 +527,11 @@ export class FalProvider implements AIProvider {
     }
 
     // input with all custom options
+    const { scene, ...modelOptions } = options;
+
     input = {
       ...input,
-      ...options,
+      ...modelOptions,
     };
 
     // image_input is the default options

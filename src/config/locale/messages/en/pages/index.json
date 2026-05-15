@@ -26,7 +26,7 @@
           "title": "✨ Turn Any Poster into Editable AI Layers",
           "url": "/qwenimagelayered"
         },
-        "tip": "🎯 Trusted by 10,000+ users for free image layer decomposition",
+        "tip": "Trusted by creators for poster edits, product swaps, and editable AI layers",
         "buttons": [
           {
             "title": "Try It Free",
@@ -49,7 +49,7 @@
       },
       "logos": {
         "id": "logos",
-        "title": "Powered by Qwen-Layered, GPT-4o & Flux Vision Models",
+        "title": "Layer decomposition plus GPT Image 2 poster editing",
         "items": [
           {
             "title": "Next.js",
@@ -93,7 +93,7 @@
         "id": "introduce",
         "title": "Turn Flat Images into Editable PSD-like Layers",
         "label": "Core Features",
-        "description": "Image Layered uses Qwen-Vision to decompose any flat image into transparent RGBA layers. Characters, backgrounds, text, and objects are automatically extracted for high-quality AI editing.",
+        "description": "Image Layered uses a dedicated layer-decomposition model to split flat images into transparent RGBA layers, then sends selected elements to high-quality image editing models for prompt-based poster redesign.",
         "image": {
           "src": "/imgs/features/001.jpeg",
           "alt": "introduce"
@@ -286,7 +286,7 @@
           {
             "name": "Michael Chen",
             "role": "E-commerce Operations Manager",
-            "quote": "Qwen Image Layered helps us quickly create product variations. We used to reshoot everything, now it takes minutes. Huge cost savings!",
+            "quote": "Image Layered helps us quickly create product variations. We used to reshoot everything, now it takes minutes. Huge cost savings!",
             "image": {
               "src": "/imgs/avatars/1.png",
               "alt": "michael"

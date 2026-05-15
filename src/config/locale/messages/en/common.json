@@ -1,8 +1,8 @@
 {
   "metadata": {
     "title": "AI Photoshop for Posters - AI Image Layer Editor & RGBA Decomposition Tool",
-    "description": "Automatically decompose any image into editable RGBA layers. Free, AI-powered Photoshop for posters and design assets. Features zero-drift editing, layer separation, and intelligent object detection.",
-    "keywords": "AI image editor, image layer decomposition, RGBA layers, Photoshop alternative, free image editing software, AI-powered photo editor, layer separation tool, object detection, background removal, image masking, Qwen AI, computer vision, graphic design tool, e-commerce photo editor, content creation software, open-source image editor"
+    "description": "Upload a poster, split it into editable AI layers, edit selected objects by prompt, and export a redesigned poster. Built for product images, ads, and social visuals.",
+    "keywords": "AI Photoshop for posters, AI image editor, image layer decomposition, editable AI layers, RGBA layers, poster editor, product image editor, object replacement, text editing, background removal, image masking"
   },
   "sign": {
     "sign_in_title": "Sign In",

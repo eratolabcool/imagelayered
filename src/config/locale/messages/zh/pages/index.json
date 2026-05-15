@@ -26,7 +26,7 @@
           "title": "✨ 将任何海报转换为可编辑的 AI 图层",
           "url": "/qwenimagelayered"
         },
-        "tip": "🎯 已为 10,000+ 用户提供免费图片分层服务",
+        "tip": "为创作者提供海报改图、商品替换和可编辑 AI 图层",
         "buttons": [
           {
             "title": "立即免费试用",
@@ -49,7 +49,7 @@
       },
       "logos": {
         "id": "logos",
-        "title": "由 Qwen-Layered, GPT-4o 和 Flux 视觉模型驱动",
+        "title": "图层拆解 + GPT Image 2 海报级编辑",
         "items": [
           {
             "title": "Next.js",
@@ -93,7 +93,7 @@
         "id": "introduce",
         "title": "将平面图片转换为类似 PSD 的可编辑图层",
         "label": "核心功能",
-        "description": "Image Layered 使用 Qwen-Vision 将任何平面图片分解为透明的 RGBA 图层。人物、背景、文字和物体都会被自动提取，以便进行高质量的 AI 编辑。",
+        "description": "Image Layered 使用专门的分层模型将平面图片拆成透明 RGBA 图层，再把选中元素交给高质量图像编辑模型，用提示词完成海报级重设计。",
         "image": {
           "src": "/imgs/features/001.jpeg",
           "alt": "introduce"
@@ -286,7 +286,7 @@
           {
             "name": "王磊",
             "role": "电商平台运营",
-            "quote": "Qwen Image Layered 让我们快速创建产品变体。以前需要重新拍摄，现在几分钟就能完成，节省了大量成本！",
+            "quote": "Image Layered 让我们快速创建产品变体。以前需要重新拍摄，现在几分钟就能完成，节省了大量成本！",
             "image": {
               "src": "/imgs/avatars/1.png",
               "alt": "wanglei"

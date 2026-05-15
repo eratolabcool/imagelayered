@@ -152,7 +152,7 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
             <p className="mt-4 text-center text-[10px] uppercase tracking-widest leading-relaxed text-slate-500">
               {copy.disclaimer}
               <br />
-              <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:underline">{copy.learnBilling}</a>
+              <a href="/pricing" className="text-cyan-300 hover:underline">{copy.learnBilling}</a>
             </p>
           </div>
         </div>

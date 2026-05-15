@@ -2,10 +2,10 @@
   "header": {
     "id": "header",
     "brand": {
-      "title": "Qwen Image Layered",
+      "title": "Image Layered",
       "logo": {
         "src": "/logo.png",
-        "alt": "Qwen Image Layered",
+        "alt": "Image Layered AI 海报编辑器",
         "width": 100,
         "height": 100
       },
@@ -30,8 +30,8 @@
           "icon": "RiRobot2Line",
           "children": [
             {
-              "title": "Qwen 图像分层编辑器",
-              "description": "基于 Qwen AI 的智能图层分解和图像编辑",
+              "title": "海报级 AI Photoshop",
+              "description": "上传海报，自动拆成可编辑图层，再用提示词修改任意元素",
               "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
             }
@@ -88,17 +88,17 @@
     "show_theme": true,
     "show_locale": true,
     "topbanner": {
-      "text": "使用 <span class='text-blue-300 font-bold'>Qwen 视觉分层模型</span> 进行专业 AI 图像编辑。精准分解、重新着色、替换和移除对象。"
+      "text": "将平面海报转换为 <span class='text-blue-300 font-bold'>可编辑 AI 图层</span>。自动分层、替换商品、改写文字并导出成品视觉。"
     }
   },
   "footer": {
     "id": "footer",
     "brand": {
-      "title": "Qwen Image Layered",
-      "description": "Qwen Image Layered 是一个基于 Qwen AI 模型的图像图层分解工具。您可以将任何图像分解为多个可编辑的 RGBA 图层，实现专业的图像编辑。",
+      "title": "Image Layered",
+      "description": "Image Layered 将平面海报和商品图转换为可编辑 AI 图层，并支持选中元素后用提示词修改。",
       "logo": {
         "src": "/logo.png",
-        "alt": "Qwen Image Layered",
+        "alt": "Image Layered AI 海报编辑器",
         "width": 100,
         "height": 100
       },

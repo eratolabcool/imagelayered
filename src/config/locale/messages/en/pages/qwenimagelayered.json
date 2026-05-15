@@ -1,15 +1,23 @@
 {
   "page": {
     "slug": "qwenimagelayered",
-    "title": "AI Photoshop for Posters - Editable Layers",
-    "description": "The ultimate AI poster editor. Decompose flat images into editable layers, replace objects, and redesign with professional AI vision models.",
-    "keywords": "AI Photoshop, poster editor, layer decomposition, Qwen Image Layered, image editing"
+    "title": "Image Layered - AI Photoshop for Posters",
+    "description": "Upload any poster, split it into editable AI layers, edit selected objects with GPT Image 2, and export a redesigned poster.",
+    "keywords": "AI Photoshop for posters, poster editor, editable AI layers, layer decomposition, GPT Image editing, product image editor, image masking"
   },
   "tool": {
     "brand": {
-      "title": "AI Photoshop",
-      "tagline": "Editable AI Layers",
+      "title": "Image Layered",
+      "tagline": "AI Photoshop for posters",
       "backHome": "Back to Home"
+    },
+    "workflow": {
+      "upload": "Upload poster",
+      "decompose": "Auto layers",
+      "edit": "Prompt edit",
+      "editingEngine": "Qwen layers + GPT Image editing",
+      "maskReady": "Mask ready",
+      "noMask": "No mask"
     },
     "buttons": {
       "changeImage": "Change Image",
@@ -25,8 +33,8 @@
       "processingOverlaySubtitle": "Decomposing Image into Layers..."
     },
     "empty": {
-      "title": "Upload Poster to Decompose",
-      "subtitle": "Start your multi-layered AI editing experience",
+      "title": "Upload a poster to edit",
+      "subtitle": "Split it into layers, select any element, then edit by prompt",
       "cta": "Upload Image"
     },
     "zoom": {
@@ -111,12 +119,12 @@
       "width": "Width (PX)",
       "height": "Height (PX)",
       "aiUpscale": "AI Super Resolution (4K)",
-      "aiUpscaleSub": "Enhance details with Professional Vision Models",
+      "aiUpscaleSub": "Export a polished poster-ready composite",
       "resolutionPro": "PRO",
       "start": "Start Export",
       "processing": "Processing high-res export...",
-      "disclaimer": "* 4K export requires paid API key and billing account",
-      "learnBilling": "Learn OpenRouter billing"
+      "disclaimer": "* Advanced exports and AI edits may consume credits",
+      "learnBilling": "View pricing"
     },
     "upgrade": {
       "viewPackages": "View Credit Packages",

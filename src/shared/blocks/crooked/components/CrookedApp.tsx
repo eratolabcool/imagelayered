@@ -24,7 +24,7 @@ interface CrookedAppProps {
 
 const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage = null }) => {
   const copy = useCrookedCopy();
-  const { brand, buttons, empty, editBar, workspace } = copy;
+  const { brand, buttons, empty, editBar, workspace, workflow } = copy;
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolType>('select');
@@ -41,9 +41,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [editInstruction, setEditInstruction] = useState('');
 
-  // Sidebar collapse states - 默认折叠
-  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(true);
+  // Keep the decomposition controls visible by default; this is the primary action.
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
+
+  useEffect(() => {
+    setIsLeftSidebarCollapsed(false);
+  }, []);
 
   // Guest conversion modal state
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -70,6 +74,115 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     if (activeTool === 'remove') return editBar.removePlaceholder;
     return editBar.defaultPlaceholder;
   }, [activeTool, editBar]);
+
+  const getImageFetchUrl = useCallback((url: string) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return `/api/storage/proxy-image?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  }, []);
+
+  const uploadImageBlob = useCallback(async (blob: Blob, filename: string) => {
+    const formData = new FormData();
+    formData.append('files', new File([blob], filename, { type: blob.type || 'image/png' }));
+
+    const uploadRes = await fetch('/api/storage/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const uploadData = await uploadRes.json();
+    if (uploadData.code !== 0) {
+      throw new Error(uploadData.message || 'Upload failed');
+    }
+
+    return uploadData.data.urls[0] as string;
+  }, []);
+
+  const loadCanvasImage = useCallback((url: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load image: ${url.substring(0, 80)}`));
+      img.src = getImageFetchUrl(url);
+    });
+  }, [getImageFetchUrl]);
+
+  const canvasToBlob = useCallback((canvas: HTMLCanvasElement): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Failed to create image blob'));
+          return;
+        }
+        resolve(blob);
+      }, 'image/png');
+    });
+  }, []);
+
+  const createMaskFromLayer = useCallback(async (imageUrl: string) => {
+    const img = await loadCanvasImage(imageUrl);
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) throw new Error('Failed to create mask canvas');
+
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    let hasVisiblePixels = false;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3];
+      if (alpha > 8) hasVisiblePixels = true;
+      const maskValue = alpha > 8 ? 255 : 0;
+      data[i] = maskValue;
+      data[i + 1] = maskValue;
+      data[i + 2] = maskValue;
+      data[i + 3] = 255;
+    }
+
+    if (!hasVisiblePixels) {
+      return null;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    const blob = await canvasToBlob(canvas);
+    return uploadImageBlob(blob, `layer-mask-${Date.now()}.png`);
+  }, [canvasToBlob, loadCanvasImage, uploadImageBlob]);
+
+  const applyMaskToEditedLayer = useCallback(async (imageUrl: string, maskUrl: string) => {
+    const [image, mask] = await Promise.all([
+      loadCanvasImage(imageUrl),
+      loadCanvasImage(maskUrl),
+    ]);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = mask.naturalWidth;
+    canvas.height = mask.naturalHeight;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) throw new Error('Failed to create masked layer canvas');
+
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const edited = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(mask, 0, 0, canvas.width, canvas.height);
+    const maskData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    for (let i = 0; i < edited.data.length; i += 4) {
+      edited.data[i + 3] = maskData[i];
+    }
+
+    ctx.putImageData(edited, 0, 0);
+    const blob = await canvasToBlob(canvas);
+    return uploadImageBlob(blob, `edited-layer-${Date.now()}.png`);
+  }, [canvasToBlob, loadCanvasImage, uploadImageBlob]);
+
   const placeImageLayer = useCallback((base64: string, width: number, height: number, name: string = 'Main Canvas') => {
     const isMobile = window.innerWidth < 768;
 
@@ -732,6 +845,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       console.log('[smartDecompose] Layer dimensions:', layerDimensions);
 
+      console.log('[smartDecompose] Generating alpha masks for decomposed layers...');
+      const layerMaskUrls = await Promise.all(
+        layerImages.map(async (img: any, idx: number) => {
+          try {
+            const maskUrl = await createMaskFromLayer(img.imageUrl);
+            console.log(`[smartDecompose] Layer ${idx + 1} mask:`, maskUrl ? maskUrl.substring(0, 100) : 'none');
+            return maskUrl;
+          } catch (error) {
+            console.warn(`[smartDecompose] Failed to create mask for layer ${idx + 1}:`, error);
+            return null;
+          }
+        })
+      );
+
       // Create a layer for each generated image with correct dimensions
       const newLayers: Layer[] = layerImages.map((img: any, idx: number) => {
         const dims = layerDimensions[idx];
@@ -748,6 +875,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           visible: true,
           locked: false,
           zIndex: layers.length + idx + 1,
+          maskUrl: layerMaskUrls[idx] || undefined,
           parentId: target.id
         };
       });
@@ -867,18 +995,23 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       const imageUrl = uploadData.data.urls[0];
 
-      // Call AI generate for editing using fal.ai seedream model
+      // Call AI generate for high-quality poster editing. The API route can
+      // override these defaults from admin settings; fal GPT Image 2 is the
+      // first-stage default editing engine after Qwen layer decomposition.
       const genRes = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mediaType: 'image',
           scene,
-          provider: 'fal',
-          model: 'fal-ai/flux-pro/v1/edit',
           prompt: instruction,
           options: {
-            image_url: imageUrl,
+            image_urls: [imageUrl],
+            image_size: 'auto',
+            quality: 'high',
+            num_images: 1,
+            output_format: 'png',
+            ...(target.maskUrl ? { mask_url: target.maskUrl } : {}),
             sync_mode: true,
           },
         }),
@@ -891,9 +1024,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       // Extract result image
       const taskInfo = genData.data.taskInfo ? JSON.parse(genData.data.taskInfo) : null;
-      const newUrl = taskInfo?.images?.[0]?.imageUrl;
+      let newUrl = taskInfo?.images?.[0]?.imageUrl;
 
       if (newUrl) {
+        if (target.maskUrl) {
+          try {
+            newUrl = await applyMaskToEditedLayer(newUrl, target.maskUrl);
+          } catch (maskError) {
+            console.warn('[handleEditAction] Failed to reapply layer mask, using raw edit result:', maskError);
+          }
+        }
+
         setLayers(prev => prev.map(l =>
           l.id === selectedLayerId ? { ...l, url: newUrl } : l
         ));
@@ -1102,7 +1243,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         console.log('[handleExport] Blob created:', blob.size, 'bytes');
 
         let finalUrl = URL.createObjectURL(blob);
-        let fileName = `QwenImageLayered-export-${targetWidth}x${targetHeight}-${Date.now()}.png`;
+        let fileName = `ImageLayered-poster-export-${targetWidth}x${targetHeight}-${Date.now()}.png`;
 
         // If upscale is enabled, call AI upscaling
         if (settings.upscale) {
@@ -1195,7 +1336,41 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:72px_72px]" />
       <div className={`relative w-full flex ${embedded ? 'min-h-[920px]' : 'min-h-screen'} flex-col gap-6 px-4 py-4 md:px-6 md:py-6`}>
         <header className="rounded-[30px] bg-[rgba(20,31,56,0.72)] px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-[22px] md:px-6">
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.2)]">
+                <Icons.Layer />
+              </div>
+              <div className="min-w-0">
+                <h1 className="truncate text-lg font-semibold text-white md:text-xl">{brand.title}</h1>
+                <p className="mt-1 text-xs text-cyan-100/65">{brand.tagline}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: workflow.upload, active: layers.length > 0 },
+                { label: workflow.decompose, active: layers.length > 1 },
+                { label: workflow.edit, active: !!selectedLayer?.maskUrl },
+              ].map((step, idx) => (
+                <div
+                  key={step.label}
+                  className={`flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] ${
+                    step.active
+                      ? 'bg-cyan-300/14 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.24)]'
+                      : 'bg-white/5 text-slate-400 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+                  }`}
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[10px]">{idx + 1}</span>
+                  {step.label}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className="rounded-full bg-white/6 px-4 py-2 text-xs font-medium text-cyan-100/70">
+                {workflow.editingEngine}
+              </span>
               {!embedded && (
                 <a
                   href="/"
@@ -1205,14 +1380,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   {brand.backHome}
                 </a>
               )}
+            </div>
           </div>
         </header>
 
-        {/* Three-column layout: Left Sidebar | Canvas | Right Sidebar */}
-        <section className="relative flex-1 min-h-0">
-
-          {/* Left Sidebar - Settings (Fixed Position) */}
-          <div className={`fixed left-4 top-1/2 -translate-y-1/2 z-20 transition-all duration-300 ${isLeftSidebarCollapsed ? 'w-16' : 'w-80'}`}>
+        <section
+          className="flex flex-1 flex-col gap-4 lg:grid lg:min-h-0"
+          style={{
+            gridTemplateColumns: `${isLeftSidebarCollapsed ? '72px' : '320px'} minmax(0, 1fr) ${isRightSidebarCollapsed ? '72px' : '400px'}`
+          }}
+        >
+          <aside className="z-20 max-lg:order-1 max-lg:w-full">
             <CollapsibleLeftSidebar
               isCollapsed={isLeftSidebarCollapsed}
               onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
@@ -1226,18 +1404,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               onDecompose={smartDecompose}
               onExport={() => setIsExportModalOpen(true)}
               isProcessing={isProcessing}
-              canDecompose={layers.length <= 1}
+              canDecompose={layers.length > 0}
               canExport={layers.length > 0}
             />
-          </div>
+          </aside>
 
-          {/* Main Canvas Area - with margins for fixed sidebars */}
           <main
-            className={`rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px] md:p-6 min-h-0 transition-all duration-300`}
-            style={{
-              marginLeft: `${isLeftSidebarCollapsed ? 80 : 336}px`,
-              marginRight: `${isRightSidebarCollapsed ? 80 : 400}px`
-            }}
+            className="min-w-0 rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] ring-1 ring-white/8 backdrop-blur-[22px] transition-all duration-300 md:p-6 max-lg:order-2"
           >
             <div className="flex h-full flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1247,12 +1420,21 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     {selectedLayer ? selectedLayer.name : workspace.uploadHint}
                   </p>
                 </div>
+                {selectedLayer && (
+                  <div className={`rounded-full px-3 py-2 text-xs font-semibold ${
+                    selectedLayer.maskUrl
+                      ? 'bg-emerald-400/12 text-emerald-100 shadow-[inset_0_0_0_1px_rgba(110,231,183,0.22)]'
+                      : 'bg-white/6 text-slate-300 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]'
+                  }`}>
+                    {selectedLayer.maskUrl ? workflow.maskReady : workflow.noMask}
+                  </div>
+                )}
               </div>
 
               <div
                 ref={mainRef}
                 onMouseDown={handleMouseDown}
-                className={`relative flex min-h-[560px] flex-1 items-center justify-center overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(95,116,255,0.16),transparent_28%),linear-gradient(180deg,#0c1730,#091328)] ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                className={`relative flex min-h-[560px] flex-1 items-center justify-center overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(95,116,255,0.16),transparent_28%),linear-gradient(180deg,#0c1730,#091328)] max-md:min-h-[420px] ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
               >
                 <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:48px_48px]" />
                 <div
@@ -1319,8 +1501,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             </div>
           </main>
 
-          {/* Right Sidebar - Layers Panel (Fixed Position) */}
-          <div className={`fixed right-4 top-1/2 -translate-y-1/2 z-20 transition-all duration-300 ${isRightSidebarCollapsed ? 'w-16' : 'w-96'}`}>
+          <aside className="z-20 max-lg:order-3 max-lg:w-full">
             <CollapsibleRightSidebar
             isCollapsed={isRightSidebarCollapsed}
             onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
@@ -1357,7 +1538,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             onGenerateEdit={() => handleEditAction(editInstruction || editPlaceholder)}
             isProcessing={isProcessing}
           />
-          </div>
+          </aside>
 
         </section>
 

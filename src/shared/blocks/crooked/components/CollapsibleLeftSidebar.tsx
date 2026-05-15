@@ -42,14 +42,15 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
   const adv = copy.advanced;
   const empty = copy.empty;
   const sidebar = copy.sidebar;
+  const workflow = copy.workflow;
+  const hasImage = layers.length > 0;
 
-  if (isCollapsed) {
+  if (isCollapsed && layers.length > 1) {
     return (
-      <div className="flex flex-col items-center gap-4 py-4 rounded-[34px] bg-[rgba(20,31,56,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px]">
-        {/* Toggle Button */}
+      <div className="flex flex-col items-center gap-3 rounded-[26px] bg-[rgba(15,25,48,0.84)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px]">
         <button
           onClick={onToggle}
-          className="p-2 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors"
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-white transition-colors hover:bg-white/12"
           title={sidebar.expand}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -59,34 +60,44 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
           </svg>
         </button>
 
-        {/* Upload Button */}
         <button
           onClick={onUploadClick}
-          className="p-3 rounded-xl bg-[linear-gradient(135deg,rgba(93,106,255,0.3),rgba(73,223,255,0.18))] text-white shadow-[0_16px_34px_rgba(83,108,255,0.24)] hover:shadow-[0_20px_40px_rgba(83,108,255,0.34)] transition-all"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#8fa3ff,#4de4ff)] text-[#071123] shadow-[0_16px_34px_rgba(77,228,255,0.22)] transition-transform hover:-translate-y-0.5"
           title={layers.length > 0 ? copy.buttons.changeImage : empty.title}
         >
           <Icons.Upload />
         </button>
 
-        {/* Layer Count */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[8px] font-semibold uppercase tracking-wider text-slate-400">{tb.numberOfLayers}</span>
-          <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#0b152b] text-white font-bold text-sm">
+        <div className="flex w-12 flex-col items-center rounded-2xl bg-[#eef6ff] px-1.5 py-2 text-[#071123] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.85)]">
+          <span className="text-[8px] font-black uppercase tracking-wide text-slate-500">Auto</span>
+          <div className="leading-none text-2xl font-black tabular-nums">
             {layerCount}
           </div>
+          <span className="mt-0.5 text-[8px] font-bold uppercase text-slate-500">Layers</span>
         </div>
+
+        <button
+          onClick={() => onDecompose(layerCount)}
+          disabled={!canDecompose || isProcessing}
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-300/14 text-cyan-100 ring-1 ring-cyan-200/20 transition-colors hover:bg-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-40"
+          title={tb.autoDecompose}
+        >
+          <Icons.Magic />
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 py-4 px-4 rounded-[34px] bg-[rgba(20,31,56,0.78)] shadow-[0_24px_80px_rgba(0,0,0,0.38)] backdrop-blur-[22px]">
-      {/* Header with Toggle Button */}
+    <div className="flex max-h-[calc(100vh-150px)] flex-col gap-4 overflow-y-auto rounded-[28px] bg-[rgba(15,25,48,0.84)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] custom-scrollbar">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-cyan-100/55">{adv.sidebarSettings}</span>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-100/55">{workflow.decompose}</p>
+          <h2 className="mt-1 text-base font-semibold text-white">{tb.numberOfLayers}</h2>
+        </div>
         <button
           onClick={onToggle}
-          className="p-2 rounded-xl bg-white/5 text-white hover:bg-white/10 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/8 text-white transition-colors hover:bg-white/12"
           title={sidebar.collapse}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -97,43 +108,44 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
         </button>
       </div>
 
-      {/* Upload Button */}
-      <div
+      <button
         onClick={() => fileInputRef.current?.click()}
-        className="cursor-pointer rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-transform duration-300 hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]"
+        className="group rounded-2xl bg-[linear-gradient(135deg,rgba(137,162,255,0.22),rgba(77,228,255,0.14))] p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-cyan-100/10 transition-transform duration-300 hover:-translate-y-0.5 hover:ring-cyan-100/20"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[linear-gradient(135deg,rgba(93,106,255,0.3),rgba(73,223,255,0.18))] text-white shadow-[0_16px_34px_rgba(83,108,255,0.24)]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#8fa3ff,#4de4ff)] text-[#071123] shadow-[0_16px_34px_rgba(77,228,255,0.22)]">
             <Icons.Upload />
           </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-white">{layers.length > 0 ? copy.buttons.changeImage : empty.title}</p>
-            <p className="mt-0.5 text-[10px] text-slate-400">{adv.supportedFormats}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-white">{hasImage ? copy.buttons.changeImage : empty.title}</p>
+            <p className="mt-1 text-xs text-slate-400">{adv.supportedFormats}</p>
           </div>
         </div>
-      </div>
+      </button>
 
-      {/* Layer Count */}
-      <div className="rounded-[26px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-        <div className="flex items-center justify-between gap-3">
-          <label className="flex-1 space-y-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{tb.numberOfLayers}</span>
+      <div className="rounded-2xl bg-[#eef6ff] p-4 text-[#071123] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.88)]">
+        <label className="space-y-3">
+          <span className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Auto-Layers</span>
+          <div className="flex items-center gap-3">
             <input
               type="number"
               min="1"
               max="20"
               value={layerCount}
               onChange={(e) => setLayerCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-              className="w-full rounded-xl bg-white px-3 py-2 text-center text-base font-bold text-[#0b152b] outline-none transition-all hover:bg-gray-50 focus:bg-gray-50 border border-gray-200"
+              className="h-16 w-24 rounded-2xl border border-slate-200 bg-white px-3 text-center text-4xl font-black tabular-nums text-[#071123] outline-none transition-all hover:bg-white focus:border-cyan-400 focus:ring-4 focus:ring-cyan-200/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
-          </label>
-        </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-900">{workflow.decompose}</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">Qwen separates the poster into transparent RGBA elements. More layers means finer control, but slower processing.</p>
+            </div>
+          </div>
+        </label>
       </div>
 
-      {/* Model Selection */}
-      <div className="rounded-[26px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="rounded-2xl bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
         <div className="space-y-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{adv.aiModel}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{adv.aiModel}</span>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setAdvancedConfig({ ...advancedConfig, model: 'fal-ai/qwen-image-layered' })}
@@ -159,10 +171,9 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
         </div>
       </div>
 
-      {/* Prompt (Optional) */}
-      <div className="rounded-[26px] bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="rounded-2xl bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
         <label className="space-y-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{adv.prompt}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{adv.prompt}</span>
           <textarea
             value={advancedConfig.prompt}
             onChange={(e) => setAdvancedConfig({ ...advancedConfig, prompt: e.target.value })}
@@ -173,26 +184,23 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
         </label>
       </div>
 
-      {/* Action Buttons */}
       <div className="space-y-2">
-        {/* Decompose Button */}
-        {canDecompose && (
-          <button
-            onClick={() => onDecompose(layerCount)}
-            disabled={isProcessing}
-            className="w-full rounded-xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-4 py-3 text-xs font-semibold text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.22)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isProcessing ? 'Processing...' : `Decompose into ${layerCount} layers`}
-          </button>
-        )}
+        <button
+          onClick={() => onDecompose(layerCount)}
+          disabled={!canDecompose || isProcessing}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-4 py-3 text-sm font-black text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.22)] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50"
+        >
+          <Icons.Magic />
+          {isProcessing ? copy.buttons.processing : `Create ${layerCount} editable layers`}
+        </button>
 
-        {/* Export Button */}
         <button
           onClick={onExport}
           disabled={!canExport || isProcessing}
-          className="w-full rounded-xl bg-white/8 px-4 py-3 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white/8 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Export Project
+          <Icons.Download />
+          {copy.buttons.exportProject}
         </button>
       </div>
     </div>

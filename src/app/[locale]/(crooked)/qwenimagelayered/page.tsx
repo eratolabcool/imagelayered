@@ -3,25 +3,25 @@ import { Metadata } from 'next';
 import CrookedAppWrapper from './CrookedAppWrapper';
 
 export const metadata: Metadata = {
-  title: 'AI Photoshop for Posters | Edit Images Like Layers',
-  description: 'The ultimate AI poster editor. Automatically split images into editable layers, replace products, and redesign posters with high-quality AI vision models.',
-  keywords: 'AI Photoshop, poster editor, image layering, split image layers, product photo editor, background removal, transparent layers',
+  title: 'Image Layered | AI Photoshop for Posters',
+  description: 'Upload any poster, split it into editable AI layers, edit selected objects with GPT Image 2, and export a polished redesigned poster.',
+  keywords: 'Image Layered, AI Photoshop for posters, poster editor, editable AI layers, GPT Image editing, product replacement, text editing, image masks',
   alternates: {
     canonical: '/qwenimagelayered',
   },
   openGraph: {
-    title: 'AI Photoshop for Posters - Edit Images Like Layers',
-    description: 'Automatically split posters into editable layers. Replace products, change text, and redesign with professional AI.',
+    title: 'Image Layered - AI Photoshop for Posters',
+    description: 'Turn flat posters into editable AI layers. Replace products, rewrite text, remove objects, and export polished designs.',
     type: 'website',
     url: '/qwenimagelayered',
-    siteName: 'Image Layered AI',
+    siteName: 'Image Layered',
   },
 };
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'AI Photoshop for Posters',
+  name: 'Image Layered',
   applicationCategory: 'DesignApplication',
   operatingSystem: 'Web Browser',
   offers: {
@@ -30,7 +30,7 @@ const jsonLd = {
     priceCurrency: 'USD',
   },
   description:
-    'Upload a single picture, automatically split it into distinct editable layers, and seamlessly refine object cleanup or replacement.',
+    'Upload a poster, automatically split it into editable AI layers, edit selected objects by prompt, and export a redesigned visual.',
 };
 
 export default function QwenImageLayeredPage() {

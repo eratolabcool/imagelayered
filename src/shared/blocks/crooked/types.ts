@@ -11,6 +11,7 @@ export interface Layer {
   visible: boolean;
   locked: boolean;
   zIndex: number;
+  maskUrl?: string; // White editable area derived from the layer alpha channel
   parentId?: string; // For recursive decomposition
 }
 

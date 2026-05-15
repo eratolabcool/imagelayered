@@ -24,9 +24,17 @@ const getWithFallback = (t: ReturnType<typeof useTranslations>): TranslationGett
 
 const fallbackCopy = {
   brand: {
-    title: 'AI Photoshop',
-    tagline: 'AI Editable Layers',
+    title: 'Image Layered',
+    tagline: 'AI Photoshop for posters',
     backHome: 'Back to Home',
+  },
+  workflow: {
+    upload: 'Upload poster',
+    decompose: 'Auto layers',
+    edit: 'Prompt edit',
+    editingEngine: 'Qwen layers + GPT Image editing',
+    maskReady: 'Mask ready',
+    noMask: 'No mask',
   },
   buttons: {
     changeImage: 'Change Image',
@@ -128,12 +136,12 @@ const fallbackCopy = {
     width: 'Width (PX)',
     height: 'Height (PX)',
     aiUpscale: 'AI Super Resolution',
-    aiUpscaleSub: 'Enhance details with Qwen Vision',
+    aiUpscaleSub: 'Export a polished poster-ready composite',
     resolutionPro: 'PRO',
     start: 'Start Export',
     processing: 'Processing high-res export...',
-    disclaimer: '* 4K export requires paid API key and billing account',
-    learnBilling: 'Learn OpenRouter billing',
+    disclaimer: '* Advanced exports and AI edits may consume credits',
+    learnBilling: 'View pricing',
   },
   upgrade: {
     viewPackages: 'View Credit Packages',
@@ -200,6 +208,14 @@ export function useCrookedCopy(): CrookedCopy {
       title: g('brand.title', fallbackCopy.brand.title),
       tagline: g('brand.tagline', fallbackCopy.brand.tagline),
       backHome: g('brand.backHome', fallbackCopy.brand.backHome),
+    },
+    workflow: {
+      upload: g('workflow.upload', fallbackCopy.workflow.upload),
+      decompose: g('workflow.decompose', fallbackCopy.workflow.decompose),
+      edit: g('workflow.edit', fallbackCopy.workflow.edit),
+      editingEngine: g('workflow.editingEngine', fallbackCopy.workflow.editingEngine),
+      maskReady: g('workflow.maskReady', fallbackCopy.workflow.maskReady),
+      noMask: g('workflow.noMask', fallbackCopy.workflow.noMask),
     },
     buttons: {
       changeImage: g('buttons.changeImage', fallbackCopy.buttons.changeImage),
