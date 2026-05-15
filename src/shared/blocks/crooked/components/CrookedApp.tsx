@@ -875,7 +875,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           mediaType: 'image',
           scene,
           provider: 'fal',
-          model: 'fal-ai/bytedance/seedream/v4.5/edit',
+          model: 'fal-ai/flux-pro/v1/edit',
           prompt: instruction,
           options: {
             image_url: imageUrl,

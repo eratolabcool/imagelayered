@@ -1,14 +1,14 @@
 {
   "page": {
     "slug": "qwenimagelayered",
-    "title": "Qwen Image Layered - AI Vision Editor",
-    "description": "Decompose images into multiple layers using Qwen Image Layered AI model. Professional image editing with layer separation powered by AI.",
-    "keywords": "Qwen Image Layered, image decomposition, AI image editor, layer separation, image layers, Qwen AI, vision AI"
+    "title": "AI Photoshop for Posters - Editable Layers",
+    "description": "The ultimate AI poster editor. Decompose flat images into editable layers, replace objects, and redesign with professional AI vision models.",
+    "keywords": "AI Photoshop, poster editor, layer decomposition, Qwen Image Layered, image editing"
   },
   "tool": {
     "brand": {
-      "title": "Qwen Image Layered",
-      "tagline": "Vision Intelligence",
+      "title": "AI Photoshop",
+      "tagline": "Editable AI Layers",
       "backHome": "Back to Home"
     },
     "buttons": {
@@ -21,11 +21,11 @@
       "hideLayers": "Hide Layers",
       "processing": "Processing...",
       "execute": "Execute",
-      "processingOverlayTitle": "Qwen Image Layered Engine Running",
-      "processingOverlaySubtitle": "Neural Decomposition in Progress..."
+      "processingOverlayTitle": "AI Photoshop Engine Running",
+      "processingOverlaySubtitle": "Decomposing Image into Layers..."
     },
     "empty": {
-      "title": "Upload image to Qwen Image Layered",
+      "title": "Upload Poster to Decompose",
       "subtitle": "Start your multi-layered AI editing experience",
       "cta": "Upload Image"
     },
@@ -34,7 +34,7 @@
     },
     "workspace": {
       "preview": "Workspace preview",
-      "uploadHint": "Upload an image to begin building the layer stack."
+      "uploadHint": "Upload a poster to begin building the editable layer stack."
     },
     "sidebar": {
       "expand": "Expand sidebar",
@@ -48,13 +48,13 @@
       "hide": "Hide"
     },
     "toolbar": {
-      "selection": "Selection",
+      "selection": "Select Element",
       "panView": "Pan View",
-      "recolor": "Recolor",
-      "aiReplace": "AI Replace",
+      "recolor": "Recolor / Rewrite",
+      "aiReplace": "Replace Object",
       "removeObject": "Remove Object",
       "layerCountPlaceholder": "Count",
-      "numberOfLayers": "Layers",
+      "numberOfLayers": "Auto-Layers",
       "manualDecompose": "Manual Decompose",
       "autoDecompose": "Auto Decompose",
       "lightMode": "Light Mode",
@@ -110,8 +110,8 @@
       "originalSizeSelected": "✓ Original size ({width}x{height})",
       "width": "Width (PX)",
       "height": "Height (PX)",
-      "aiUpscale": "AI Super Resolution",
-      "aiUpscaleSub": "Enhance details with Qwen Vision",
+      "aiUpscale": "AI Super Resolution (4K)",
+      "aiUpscaleSub": "Enhance details with Professional Vision Models",
       "resolutionPro": "PRO",
       "start": "Start Export",
       "processing": "Processing high-res export...",
@@ -158,10 +158,10 @@
       }
     },
     "editBar": {
-      "recolorPlaceholder": "Describe new color (e.g., change car to metallic red)...",
-      "replacePlaceholder": "What do you want to replace it with? (e.g., a cyberpunk warrior)...",
-      "removePlaceholder": "Removing object precisely...",
-      "defaultPlaceholder": "Enter editing instruction..."
+      "recolorPlaceholder": "Rewrite text or change color (e.g., change car to metallic red, rewrite 'SALE' to 'OFF')...",
+      "replacePlaceholder": "What do you want to replace this object with? (e.g., a luxury perfume bottle)...",
+      "removePlaceholder": "Removing this object precisely from the poster...",
+      "defaultPlaceholder": "Describe how to edit this element..."
     },
     "notifications": {
       "loadImageFail": "Failed to load image. Please try another image.",

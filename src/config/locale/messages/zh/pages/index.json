@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "免费 AI 图像分层编辑器 - 自动图层分解 | Qwen Image Layered",
-    "description": "基于 Qwen Image Layered 模型的免费 AI 图像分层编辑器。自动将图像分解为 RGBA 图层，分离视觉元素，并利用 AI 进行编辑。最佳的免费 Photoshop 替代方案，用于自动图层分离和图像分割。",
-    "keywords": "图像分层编辑器, AI 图层分解, RGBA 图层, 自动图像分割, 免费 Photoshop 替代, 图像图层分离, AI 图像编辑, 基于图层的编辑, 去除背景, 图像蒙版"
+    "title": "AI Photoshop for Posters - 海报级 AI 图层编辑",
+    "description": "将任何平面图片转换为可编辑的 AI 图层。自动将海报分解为 RGBA 图层，分离视觉元素，并使用专业 AI 模型进行编辑。秒级修改文字、替换产品、重设计海报。",
+    "keywords": "AI Photoshop, 海报编辑器, AI 图层分解, 可编辑图层, 图像分割, 产品摄影编辑, AI 图像编辑, 基于图层的编辑, 去除背景, 图像蒙版"
   },
   "page": {
     "show_sections": [
@@ -18,12 +18,12 @@
     "sections": {
       "hero": {
         "id": "hero",
-        "title": "AI一键分层，图片编辑从未如此简单",
-        "highlight_text": "AI一键分层",
-        "description": "上传图片，AI自动分层。产品换背景、设计素材拆解、Logo分层提取，一键搞定。无需PS技能，比Photoshop快10倍，完全免费。",
+        "title": "上传一张海报，每个元素都能像图层一样编辑",
+        "highlight_text": "每个元素都能像图层一样编辑",
+        "description": "Image Layered 将平面图片转换为可编辑图层，让你用 AI 修改文字、替换产品、移除物体，并重新设计海报。",
         "announcement": {
           "badge": "NEW",
-          "title": "✨ 支持AI换背景、AI抠图、智能修图",
+          "title": "✨ 将任何海报转换为可编辑的 AI 图层",
           "url": "/qwenimagelayered"
         },
         "tip": "🎯 已为 10,000+ 用户提供免费图片分层服务",
@@ -49,7 +49,7 @@
       },
       "logos": {
         "id": "logos",
-        "title": "Qwen Image Layered 由前沿 AI 技术驱动",
+        "title": "由 Qwen-Layered, GPT-4o 和 Flux 视觉模型驱动",
         "items": [
           {
             "title": "Next.js",
@@ -91,9 +91,9 @@
       "introduce": {
         "block": "features-list",
         "id": "introduce",
-        "title": "一键分层，3秒搞定复杂图片编辑",
+        "title": "将平面图片转换为类似 PSD 的可编辑图层",
         "label": "核心功能",
-        "description": "电商产品换背景、设计素材拆分、Logo分层提取...上传图片，AI自动识别并分层，比PS快10倍，完全免费。",
+        "description": "Image Layered 使用 Qwen-Vision 将任何平面图片分解为透明的 RGBA 图层。人物、背景、文字和物体都会被自动提取，以便进行高质量的 AI 编辑。",
         "image": {
           "src": "/imgs/features/001.jpeg",
           "alt": "introduce"

@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "Free AI Image Layer Editor - Automatic Layer Decomposition | Qwen Image Layered",
-    "description": "Free AI-powered image layer editor using Qwen Image Layered model. Automatically decompose images into RGBA layers, separate visual elements, and edit with AI. Best free Photoshop alternative for automatic layer separation and image segmentation.",
-    "keywords": "image layer editor, AI layer decomposition, RGBA layers, automatic image segmentation, free Photoshop alternative, image layer separation, AI image editing, layer-based editing, remove background, image masking"
+    "title": "AI Photoshop for Posters - Edit Every Object with AI Layers",
+    "description": "Turn any flat image into editable AI layers. Automatically decompose posters into RGBA layers, separate visual elements, and edit with professional AI models. Change text, replace products, and redesign posters in seconds.",
+    "keywords": "AI Photoshop, poster editor, AI layer decomposition, editable layers, image segmentation, product photography editor, AI image editing, layer-based editing, remove background, image masking"
   },
   "page": {
     "show_sections": [
@@ -18,12 +18,12 @@
     "sections": {
       "hero": {
         "id": "hero",
-        "title": "AI-Powered Layer Decomposition - Image Editing Made Simple",
-        "highlight_text": "AI-Powered Layer Decomposition",
-        "description": "Upload any image, AI automatically separates it into editable layers. Product backgrounds, design assets, logos - one click to decompose. No Photoshop skills needed, 10x faster than manual editing, completely free.",
+        "title": "Upload any poster. Edit every object like layers.",
+        "highlight_text": "Edit every object like layers",
+        "description": "Image Layered turns flat images into editable layers, so you can change text, replace products, remove objects, and redesign posters with AI.",
         "announcement": {
           "badge": "NEW",
-          "title": "✨ AI Background Replacement, Smart Masking, Intelligent Editing",
+          "title": "✨ Turn Any Poster into Editable AI Layers",
           "url": "/qwenimagelayered"
         },
         "tip": "🎯 Trusted by 10,000+ users for free image layer decomposition",
@@ -49,7 +49,7 @@
       },
       "logos": {
         "id": "logos",
-        "title": "Qwen Image Layered is powered by cutting-edge AI technology",
+        "title": "Powered by Qwen-Layered, GPT-4o & Flux Vision Models",
         "items": [
           {
             "title": "Next.js",
@@ -91,9 +91,9 @@
       "introduce": {
         "block": "features-list",
         "id": "introduce",
-        "title": "One-Click Layer Decomposition, Complex Image Editing in 3 Seconds",
+        "title": "Turn Flat Images into Editable PSD-like Layers",
         "label": "Core Features",
-        "description": "E-commerce product background replacement, design asset separation, logo extraction - upload an image and AI automatically identifies and separates layers. 10x faster than Photoshop, completely free.",
+        "description": "Image Layered uses Qwen-Vision to decompose any flat image into transparent RGBA layers. Characters, backgrounds, text, and objects are automatically extracted for high-quality AI editing.",
         "image": {
           "src": "/imgs/features/001.jpeg",
           "alt": "introduce"

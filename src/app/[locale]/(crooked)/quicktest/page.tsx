@@ -3,10 +3,10 @@ import React from 'react';
 
 // SEO Metadata for Quick Test Page
 export const metadata: Metadata = {
-  title: 'Qwen Image Layered Quick Test - Free Online Demo | AI Image Decomposition',
-  description: 'Try Qwen Image Layered AI model for automatic image decomposition. Free demo for RGBA layer separation and AI image editing. No signup required.',
-  keywords: 'qwen image layered demo, image layer decomposition test, RGBA layers online test, AI image editing demo, free image editing trial, image segmentation test, automatic layer separation demo',
-  authors: [{ name: 'Qwen Image Layered Team' }],
+  title: 'AI Photoshop for Posters - Free Demo | AI Image Decomposition',
+  description: 'Try the ultimate AI poster editor for free. Experience automatic image decomposition and professional-grade layer editing. No signup required.',
+  keywords: 'AI Photoshop, poster editor, image decomposition demo, RGBA layers online test, AI image editing demo',
+  authors: [{ name: 'Image Layered Team' }],
   robots: {
     index: true,
     follow: true,
@@ -25,9 +25,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://your-domain.com/quicktest',
-    title: 'Qwen Image Layered - Free Quick Test Demo',
-    description: 'Test the Qwen Image Layered AI model for automatic image decomposition and layer separation. Free online demo.',
-    siteName: 'Qwen Image Layered',
+    title: 'AI Photoshop for Posters - Free Quick Test Demo',
+    description: 'Test the ultimate AI poster editor. Automatically split images into editable layers. Free online demo.',
+    siteName: 'Image Layered AI',
   },
   twitter: {
     card: 'summary_large_image',
@@ -40,8 +40,8 @@ export const metadata: Metadata = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'Qwen Image Layered Quick Test',
-  description: 'Free demo to test Qwen Image Layered AI model for automatic image decomposition and RGBA layer separation.',
+  name: 'AI Photoshop for Posters Demo',
+  description: 'Free demo to test the ultimate AI poster editor for automatic image decomposition and RGBA layer separation.',
   url: 'https://your-domain.com/quicktest',
   applicationCategory: 'DesignApplication',
   operatingSystem: 'Web Browser',
@@ -73,9 +73,9 @@ export default function QuickTestPage() {
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">Q</span>
+                <span className="text-white font-bold text-sm">P</span>
               </div>
-              <h1 className="text-xl font-semibold text-white">Qwen Image Layered - Quick Test</h1>
+              <h1 className="text-xl font-semibold text-white">AI Photoshop - Quick Test</h1>
             </div>
             <div className="flex items-center gap-3">
               <a
@@ -99,11 +99,11 @@ export default function QuickTestPage() {
           {/* Hero Section */}
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-4">
-              Test Qwen Image Layered AI Model
+              Test AI Photoshop for Posters
             </h2>
             <p className="text-gray-300 text-lg max-w-3xl mx-auto">
-              Experience automatic image decomposition and RGBA layer separation powered by Qwen AI.
-              Try our free AI image editor below - no signup required.
+              Experience automatic image decomposition and RGBA layer separation powered by Qwen and Flux AI models.
+              Try our free AI poster editor below - no signup required.
             </p>
           </div>
 
@@ -124,8 +124,8 @@ export default function QuickTestPage() {
                 </div>
               </div>
               <p className="text-gray-300 mb-6">
-                Upload your image and let Qwen AI automatically decompose it into editable RGBA layers.
-                Edit, recolor, replace objects, and export in high resolution.
+                Upload your image and let our AI automatically decompose it into editable RGBA layers.
+                Edit, recolor, replace products, and redesign posters in seconds.
               </p>
               <ul className="space-y-2 mb-6 text-gray-300">
                 <li className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export default function QuickTestPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white">Hugging Face Demo</h3>
-                  <p className="text-gray-400 text-sm">Official Qwen Image Layered Space</p>
+                  <p className="text-gray-400 text-sm">Official Qwen-Layered Space</p>
                 </div>
               </div>
               <p className="text-gray-300 mb-6">
@@ -191,7 +191,7 @@ export default function QuickTestPage() {
           {/* Features Section */}
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 mb-8">
             <h3 className="text-2xl font-bold text-white mb-6 text-center">
-              Why Choose Qwen Image Layered?
+              Why Choose AI Photoshop for Posters?
             </h3>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="text-center">

@@ -1,14 +1,14 @@
 {
   "page": {
     "slug": "qwenimagelayered",
-    "title": "Qwen Image Layered - AI 视觉编辑器",
-    "description": "使用 Qwen Image Layered AI 模型将图像分解为多个图层。由 AI 驱动的专业图像分层编辑。",
-    "keywords": "Qwen Image Layered, 图像分层, AI图像编辑器, 图层分离, 图像图层, Qwen AI, 视觉AI"
+    "title": "AI Photoshop for Posters - 可编辑图层",
+    "description": "终极 AI 海报编辑器。将平面图片分解为可编辑图层，替换物体，并使用专业 AI 视觉模型重新设计。",
+    "keywords": "AI Photoshop, 海报编辑器, 图层分解, Qwen Image Layered, 图像编辑"
   },
   "tool": {
     "brand": {
-      "title": "Qwen Image Layered",
-      "tagline": "视觉智能引擎",
+      "title": "AI Photoshop",
+      "tagline": "AI 可编辑图层",
       "backHome": "返回首页"
     },
     "buttons": {
@@ -21,8 +21,8 @@
       "hideLayers": "收起图层",
       "processing": "处理中...",
       "execute": "执行",
-      "processingOverlayTitle": "Qwen Image Layered 引擎运行中",
-      "processingOverlaySubtitle": "神经分层处理中..."
+      "processingOverlayTitle": "AI Photoshop 引擎运行中",
+      "processingOverlaySubtitle": "正在将图像分解为图层..."
     },
     "empty": {
       "title": "上传图片到 Qwen Image Layered",
@@ -48,13 +48,13 @@
       "hide": "隐藏"
     },
     "toolbar": {
-      "selection": "选择",
+      "selection": "选择元素",
       "panView": "平移视图",
-      "recolor": "重新上色",
-      "aiReplace": "AI 替换",
+      "recolor": "重新上色 / 改写",
+      "aiReplace": "替换产品",
       "removeObject": "移除物体",
       "layerCountPlaceholder": "数量",
-      "numberOfLayers": "分层数量",
+      "numberOfLayers": "自动分层",
       "manualDecompose": "手动分层",
       "autoDecompose": "一键分层",
       "lightMode": "亮色模式",
@@ -158,10 +158,10 @@
       }
     },
     "editBar": {
-      "recolorPlaceholder": "描述新的颜色（如：把车改成金属红）...",
-      "replacePlaceholder": "想替换成什么？（如：赛博朋克战士）...",
-      "removePlaceholder": "精准移除物体...",
-      "defaultPlaceholder": "输入编辑指令..."
+      "recolorPlaceholder": "改写文字或更改颜色（如：把车改成金属红，把 SALE 改成 OFF）...",
+      "replacePlaceholder": "想把这个物体替换成什么？（如：一瓶高档香水）...",
+      "removePlaceholder": "正在从海报中精准移除物体...",
+      "defaultPlaceholder": "描述如何编辑该元素..."
     },
     "notifications": {
       "loadImageFail": "图片加载失败，请换一张再试。",

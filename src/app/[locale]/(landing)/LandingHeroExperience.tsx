@@ -35,12 +35,12 @@ export default function LandingHeroExperience() {
         <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.8)_1px,transparent_1px)] [background-size:76px_76px]" />
         <div className="relative mx-auto max-w-[1440px] px-4 pb-10 pt-6 md:px-6 md:pb-14 md:pt-8">
           <div className="mx-auto flex max-w-[980px] flex-col items-center px-2 pb-10 pt-20 text-center md:pt-28">
-            <p className="text-[10px] uppercase tracking-[0.42em] text-cyan-100/55">Image layered</p>
+            <p className="text-[10px] uppercase tracking-[0.42em] text-cyan-100/55">AI Photoshop for Posters</p>
             <h1 className="mt-8 max-w-4xl text-5xl font-black tracking-[-0.06em] text-white [font-family:var(--font-display)] md:text-7xl">
-              Effortless Image Layering with AI
+              Upload any poster.<br/>Edit every object like layers.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-slate-400 md:text-lg">
-              Upload a product image and immediately generate a clean, editable stack of layers below.
+              Image Layered turns flat images into editable layers, so you can change text, replace products, remove objects, and redesign posters with AI.
             </p>
 
             <label className="mt-10 block w-full max-w-[620px] cursor-pointer">
@@ -84,10 +84,10 @@ export default function LandingHeroExperience() {
         <div className="flex flex-col gap-12">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-white [font-family:var(--font-display)] mb-4">
-              Powerful AI Image Layering Features
+              Powerful AI Poster Editing Features
             </h2>
             <p className="text-base text-slate-400 max-w-3xl mx-auto">
-              Our advanced AI-powered image layering tool provides professional-grade separation of image elements into editable layers. Perfect for product photography, e-commerce, graphic design, and digital marketing.
+              Our advanced AI-powered editor provides professional-grade separation of image elements into editable layers. Perfect for redesigning posters, product photography, e-commerce, and digital marketing.
             </p>
           </div>
 

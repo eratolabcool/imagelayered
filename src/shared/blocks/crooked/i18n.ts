@@ -24,8 +24,8 @@ const getWithFallback = (t: ReturnType<typeof useTranslations>): TranslationGett
 
 const fallbackCopy = {
   brand: {
-    title: 'Qwen Image Layered',
-    tagline: 'Vision Intelligence',
+    title: 'AI Photoshop',
+    tagline: 'AI Editable Layers',
     backHome: 'Back to Home',
   },
   buttons: {
@@ -38,11 +38,11 @@ const fallbackCopy = {
     hideLayers: 'Hide Layers',
     processing: 'Processing...',
     execute: 'Execute',
-    processingOverlayTitle: 'Qwen Image Layered Engine Running',
-    processingOverlaySubtitle: 'Neural Decomposition in Progress...',
+    processingOverlayTitle: 'AI Photoshop Engine Running',
+    processingOverlaySubtitle: 'Neural Layer Decomposition in Progress...',
   },
   empty: {
-    title: 'Upload image to Qwen Image Layered',
+    title: 'Upload image to AI Photoshop',
     subtitle: 'Start your multi-layered AI editing experience',
     cta: 'Upload Image',
   },
