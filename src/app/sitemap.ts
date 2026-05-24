@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 
 import { envConfigs } from '@/config';
 import { defaultLocale, locales } from '@/config/locale';
+import { imageLayeredSeoPages } from '@/shared/seo/image-layered-pages';
 
 /**
  * Generate dynamic sitemap for SEO
@@ -41,6 +42,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: currentDate,
       changeFrequency: 'daily' as const,
       priority: 0.8,
+    },
+    {
+      url: '/seo',
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.85,
     },
     {
       url: '/updates',
@@ -98,6 +105,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         },
       });
     }
+  }
+
+  for (const page of imageLayeredSeoPages) {
+    sitemapEntries.push({
+      url: `${appUrl}/seo/${page.market}/${page.slug}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.72,
+    });
+  }
+
+  for (const market of ['en', 'pt', 'ja', 'ru', 'es']) {
+    sitemapEntries.push({
+      url: `${appUrl}/seo/${market}`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: market === 'en' ? 0.82 : 0.78,
+    });
   }
 
   return sitemapEntries;

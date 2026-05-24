@@ -8,6 +8,11 @@
         "icon": "User"
       },
       {
+        "title": "海报项目",
+        "url": "/settings/projects",
+        "icon": "Layers"
+      },
+      {
         "title": "账单",
         "url": "/settings/billing",
         "icon": "CreditCard"

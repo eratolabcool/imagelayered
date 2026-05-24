@@ -600,3 +600,49 @@ export const chatMessage = table(
     index('idx_chat_message_user_id').on(table.userId, table.status),
   ]
 );
+
+export const project = table(
+  'project',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    layers: text('layers').notNull(), // JSON string representing the layers
+    previewUrl: text('preview_url'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .default(sqliteNowMs)
+      .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .default(sqliteNowMs)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index('idx_project_user_id').on(table.userId),
+    index('idx_project_created_at').on(table.createdAt),
+  ]
+);
+
+export const newsletterSubscriber = table(
+  'newsletter_subscriber',
+  {
+    id: text('id').primaryKey(),
+    email: text('email').notNull().unique(),
+    status: text('status').notNull().default('active'), // active, unsubscribed
+    utmSource: text('utm_source').notNull().default(''),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .default(sqliteNowMs)
+      .notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .default(sqliteNowMs)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index('idx_subscriber_email').on(table.email),
+    index('idx_subscriber_created_at').on(table.createdAt),
+  ]
+);
+

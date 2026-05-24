@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Layer, ToolType } from '../types';
+import { Layer, ToolType, WorkflowPreset } from '../types';
 import { Icons } from './Icon';
 import { useCrookedCopy } from '../i18n';
 
@@ -14,12 +14,17 @@ interface CollapsibleRightSidebarProps {
   onDeleteLayer: (id: string) => void;
   onSelectLayer: (id: string) => void;
   onUpdateLayer: (id: string, updates: Partial<Layer>) => void;
+  onDuplicateLayer: (id: string) => void;
+  onSoloLayer: (id: string) => void;
+  onShowAllLayers: () => void;
+  onDownloadLayer: (id: string) => void;
   activeTool: ToolType;
   setActiveTool: (tool: ToolType) => void;
   editInstruction: string;
   setEditInstruction: (instruction: string) => void;
   onGenerateEdit: () => void;
   isProcessing: boolean;
+  workflowPreset: WorkflowPreset;
 }
 
 const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
@@ -31,12 +36,17 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
   onDeleteLayer,
   onSelectLayer,
   onUpdateLayer,
+  onDuplicateLayer,
+  onSoloLayer,
+  onShowAllLayers,
+  onDownloadLayer,
   activeTool,
   setActiveTool,
   editInstruction,
   setEditInstruction,
   onGenerateEdit,
   isProcessing,
+  workflowPreset,
 }) => {
   const copy = useCrookedCopy();
   const layerPanel = copy.layerPanel;
@@ -51,10 +61,17 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
     activeTool === 'remove' ? editBar.removePlaceholder :
     editBar.defaultPlaceholder;
 
+  const selectedLayer = layers.find(layer => layer.id === selectedLayerId) || null;
+
+  const applyPromptChip = (chip: WorkflowPreset['chips'][number]) => {
+    setActiveTool(chip.tool);
+    setEditInstruction(chip.prompt);
+  };
+
   return (
     <>
       {isCollapsed ? (
-        <div className="flex flex-col items-center gap-2 overflow-y-auto rounded-[26px] bg-[rgba(15,25,48,0.84)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] max-h-[calc(100vh-150px)] custom-scrollbar">
+        <div className="flex max-h-[calc(100vh-150px)] flex-col items-center gap-2 overflow-y-auto rounded-[26px] bg-[rgba(15,25,48,0.84)] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] custom-scrollbar lg:h-full lg:max-h-none">
           {/* Toggle Button */}
           <button
             onClick={onToggle}
@@ -147,7 +164,7 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
           )}
         </div>
       ) : (
-        <div className="flex max-h-[calc(100vh-150px)] flex-col gap-4 overflow-y-auto rounded-[28px] bg-[rgba(15,25,48,0.84)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] custom-scrollbar">
+        <div className="flex max-h-[calc(100vh-150px)] flex-col gap-4 overflow-y-auto rounded-[28px] bg-[rgba(15,25,48,0.84)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] custom-scrollbar lg:h-full lg:max-h-none">
           {/* Header with Toggle Button */}
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-cyan-100/55">{layerPanel.title}</span>
@@ -166,6 +183,20 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
 
           {/* Layers - Photoshop Style */}
           <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+            {layers.length > 0 && (
+              <div className="rounded-2xl border border-cyan-200/12 bg-white/5 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-100/60">
+                    Active workflow
+                  </span>
+                  <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100">
+                    {workflowPreset.layerCount} layers
+                  </span>
+                </div>
+                <h3 className="mt-2 text-sm font-black text-white">{workflowPreset.title}</h3>
+                <p className="mt-1 text-xs leading-5 text-slate-400">{workflowPreset.outcome}</p>
+              </div>
+            )}
             {layers.map((layer) => (
               <div
                 key={layer.id}
@@ -235,7 +266,49 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
 
                 {/* Opacity Slider - Only show for selected layer */}
                 {selectedLayerId === layer.id && (
-                  <div className="mt-3 space-y-1">
+                  <div className="mt-3 space-y-3">
+                    <div className="grid grid-cols-4 gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSoloLayer(layer.id);
+                        }}
+                        className="rounded-lg bg-cyan-300/12 px-2 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 transition-colors hover:bg-cyan-300/18"
+                        title="Show only this layer"
+                      >
+                        Extract
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onShowAllLayers();
+                        }}
+                        className="rounded-lg bg-white/8 px-2 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-slate-100 transition-colors hover:bg-white/12"
+                        title="Show all layers"
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDownloadLayer(layer.id);
+                        }}
+                        className="rounded-lg bg-white/8 px-2 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-slate-100 transition-colors hover:bg-white/12"
+                        title="Download this layer as PNG"
+                      >
+                        PNG
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDuplicateLayer(layer.id);
+                        }}
+                        className="rounded-lg bg-white/8 px-2 py-2 text-[10px] font-black uppercase tracking-[0.08em] text-slate-100 transition-colors hover:bg-white/12"
+                        title={layerPanel.duplicate}
+                      >
+                        Copy
+                      </button>
+                    </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[8px] font-semibold uppercase tracking-wider text-slate-400">{layerPanel.opacity}</span>
                       <span className="text-[10px] font-mono text-slate-400">{Math.round(layer.opacity * 100)}%</span>
@@ -265,6 +338,31 @@ const CollapsibleRightSidebar: React.FC<CollapsibleRightSidebarProps> = ({
 
           {/* Edit Tools */}
           <div className="space-y-3 border-t border-white/10 pt-3">
+            {selectedLayer && (
+              <div className="rounded-2xl border border-cyan-200/12 bg-cyan-300/8 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-100/70">
+                    {workflowPreset.title}
+                  </span>
+                  <span className="rounded-full bg-white/8 px-2 py-1 text-[9px] font-black uppercase tracking-[0.1em] text-slate-200">
+                    Prompt chips
+                  </span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {workflowPreset.chips.map((chip) => (
+                    <button
+                      key={chip.label}
+                      onClick={() => applyPromptChip(chip)}
+                      className="rounded-full bg-white/8 px-3 py-2 text-left text-[11px] font-bold leading-4 text-slate-100 transition-colors hover:bg-white/12"
+                      title={chip.prompt}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Tool Selection */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">

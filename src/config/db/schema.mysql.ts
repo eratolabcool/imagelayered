@@ -515,3 +515,39 @@ export const chatMessage = table(
     index('idx_chat_message_user_id').on(table.userId, table.status),
   ]
 );
+
+export const project = table(
+  'project',
+  {
+    id: varchar191('id').primaryKey(),
+    userId: varchar191('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 255 }).notNull(),
+    layers: longtext('layers').notNull(), // JSON string representing the layers
+    previewUrl: text('preview_url'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [
+    index('idx_project_user_id').on(table.userId),
+    index('idx_project_created_at').on(table.createdAt),
+  ]
+);
+
+export const newsletterSubscriber = table(
+  'newsletter_subscriber',
+  {
+    id: varchar191('id').primaryKey(),
+    email: varchar191('email').notNull().unique(),
+    status: varchar('status', { length: 50 }).notNull().default('active'), // active, unsubscribed
+    utmSource: varchar('utm_source', { length: 100 }).notNull().default(''),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => [
+    index('idx_subscriber_email').on(table.email),
+    index('idx_subscriber_created_at').on(table.createdAt),
+  ]
+);
+

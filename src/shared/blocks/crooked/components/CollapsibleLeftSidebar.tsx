@@ -3,6 +3,7 @@
 import React from 'react';
 import { Icons } from './Icon';
 import { useCrookedCopy } from '../i18n';
+import { WorkflowPreset, WorkflowPresetId } from '../types';
 
 interface CollapsibleLeftSidebarProps {
   isCollapsed: boolean;
@@ -19,6 +20,9 @@ interface CollapsibleLeftSidebarProps {
   isProcessing: boolean;
   canDecompose: boolean;
   canExport: boolean;
+  workflowPresets: WorkflowPreset[];
+  selectedWorkflowId: WorkflowPresetId;
+  onSelectWorkflow: (id: WorkflowPresetId) => void;
 }
 
 const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
@@ -36,6 +40,9 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
   isProcessing,
   canDecompose,
   canExport,
+  workflowPresets,
+  selectedWorkflowId,
+  onSelectWorkflow,
 }) => {
   const copy = useCrookedCopy();
   const tb = copy.toolbar;
@@ -89,7 +96,7 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
   }
 
   return (
-    <div className="flex max-h-[calc(100vh-150px)] flex-col gap-4 overflow-y-auto rounded-[28px] bg-[rgba(15,25,48,0.84)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] custom-scrollbar">
+    <div className="flex max-h-[calc(100vh-150px)] flex-col gap-4 overflow-y-auto rounded-[28px] bg-[rgba(15,25,48,0.84)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.34)] ring-1 ring-white/8 backdrop-blur-[22px] custom-scrollbar lg:h-full lg:max-h-none">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-cyan-100/55">{workflow.decompose}</p>
@@ -122,6 +129,41 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
           </div>
         </div>
       </button>
+
+      <div className="rounded-2xl bg-[linear-gradient(180deg,rgba(14,24,46,0.96),rgba(9,19,40,0.92))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Workflow</span>
+          <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100">
+            Preset
+          </span>
+        </div>
+        <div className="mt-3 grid gap-2">
+          {workflowPresets.map((preset) => (
+            <button
+              key={preset.id}
+              onClick={() => onSelectWorkflow(preset.id)}
+              className={`rounded-xl border p-3 text-left transition-all ${
+                selectedWorkflowId === preset.id
+                  ? 'border-cyan-300/45 bg-cyan-300/12 text-white shadow-[0_12px_28px_rgba(34,211,238,0.08)]'
+                  : 'border-white/8 bg-white/5 text-slate-300 hover:border-white/14 hover:bg-white/8'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-black">{preset.title}</span>
+                <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] font-black tabular-nums text-cyan-100">
+                  {preset.layerCount}
+                </span>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-400">{preset.subtitle}</p>
+              {selectedWorkflowId === preset.id && (
+                <p className="mt-2 rounded-lg bg-black/18 px-2 py-1.5 text-[11px] font-semibold leading-5 text-cyan-50/80">
+                  {preset.goal}
+                </p>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="rounded-2xl bg-[#eef6ff] p-4 text-[#071123] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.88)]">
         <label className="space-y-3">

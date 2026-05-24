@@ -23,6 +23,24 @@ export interface CanvasState {
 
 export type ToolType = 'select' | 'move' | 'recolor' | 'replace' | 'remove' | 'scale' | 'decompose';
 
+export type WorkflowPresetId = 'product' | 'poster' | 'ai-image' | 'character';
+
+export interface WorkflowPreset {
+  id: WorkflowPresetId;
+  title: string;
+  subtitle: string;
+  goal: string;
+  outcome: string;
+  layerCount: number;
+  prompt: string;
+  steps: string[];
+  chips: Array<{
+    label: string;
+    tool: Extract<ToolType, 'recolor' | 'replace' | 'remove'>;
+    prompt: string;
+  }>;
+}
+
 export interface DecomposeResponse {
   layers: Array<{
     name: string;

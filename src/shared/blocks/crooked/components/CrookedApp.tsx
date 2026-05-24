@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig } from '../types';
+import { useSearchParams, useRouter, useParams } from 'next/navigation';
+import { useSession } from '@/core/auth/client';
+import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw } from 'lucide-react';
+import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
 import CollapsibleLeftSidebar from './CollapsibleLeftSidebar';
@@ -16,6 +19,7 @@ import {
 import { useCrookedCopy } from '../i18n';
 import { toast } from 'sonner';
 import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
+import { getWorkflowPreset, workflowPresets } from '../workflows';
 
 interface CrookedAppProps {
   embedded?: boolean;
@@ -28,6 +32,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolType>('select');
+
+  // Growth & Cloud Save States
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState<string>('My Poster');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [showExitIntent, setShowExitIntent] = useState(false);
+  const [exitIntentEmail, setExitIntentEmail] = useState('');
+  const [exitIntentSubmitting, setExitIntentSubmitting] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -37,7 +51,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
   const [layerDragOffset, setLayerDragOffset] = useState({ x: 0, y: 0 });
-  const [layerCount, setLayerCount] = useState<number>(5);
+  const [layerCount, setLayerCount] = useState<number>(workflowPresets[1].layerCount);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<WorkflowPresetId>('poster');
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [editInstruction, setEditInstruction] = useState('');
 
@@ -45,9 +60,188 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const params = useParams();
+  const isZh = params?.locale === 'zh';
+  const projectIdQuery = searchParams ? searchParams.get('project') : null;
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+
   useEffect(() => {
     setIsLeftSidebarCollapsed(false);
   }, []);
+
+  // 1. On Mount: Load Project if projectIdQuery is present
+  useEffect(() => {
+    if (!projectIdQuery) return;
+
+    const loadProject = async () => {
+      try {
+        setSaveStatus('saving');
+        const res = await fetch(`/api/projects/share?id=${projectIdQuery}`);
+        if (!res.ok) {
+          throw new Error('Failed to load project');
+        }
+        const data = await res.json();
+        if (data && data.code === 0 && data.data) {
+          const { id, name, layers: loadedLayers } = data.data;
+          setProjectId(id);
+          setProjectName(name || 'Untitled Poster');
+          if (Array.isArray(loadedLayers)) {
+            setLayers(loadedLayers);
+            if (loadedLayers.length > 0) {
+              setSelectedLayerId(loadedLayers[0].id);
+            }
+          }
+          setSaveStatus('saved');
+          toast.success(isZh ? '项目加载成功' : 'Project loaded successfully');
+        } else {
+          throw new Error(data?.message || 'Failed to parse project');
+        }
+      } catch (err: any) {
+        console.error('[loadProject] Error:', err);
+        setSaveStatus('error');
+        toast.error(isZh ? '无法加载该项目' : 'Failed to load project: ' + err.message);
+      }
+    };
+
+    loadProject();
+  }, [projectIdQuery, isZh]);
+
+  // 2. Debounced Autosave / Guest Save to sessionStorage
+  useEffect(() => {
+    if (layers.length === 0) return;
+
+    if (!projectId) {
+      setProjectId(crypto.randomUUID());
+      return;
+    }
+
+    if (!isLoggedIn) {
+      const draft = {
+        id: projectId,
+        name: projectName,
+        layers
+      };
+      sessionStorage.setItem('guest_project_draft', JSON.stringify(draft));
+      setSaveStatus('saved');
+      return;
+    }
+
+    setSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      try {
+        const bgLayer = layers.find(l => l.zIndex === 0) || layers[0];
+        const previewUrl = bgLayer?.url || null;
+
+        const res = await fetch('/api/projects', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            id: projectId,
+            name: projectName,
+            layers,
+            previewUrl
+          })
+        });
+
+        if (!res.ok) throw new Error('Save failed');
+        const data = await res.json();
+        if (data.code === 0) {
+          setSaveStatus('saved');
+        } else {
+          throw new Error(data.message || 'Unknown save error');
+        }
+      } catch (err) {
+        console.error('[Autosave] Failed:', err);
+        setSaveStatus('error');
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [layers, projectName, projectId, isLoggedIn]);
+
+  // 3. Session Restore / Auto-Resume after registration
+  useEffect(() => {
+    if (isLoggedIn) {
+      const guestDraftStr = sessionStorage.getItem('guest_project_draft');
+      if (guestDraftStr) {
+        try {
+          const draft = JSON.parse(guestDraftStr);
+          if (draft && draft.layers && draft.layers.length > 0) {
+            setProjectId(draft.id);
+            setProjectName(draft.name || 'My Poster');
+            setLayers(draft.layers);
+            if (draft.layers.length > 0) {
+              setSelectedLayerId(draft.layers[0].id);
+            }
+
+            const bgLayer = draft.layers.find((l: any) => l.zIndex === 0) || draft.layers[0];
+            const previewUrl = bgLayer?.url || null;
+
+            fetch('/api/projects', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                id: draft.id,
+                name: draft.name || 'My Poster',
+                layers: draft.layers,
+                previewUrl
+              })
+            }).then(async (res) => {
+              if (res.ok) {
+                const data = await res.json();
+                if (data.code === 0) {
+                  toast.success(isZh 
+                    ? '🎉 欢迎回来！我们已自动将您刚才编辑的海报保存到云端项目。' 
+                    : '🎉 Welcome back! We have automatically saved your poster draft to your cloud account.'
+                  );
+                  sessionStorage.removeItem('guest_project_draft');
+                  setSaveStatus('saved');
+                }
+              }
+            }).catch(err => {
+              console.error('[Auto-resume] Failed to save guest draft to database:', err);
+            });
+          }
+        } catch (e) {
+          console.error('[Auto-resume] Error parsing guest draft:', e);
+        }
+      }
+    }
+  }, [isLoggedIn, isZh]);
+
+  // 4. Exit Intent Detector
+  useEffect(() => {
+    const subscribed = localStorage.getItem('layered_newsletter_subscribed') === 'true';
+    if (subscribed || isLoggedIn) return;
+
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY < 20) {
+        if (layers.length > 0 && !showExitIntent) {
+          setShowExitIntent(true);
+        }
+      }
+    };
+
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, [layers.length, isLoggedIn, showExitIntent]);
+
+  // 5. Onboarding Tour logic
+  useEffect(() => {
+    if (layers.length > 0) {
+      const completed = localStorage.getItem('layered_tour_completed') === 'true';
+      if (!completed && onboardingStep === null) {
+        setOnboardingStep(0);
+      }
+    }
+  }, [layers.length, onboardingStep]);
 
   // Guest conversion modal state
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -55,7 +249,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   // Advanced Settings State
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedDecompositionConfig>({
-    prompt: '',
+    prompt: workflowPresets[1].prompt,
     negativePrompt: '',
     seed: 42,
     randomizeSeed: true,
@@ -66,6 +260,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     model: 'fal-ai/qwen-image-layered'
   });
 
+  const selectedWorkflow = React.useMemo(
+    () => getWorkflowPreset(selectedWorkflowId),
+    [selectedWorkflowId]
+  );
+
   const mainRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editPlaceholder = React.useMemo(() => {
@@ -74,6 +273,24 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     if (activeTool === 'remove') return editBar.removePlaceholder;
     return editBar.defaultPlaceholder;
   }, [activeTool, editBar]);
+
+  const handleSelectWorkflow = useCallback((id: WorkflowPresetId) => {
+    const preset = getWorkflowPreset(id);
+    setSelectedWorkflowId(id);
+    setLayerCount(preset.layerCount);
+    setAdvancedConfig((prev) => ({
+      ...prev,
+      prompt: preset.prompt,
+    }));
+    setActiveTool('select');
+    setEditInstruction('');
+  }, []);
+
+  useEffect(() => {
+    handleSelectWorkflow(selectedWorkflowId);
+    // Initialize the editor with the default workflow preset once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getImageFetchUrl = useCallback((url: string) => {
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -859,12 +1076,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         })
       );
 
+      const layerNamePresets: Record<WorkflowPresetId, string[]> = {
+        product: ['Product', 'Background', 'Shadow', 'Label / Text', 'Props', 'Reflection'],
+        poster: ['Subject', 'Headline Text', 'Logo', 'Product', 'Background', 'Effects', 'Shadow', 'Decoration'],
+        'ai-image': ['Subject', 'Clothing', 'Object', 'Background', 'Lighting', 'Text', 'Detail'],
+        character: ['Face', 'Hair', 'Clothing', 'Body', 'Background', 'Lighting', 'Props'],
+      };
+      const names = layerNamePresets[selectedWorkflowId];
+
       // Create a layer for each generated image with correct dimensions
       const newLayers: Layer[] = layerImages.map((img: any, idx: number) => {
         const dims = layerDimensions[idx];
         return {
           id: crypto.randomUUID(),
-          name: `${target.name} - Layer ${idx + 1}`,
+          name: names[idx] || `${selectedWorkflow.title} Layer ${idx + 1}`,
           type: 'image',
           url: img.imageUrl,
           x: target.x,
@@ -1315,6 +1540,177 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     }
   };
 
+  const downloadBlob = useCallback((blob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }, []);
+
+  const handleDownloadLayer = useCallback(async (id: string) => {
+    const layer = layers.find((item) => item.id === id);
+    if (!layer) return;
+
+    try {
+      const image = await loadCanvasImage(layer.url);
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth || layer.width;
+      canvas.height = image.naturalHeight || layer.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Failed to create layer export canvas');
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const blob = await canvasToBlob(canvas);
+      const safeName = layer.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'layer';
+      downloadBlob(blob, `image-layered-${safeName}-${Date.now()}.png`);
+      toast.success(isZh ? '图层已下载' : 'Layer downloaded');
+    } catch (error) {
+      console.error('[handleDownloadLayer] Failed:', error);
+      toast.error(isZh ? '图层下载失败' : 'Failed to download layer');
+    }
+  }, [canvasToBlob, downloadBlob, isZh, layers, loadCanvasImage]);
+
+  const handleDuplicateLayer = useCallback((id: string) => {
+    const layer = layers.find((item) => item.id === id);
+    if (!layer) return;
+
+    const maxZ = Math.max(...layers.map((item) => item.zIndex), 0);
+    const copyLayer: Layer = {
+      ...layer,
+      id: crypto.randomUUID(),
+      name: `${layer.name} Copy`,
+      x: layer.x + 16,
+      y: layer.y + 16,
+      zIndex: maxZ + 1,
+      locked: false,
+      visible: true,
+    };
+
+    setLayers((prev) => [...prev, copyLayer]);
+    setSelectedLayerId(copyLayer.id);
+    toast.success(isZh ? '已复制图层' : 'Layer duplicated');
+  }, [isZh, layers]);
+
+  const handleSoloLayer = useCallback((id: string) => {
+    setLayers((prev) => prev.map((layer) => ({ ...layer, visible: layer.id === id })));
+    setSelectedLayerId(id);
+    toast.success(isZh ? '已提取预览该图层' : 'Showing selected layer only');
+  }, [isZh]);
+
+  const handleShowAllLayers = useCallback(() => {
+    setLayers((prev) => prev.map((layer) => ({ ...layer, visible: true })));
+    toast.success(isZh ? '已显示全部图层' : 'All layers visible');
+  }, [isZh]);
+
+  // Copying link helper
+  const handleCopyShareLink = () => {
+    try {
+      const shareUrl = `${window.location.origin}/${params?.locale || 'en'}/share/${projectId}`;
+      navigator.clipboard.writeText(shareUrl);
+      toast.success(isZh ? '项目分享链接已复制到剪贴板！' : 'Project share link copied to clipboard!');
+    } catch (err) {
+      toast.error(isZh ? '复制链接失败' : 'Failed to copy link');
+    }
+  };
+
+  const handleExitIntentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!exitIntentEmail || exitIntentSubmitting) return;
+
+    setExitIntentSubmitting(true);
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: exitIntentEmail,
+          utmSource: 'editor_exit_intent',
+        }),
+      });
+
+      if (!res.ok) throw new Error('Subscription failed');
+      const data = await res.json();
+      if (data.code === 0) {
+        localStorage.setItem('layered_newsletter_subscribed', 'true');
+        toast.success(isZh ? '🎉 订阅成功！欢迎手册与额度已发送至您的邮箱！' : '🎉 Subscribed! Your manual & credits are on the way!');
+        setShowExitIntent(false);
+      } else {
+        throw new Error(data.message || 'Error subscribing');
+      }
+    } catch (err: any) {
+      console.error('[ExitIntent] Failed to subscribe:', err);
+      toast.error(err.message || (isZh ? '订阅失败，请稍后重试' : 'Failed to subscribe. Please try again.'));
+    } finally {
+      setExitIntentSubmitting(false);
+    }
+  };
+
+  const handleNextOnboardingStep = () => {
+    if (onboardingStep === null) return;
+    
+    const nextStep = onboardingStep + 1;
+    if (nextStep >= 4) {
+      setOnboardingStep(null);
+      localStorage.setItem('layered_tour_completed', 'true');
+      toast.success(isZh ? '🎓 恭喜完成新手教程，开始您的创作吧！' : '🎓 Congratulations! You completed the tour. Happy designing!');
+      setIsLeftSidebarCollapsed(false);
+      setIsRightSidebarCollapsed(true);
+    } else {
+      setOnboardingStep(nextStep);
+      if (nextStep === 1) {
+        setIsLeftSidebarCollapsed(true);
+        setIsRightSidebarCollapsed(true);
+      } else if (nextStep === 2) {
+        setIsLeftSidebarCollapsed(true);
+        setIsRightSidebarCollapsed(false);
+      } else if (nextStep === 3) {
+        setIsLeftSidebarCollapsed(true);
+        setIsRightSidebarCollapsed(true);
+      }
+    }
+  };
+
+  const handleSkipOnboarding = () => {
+    setOnboardingStep(null);
+    localStorage.setItem('layered_tour_completed', 'true');
+    setIsLeftSidebarCollapsed(false);
+    setIsRightSidebarCollapsed(true);
+  };
+
+  const tourSteps = [
+    {
+      title: isZh ? '1. AI 智能分层' : '1. AI Poster Decomposition',
+      content: isZh
+        ? '点击左侧栏的“Smart Decompose”将上传的单一图层海报一键提取并拆分为多个独立的 AI 图层！'
+        : 'Click "Smart Decompose" in the left sidebar to extract and split your uploaded poster into multiple editable layers automatically.',
+    },
+    {
+      title: isZh ? '2. 自由交互式画布' : '2. Interactive Canvas Workspace',
+      content: isZh
+        ? '在画布中，您可以直接点击任意元素，拖拽进行移动，或者在底部缩放画布。'
+        : 'On the main canvas, click to select any layer, drag to reposition, and use the zoom controls to inspect details.',
+    },
+    {
+      title: isZh ? '3. AI 局部魔法重塑' : '3. AI Magic Brush & Editor',
+      content: isZh
+        ? '点击任何图层后，您可以在右侧编辑栏中输入文字提示词（Prompt），为选中的元素执行 Recoloring (改色)、Replace (产品替换) 或 Remove (擦除)。'
+        : 'Select any layer, and use the edit tools (Recolor, Replace, Remove) in the right sidebar. Just write a simple prompt to let AI do the work!',
+    },
+    {
+      title: isZh ? '4. 分享与高清导出' : '4. Share & Export Designs',
+      content: isZh
+        ? '点击顶部的“Share Poster”可以生成公开克隆链接与同事分享；点击左侧/右上角“Export”即可导出高质量 PNG。'
+        : 'Click "Share Poster" in the header to generate a public view-remix link, or click "Export" to download your high-resolution PNG.',
+    }
+  ];
+
   const selectedLayer = layers.find(layer => layer.id === selectedLayerId) ?? layers[0] ?? null;
   const displayedLayers = layers
     .filter(layer => {
@@ -1342,12 +1738,56 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 <Icons.Layer />
               </div>
               <div className="min-w-0">
-                <h1 className="truncate text-lg font-semibold text-white md:text-xl">{brand.title}</h1>
-                <p className="mt-1 text-xs text-cyan-100/65">{brand.tagline}</p>
+                {layers.length > 0 ? (
+                  <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-3">
+                    <input
+                      type="text"
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      className="bg-transparent border-b border-transparent hover:border-white/20 focus:border-cyan-400 focus:outline-none text-base font-bold text-white md:text-lg py-0.5 px-1 max-w-[150px] md:max-w-[220px]"
+                      placeholder="My Poster"
+                    />
+                    <div className="flex items-center gap-1 text-[10px] text-cyan-200/60 font-mono px-2 py-0.5 rounded-full bg-white/5 w-fit">
+                      {saveStatus === 'saving' && (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          <span>Autosaving...</span>
+                        </>
+                      )}
+                      {saveStatus === 'saved' && (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          <span>Autosaved</span>
+                        </>
+                      )}
+                      {saveStatus === 'error' && (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-bounce" />
+                          <span>Save Error</span>
+                        </>
+                      )}
+                      {saveStatus === 'idle' && (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                          <span>Saved Local</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h1 className="truncate text-lg font-semibold text-white md:text-xl">{brand.title}</h1>
+                    <p className="mt-1 text-xs text-cyan-100/65">{brand.tagline}</p>
+                  </>
+                )}
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 rounded-full bg-cyan-300/14 px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.24)]">
+                <Sparkles className="size-3.5" />
+                {selectedWorkflow.title}
+              </div>
               {[
                 { label: workflow.upload, active: layers.length > 0 },
                 { label: workflow.decompose, active: layers.length > 1 },
@@ -1368,6 +1808,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2">
+              {layers.length > 0 && (
+                <button
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/10 transition-all active:scale-95"
+                >
+                  <Share2 className="size-3.5" />
+                  <span>{isZh ? '分享海报' : 'Share Poster'}</span>
+                </button>
+              )}
               <span className="rounded-full bg-white/6 px-4 py-2 text-xs font-medium text-cyan-100/70">
                 {workflow.editingEngine}
               </span>
@@ -1385,12 +1834,12 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         </header>
 
         <section
-          className="flex flex-1 flex-col gap-4 lg:grid lg:min-h-0"
+          className="flex flex-1 flex-col gap-4 lg:grid lg:h-[calc(100vh-156px)] lg:min-h-[640px]"
           style={{
             gridTemplateColumns: `${isLeftSidebarCollapsed ? '72px' : '320px'} minmax(0, 1fr) ${isRightSidebarCollapsed ? '72px' : '400px'}`
           }}
         >
-          <aside className="z-20 max-lg:order-1 max-lg:w-full">
+          <aside className="z-20 min-h-0 max-lg:order-1 max-lg:w-full">
             <CollapsibleLeftSidebar
               isCollapsed={isLeftSidebarCollapsed}
               onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
@@ -1406,13 +1855,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               isProcessing={isProcessing}
               canDecompose={layers.length > 0}
               canExport={layers.length > 0}
+              workflowPresets={workflowPresets}
+              selectedWorkflowId={selectedWorkflowId}
+              onSelectWorkflow={handleSelectWorkflow}
             />
           </aside>
 
           <main
-            className="min-w-0 rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] ring-1 ring-white/8 backdrop-blur-[22px] transition-all duration-300 md:p-6 max-lg:order-2"
+            className="min-h-0 min-w-0 rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] ring-1 ring-white/8 backdrop-blur-[22px] transition-all duration-300 md:p-6 max-lg:order-2"
           >
-            <div className="flex h-full flex-col gap-4">
+            <div className="flex h-full min-h-0 flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.38em] text-cyan-100/55">{workspace.preview}</p>
@@ -1434,7 +1886,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               <div
                 ref={mainRef}
                 onMouseDown={handleMouseDown}
-                className={`relative flex min-h-[560px] flex-1 items-center justify-center overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(95,116,255,0.16),transparent_28%),linear-gradient(180deg,#0c1730,#091328)] max-md:min-h-[420px] ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                className={`relative flex h-[520px] shrink-0 items-center justify-center overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(95,116,255,0.16),transparent_28%),linear-gradient(180deg,#0c1730,#091328)] md:h-[560px] lg:h-auto lg:min-h-0 lg:flex-1 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
               >
                 <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:48px_48px]" />
                 <div
@@ -1481,18 +1933,65 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       })}
                     </div>
                   ) : (
-                    <div className="relative flex w-full max-w-xl flex-col items-center gap-4 rounded-[30px] bg-white/5 p-10 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,rgba(97,120,255,0.32),rgba(77,228,255,0.18))]">
-                        <Icons.Upload />
+                    <div className="relative flex w-full max-w-4xl flex-col gap-5 rounded-[30px] bg-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:p-7">
+                      <div className="grid gap-5 md:grid-cols-[0.92fr_1.08fr] md:items-center">
+                        <div className="text-left">
+                          <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,rgba(97,120,255,0.32),rgba(77,228,255,0.18))]">
+                            <Icons.Upload />
+                          </div>
+                          <p className="mt-5 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-100/60">
+                            Workflow first
+                          </p>
+                          <h3 className="mt-2 text-3xl font-bold leading-tight text-white [font-family:var(--font-display)]">
+                            Choose the result, then upload the image
+                          </h3>
+                          <p className="mt-3 max-w-md text-sm leading-7 text-slate-400">
+                            {selectedWorkflow.goal} The editor will set the layer count,
+                            Qwen prompt, and suggested edit prompts for that workflow.
+                          </p>
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="mt-5 rounded-full bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-5 py-3 text-sm font-bold text-[#071123]"
+                          >
+                            {buttons.changeImage}
+                          </button>
+                        </div>
+
+                        <div className="grid gap-2">
+                          {workflowPresets.map((preset) => (
+                            <button
+                              key={preset.id}
+                              onClick={() => handleSelectWorkflow(preset.id)}
+                              className={`rounded-2xl border p-4 text-left transition-all ${
+                                selectedWorkflowId === preset.id
+                                  ? 'border-cyan-300/45 bg-cyan-300/12 text-white shadow-[0_14px_34px_rgba(34,211,238,0.08)]'
+                                  : 'border-white/8 bg-white/5 text-slate-300 hover:border-white/14 hover:bg-white/8'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-black">{preset.title}</p>
+                                  <p className="mt-1 text-xs leading-5 text-slate-400">{preset.subtitle}</p>
+                                </div>
+                                <span className="rounded-full bg-white/8 px-2.5 py-1 text-[10px] font-black tabular-nums text-cyan-100">
+                                  {preset.layerCount} layers
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <h3 className="text-2xl font-bold text-white [font-family:var(--font-display)]">{empty.title}</h3>
-                      <p className="max-w-md text-sm leading-7 text-slate-400">{empty.subtitle}</p>
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="rounded-full bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-5 py-3 text-sm font-bold text-[#071123]"
-                      >
-                        {buttons.changeImage}
-                      </button>
+
+                      <div className="grid gap-2 border-t border-white/10 pt-4 md:grid-cols-4">
+                        {selectedWorkflow.steps.map((step, index) => (
+                          <div key={step} className="rounded-2xl bg-black/18 p-3 text-left">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-300/14 text-xs font-black text-cyan-100">
+                              {index + 1}
+                            </span>
+                            <p className="mt-3 text-xs font-semibold leading-5 text-slate-300">{step}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   </div>
@@ -1501,7 +2000,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             </div>
           </main>
 
-          <aside className="z-20 max-lg:order-3 max-lg:w-full">
+          <aside className="z-20 min-h-0 max-lg:order-3 max-lg:w-full">
             <CollapsibleRightSidebar
             isCollapsed={isRightSidebarCollapsed}
             onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
@@ -1531,12 +2030,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             onUpdateLayer={(id, updates) => {
               setLayers(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
             }}
+            onDuplicateLayer={handleDuplicateLayer}
+            onSoloLayer={handleSoloLayer}
+            onShowAllLayers={handleShowAllLayers}
+            onDownloadLayer={handleDownloadLayer}
             activeTool={activeTool}
             setActiveTool={setActiveTool}
             editInstruction={editInstruction}
             setEditInstruction={setEditInstruction}
             onGenerateEdit={() => handleEditAction(editInstruction || editPlaceholder)}
             isProcessing={isProcessing}
+            workflowPreset={selectedWorkflow}
           />
           </aside>
 
@@ -1566,6 +2070,168 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         type={upgradeModalType}
         remainingUploads={getRemainingUploads()}
       />
+
+      {isShareModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-[30px] border border-white/10 bg-[#0d1527]/90 p-6 shadow-[0_32px_96px_rgba(0,0,0,0.6)] backdrop-blur-[24px]">
+            <div className="absolute -right-16 -top-16 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
+            <button
+              onClick={() => setIsShareModalOpen(false)}
+              className="absolute right-4 top-4 rounded-full bg-white/5 p-2 text-gray-400 hover:bg-white/10 hover:text-white"
+            >
+              <X className="size-4" />
+            </button>
+
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+                <Share2 className="size-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">
+                {isZh ? '分享您的创作空间' : 'Share Your Workspace'}
+              </h3>
+              <p className="mt-2 text-sm text-gray-400">
+                {isZh
+                  ? '生成一个公开只读链接，其他人可以查看您的图层，并一键克隆到他们自己的工作区。'
+                  : 'Generate a public, view-only link. Others can view your layers and clone (Remix) them into their own workspace.'}
+              </p>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label className="text-[10px] uppercase tracking-[0.2em] text-cyan-200/50">
+                  {isZh ? '分享地址' : 'Share Link'}
+                </label>
+                <div className="mt-1.5 flex gap-2 rounded-xl bg-white/5 p-1 ring-1 ring-white/10">
+                  <input
+                    type="text"
+                    readOnly
+                    value={projectId ? `${window.location.origin}/${params?.locale || 'en'}/share/${projectId}` : ''}
+                    className="w-full bg-transparent px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleCopyShareLink}
+                    className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
+                  >
+                    {isZh ? '复制' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-white/5 bg-white/5 p-4 flex gap-3">
+                <Sparkles className="size-5 shrink-0 text-cyan-400 animate-pulse" />
+                <div className="text-left text-xs leading-relaxed text-slate-400">
+                  <p className="font-bold text-slate-200">
+                    {isZh ? '什么是裂变 Remix？' : 'What is a Remix?'}
+                  </p>
+                  <p className="mt-1">
+                    {isZh
+                      ? '访客可以通过此链接查看您的每一层设计、开启或隐藏图层，然后点击“克隆海报”复制到自己的编辑器中继续创作。这对于传播非常有效！'
+                      : 'Visitors will see a high-end interactive canvas. They can toggle layer visibilities and click "Remix Poster" to start editing. Great for viral loops!'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showExitIntent && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-[30px] border border-cyan-500/20 bg-[#070e1c]/90 p-8 shadow-[0_32px_96px_rgba(6,182,212,0.15)] backdrop-blur-[24px]">
+            <div className="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl animate-pulse" />
+            <button
+              onClick={() => {
+                setShowExitIntent(false);
+                sessionStorage.setItem('layered_exit_intent_dismissed', 'true');
+              }}
+              className="absolute right-4 top-4 rounded-full bg-white/5 p-2 text-gray-400 hover:bg-white/10 hover:text-white"
+            >
+              <X className="size-4" />
+            </button>
+
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400">
+                <Mail className="size-7" />
+              </div>
+              <h3 className="text-2xl font-black text-white tracking-tight">
+                {isZh ? '🎁 挽留礼包：带走您的海报图层' : '🎁 Wait! Keep Your Layers & Master AI Posters'}
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+                {isZh
+                  ? '不要让您的分层付之东流！订阅我们的 newsletter，免费获得 5 个高清导出额度 + 20+ 海报 AI 提示词终极手册。'
+                  : 'Do not let your layers fade away! Sign up to our newsletter for 5 extra HD exports & our ultimate Guide (20+ premium Poster Prompts).'}
+              </p>
+            </div>
+
+            <form onSubmit={handleExitIntentSubmit} className="mt-6 space-y-3">
+              <input
+                type="email"
+                required
+                value={exitIntentEmail}
+                onChange={(e) => setExitIntentEmail(e.target.value)}
+                placeholder={isZh ? '输入您的电子邮箱' : 'Enter your email address'}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none ring-1 ring-transparent focus:ring-cyan-500/20"
+              />
+              <button
+                type="submit"
+                disabled={exitIntentSubmitting}
+                className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50"
+              >
+                {exitIntentSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {isZh ? '正在提交...' : 'Submitting...'}
+                  </span>
+                ) : (
+                  <span>{isZh ? '订阅并获取礼包' : 'Subscribe & Claim Gift'}</span>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {onboardingStep !== null && onboardingStep >= 0 && onboardingStep < 4 && (
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-[24px] border border-cyan-500/20 bg-[#0d1627]/95 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">
+              {isZh ? `步骤 ${onboardingStep + 1} / 4` : `Step ${onboardingStep + 1} / 4`}
+            </span>
+            <button
+              onClick={handleSkipOnboarding}
+              className="text-[10px] text-gray-500 hover:text-white"
+            >
+              {isZh ? '跳过' : 'Skip Tour'}
+            </button>
+          </div>
+
+          <h4 className="mt-2 text-base font-bold text-white">
+            {tourSteps[onboardingStep].title}
+          </h4>
+          <p className="mt-2 text-xs leading-relaxed text-slate-400">
+            {tourSteps[onboardingStep].content}
+          </p>
+
+          <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+            <div className="flex gap-1">
+              {[0, 1, 2, 3].map((s) => (
+                <div
+                  key={s}
+                  className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                    s === onboardingStep ? 'bg-cyan-400' : 'bg-white/10'
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={handleNextOnboardingStep}
+              className="rounded-lg bg-cyan-500 px-4 py-2 text-xs font-bold text-[#071123] transition-all hover:bg-cyan-400 active:scale-95 flex items-center gap-1"
+            >
+              <span>{onboardingStep === 3 ? (isZh ? '完成' : 'Finish') : (isZh ? '下一步' : 'Next')}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {isProcessing && !isExportModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center">

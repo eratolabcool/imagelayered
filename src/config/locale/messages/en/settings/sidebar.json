@@ -8,6 +8,11 @@
         "icon": "User"
       },
       {
+        "title": "Projects",
+        "url": "/settings/projects",
+        "icon": "Layers"
+      },
+      {
         "title": "Billing",
         "url": "/settings/billing",
         "icon": "CreditCard"

@@ -44,9 +44,9 @@
               "Basic support"
             ],
             "interval": "one-time",
-            "amount": 990,
+            "amount": 2490,
             "currency": "USD",
-            "price": "$9.99",
+            "price": "$24.90",
             "original_price": "",
             "unit": "/pack",
             "is_featured": false,
