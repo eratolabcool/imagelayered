@@ -55,10 +55,12 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<WorkflowPresetId>('poster');
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [editInstruction, setEditInstruction] = useState('');
+  const [viewMode, setViewMode] = useState<'result' | 'compare'>('result');
+  const [comparePosition, setComparePosition] = useState(52);
 
   // Keep the decomposition controls visible by default; this is the primary action.
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(true);
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -1725,6 +1727,41 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       return true;
     })
     .sort((a, b) => a.zIndex - b.zIndex);
+  const baseLayer = layers[0] ?? null;
+  const renderLayerStack = (interactive = true) => {
+    if (!baseLayer) return null;
+
+    return displayedLayers.map((layer) => {
+      const isRootLayer = !layer.parentId;
+
+      return (
+        <div
+          key={layer.id}
+          className={`absolute transition-all duration-200 ${interactive && selectedLayerId === layer.id ? 'z-20' : ''}`}
+          style={{
+            left: isRootLayer ? layer.x : 0,
+            top: isRootLayer ? layer.y : 0,
+            width: isRootLayer ? layer.width : baseLayer.width,
+            height: isRootLayer ? layer.height : baseLayer.height,
+            opacity: layer.opacity,
+            zIndex: layer.zIndex,
+            backgroundImage: `url(${layer.url})`,
+            backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
+            backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
+            backgroundRepeat: 'no-repeat',
+            outline: interactive && selectedLayerId === layer.id ? '2px solid rgba(113,190,255,0.92)' : 'none',
+            outlineOffset: interactive && selectedLayerId === layer.id ? '2px' : '0',
+            pointerEvents: interactive ? 'auto' : 'none',
+          }}
+          onMouseDown={interactive ? (e) => handleLayerMouseDown(e, layer) : undefined}
+          onClick={interactive ? (e) => {
+            e.stopPropagation();
+            setSelectedLayerId(layer.id);
+          } : undefined}
+        />
+      );
+    });
+  };
 
   return (
     <div className={`relative w-full overflow-hidden ${embedded ? 'rounded-[36px]' : 'min-h-screen'} bg-[#060e20] text-white [font-family:var(--font-body)]`}>
@@ -1865,22 +1902,47 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             className="min-h-0 min-w-0 rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] ring-1 ring-white/8 backdrop-blur-[22px] transition-all duration-300 md:p-6 max-lg:order-2"
           >
             <div className="flex h-full min-h-0 flex-col gap-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-[#0f172a]/72 px-4 py-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.38em] text-cyan-100/55">{workspace.preview}</p>
-                  <p className="mt-2 text-sm text-slate-300">
+                  <p className="text-[10px] font-black uppercase tracking-[0.38em] text-cyan-100/55">Live workflow studio</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-200">
                     {selectedLayer ? selectedLayer.name : workspace.uploadHint}
                   </p>
                 </div>
-                {selectedLayer && (
-                  <div className={`rounded-full px-3 py-2 text-xs font-semibold ${
-                    selectedLayer.maskUrl
-                      ? 'bg-emerald-400/12 text-emerald-100 shadow-[inset_0_0_0_1px_rgba(110,231,183,0.22)]'
-                      : 'bg-white/6 text-slate-300 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]'
-                  }`}>
-                    {selectedLayer.maskUrl ? workflow.maskReady : workflow.noMask}
+                <div className="flex flex-wrap items-center gap-2">
+                  {layers.length > 0 && (
+                    <div className="flex rounded-full bg-white/7 p-1 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+                      {[
+                        { id: 'result' as const, label: isZh ? '结果' : 'Result' },
+                        { id: 'compare' as const, label: isZh ? '前后对比' : 'Before / After' },
+                      ].map((mode) => (
+                        <button
+                          key={mode.id}
+                          onClick={() => setViewMode(mode.id)}
+                          className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${
+                            viewMode === mode.id
+                              ? 'bg-cyan-300 text-[#071123]'
+                              : 'text-slate-300 hover:bg-white/8'
+                          }`}
+                        >
+                          {mode.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedLayer && (
+                    <div className={`rounded-full px-3 py-2 text-xs font-semibold ${
+                      selectedLayer.maskUrl
+                        ? 'bg-emerald-400/12 text-emerald-100 shadow-[inset_0_0_0_1px_rgba(110,231,183,0.22)]'
+                        : 'bg-white/6 text-slate-300 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]'
+                    }`}>
+                      {selectedLayer.maskUrl ? workflow.maskReady : workflow.noMask}
+                    </div>
+                  )}
+                  <div className="rounded-full bg-cyan-300/10 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-cyan-100">
+                    {selectedWorkflow.outcome}
                   </div>
-                )}
+                </div>
               </div>
 
               <div
@@ -1899,38 +1961,59 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       transformOrigin: 'center center',
                     }}
                   >
-                  {layers.length > 0 ? (
-                    <div className="relative overflow-hidden rounded-[26px] bg-white shadow-[0_36px_120px_rgba(0,0,0,0.45)]" style={{ width: layers[0].width, height: layers[0].height }}>
-                      {displayedLayers.map((layer) => {
-                        const isRootLayer = !layer.parentId;
-                        const baseLayer = layers[0];
-
-                        return (
-                          <div
-                            key={layer.id}
-                            className={`absolute transition-all duration-200 ${selectedLayerId === layer.id ? 'z-20' : ''}`}
-                            style={{
-                              left: isRootLayer ? layer.x : 0,
-                              top: isRootLayer ? layer.y : 0,
-                              width: isRootLayer ? layer.width : baseLayer.width,
-                              height: isRootLayer ? layer.height : baseLayer.height,
-                              opacity: layer.opacity,
-                              zIndex: layer.zIndex,
-                              backgroundImage: `url(${layer.url})`,
-                              backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
-                              backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
-                              backgroundRepeat: 'no-repeat',
-                              outline: selectedLayerId === layer.id ? '2px solid rgba(113,190,255,0.92)' : 'none',
-                              outlineOffset: selectedLayerId === layer.id ? '2px' : '0',
-                            }}
-                            onMouseDown={(e) => handleLayerMouseDown(e, layer)}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLayerId(layer.id);
-                            }}
+                  {baseLayer ? (
+                    <div
+                      className="relative overflow-hidden rounded-[26px] bg-white shadow-[0_36px_120px_rgba(0,0,0,0.45)]"
+                      style={{ width: baseLayer.width, height: baseLayer.height }}
+                    >
+                      {viewMode === 'compare' ? (
+                        <>
+                          <img
+                            src={baseLayer.url}
+                            alt="Before image"
+                            className="absolute inset-0 h-full w-full object-cover"
+                            draggable={false}
                           />
-                        );
-                      })}
+                          <div
+                            className="absolute inset-y-0 left-0 overflow-hidden border-r-2 border-cyan-200"
+                            style={{ width: `${comparePosition}%` }}
+                          >
+                            <div
+                              className="relative h-full"
+                              style={{ width: baseLayer.width, height: baseLayer.height }}
+                            >
+                              {renderLayerStack(false)}
+                            </div>
+                          </div>
+                          <div
+                            className="pointer-events-none absolute inset-y-0 flex items-center"
+                            style={{ left: `${comparePosition}%`, transform: 'translateX(-50%)' }}
+                          >
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/80 bg-[#071123]/82 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+                              Drag
+                            </div>
+                          </div>
+                          <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-black text-white">
+                            {isZh ? '结果' : 'After'}
+                          </div>
+                          <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-black text-white">
+                            {isZh ? '原图' : 'Before'}
+                          </div>
+                          <input
+                            type="range"
+                            min="8"
+                            max="92"
+                            value={comparePosition}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onTouchStart={(event) => event.stopPropagation()}
+                            onChange={(event) => setComparePosition(Number(event.target.value))}
+                            className="absolute inset-x-6 bottom-5 z-30 h-1 cursor-ew-resize appearance-none rounded-full bg-white/30 accent-cyan-300"
+                            aria-label="Before after comparison position"
+                          />
+                        </>
+                      ) : (
+                        renderLayerStack(true)
+                      )}
                     </div>
                   ) : (
                     <div className="relative flex w-full max-w-4xl flex-col gap-5 rounded-[30px] bg-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:p-7">

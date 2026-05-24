@@ -216,6 +216,14 @@ export default function LandingHeroExperience() {
   const params = useParams();
   const isZh = params?.locale === 'zh';
   const t = isZh ? copy.zh : copy.en;
+  const seoLinks = [
+    { label: t.seoItems[0], href: '/seo/en/change-background-of-ai-product-image' },
+    { label: t.seoItems[1], href: '/seo/en/edit-ai-product-photos' },
+    { label: t.seoItems[2], href: '/seo/en/modify-ai-character-without-changing-face' },
+    { label: t.seoItems[3], href: '/seo/en/separate-text-from-image-ai' },
+    { label: t.seoItems[4], href: '/seo/en/edit-poster-without-photoshop' },
+    { label: t.seoItems[5], href: '/seo/en/keep-same-composition-ai' },
+  ];
 
   const schema = useMemo(
     () => ({
@@ -460,10 +468,14 @@ export default function LandingHeroExperience() {
           <h2 className="text-3xl font-black text-[#161616] [font-family:var(--font-display)] md:text-4xl">{t.seoTitle}</h2>
         </div>
         <div className="grid gap-px bg-black/10 md:grid-cols-2">
-          {t.seoItems.map((item) => (
-            <div key={item} className="bg-[#fbf8f1] p-5 text-sm font-black text-[#2b2620]">
-              {item}
-            </div>
+          {seoLinks.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="bg-[#fbf8f1] p-5 text-sm font-black text-[#2b2620] transition-colors hover:bg-white"
+            >
+              {item.label}
+            </a>
           ))}
         </div>
       </section>

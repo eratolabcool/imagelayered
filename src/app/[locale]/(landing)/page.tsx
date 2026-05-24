@@ -10,11 +10,13 @@ export const generateMetadata = getMetadata({
   metadataKey: 'pages.index.metadata',
   canonicalUrl: '/',
   additionalKeywords: [
-    'product view generator',
-    'different angle product photos',
+    'edit AI image without regenerating',
+    'AI image layer editor',
+    'AI image revision tool',
+    'edit poster without Photoshop',
+    'change background of AI product image',
     'layered image editor',
-    'product image cleanup',
-    'ai background separation',
+    'separate text from image AI',
   ],
 });
 
