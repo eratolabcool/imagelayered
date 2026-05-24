@@ -221,7 +221,7 @@ const CollapsibleLeftSidebar: React.FC<CollapsibleLeftSidebarProps> = ({
             onChange={(e) => setAdvancedConfig({ ...advancedConfig, prompt: e.target.value })}
             placeholder={adv.promptPlaceholder}
             rows={3}
-            className="w-full rounded-xl bg-[#0b152b] px-3 py-2 text-xs text-white outline-none transition-all placeholder:text-slate-500 hover:bg-[#101d39] focus:bg-[#101d39] border border-white/5 focus:border-blue-500/30 resize-none"
+            className="w-full resize-none rounded-xl border border-white/10 bg-[#071123] px-3 py-2 text-xs font-semibold leading-5 text-white caret-cyan-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition-all placeholder:text-slate-500 hover:bg-[#0b152b] focus:border-cyan-300/40 focus:bg-[#0b152b] focus:ring-4 focus:ring-cyan-300/10"
           />
         </label>
       </div>

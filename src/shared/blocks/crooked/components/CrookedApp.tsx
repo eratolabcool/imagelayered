@@ -1781,7 +1781,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       type="text"
                       value={projectName}
                       onChange={(e) => setProjectName(e.target.value)}
-                      className="bg-transparent border-b border-transparent hover:border-white/20 focus:border-cyan-400 focus:outline-none text-base font-bold text-white md:text-lg py-0.5 px-1 max-w-[150px] md:max-w-[220px]"
+                      className="max-w-[150px] rounded-xl border border-white/10 bg-[#071123] px-3 py-2 text-base font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition-colors placeholder:text-slate-500 hover:bg-[#0b152b] focus:border-cyan-300/45 focus:bg-[#0b152b] focus:ring-4 focus:ring-cyan-300/10 md:max-w-[220px] md:text-lg"
                       placeholder="My Poster"
                     />
                     <div className="flex items-center gap-1 text-[10px] text-cyan-200/60 font-mono px-2 py-0.5 rounded-full bg-white/5 w-fit">

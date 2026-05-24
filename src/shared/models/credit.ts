@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, isNull, or, sql, sum } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, isNull, or, sum } from 'drizzle-orm';
 
 import { db } from '@/core/db';
 import { credit } from '@/config/db/schema';
@@ -173,8 +173,6 @@ export async function consumeCredits({
   metadata?: string;
   tx?: any;
 }) {
-  const currentTime = new Date();
-
   // consume credits
   const execute = async (tx: any) => {
     // 1. check credits balance
@@ -188,11 +186,7 @@ export async function consumeCredits({
           eq(credit.userId, userId),
           eq(credit.transactionType, CreditTransactionType.GRANT),
           eq(credit.status, CreditStatus.ACTIVE),
-          gt(credit.remainingCredits, 0),
-          or(
-            isNull(credit.expiresAt), // Never expires
-            gt(credit.expiresAt, currentTime) // Not yet expired
-          )
+          gt(credit.remainingCredits, 0)
         )
       );
 
@@ -226,11 +220,7 @@ export async function consumeCredits({
             eq(credit.userId, userId),
             eq(credit.transactionType, CreditTransactionType.GRANT),
             eq(credit.status, CreditStatus.ACTIVE),
-            gt(credit.remainingCredits, 0),
-            or(
-              isNull(credit.expiresAt), // Never expires
-              gt(credit.expiresAt, currentTime) // Not yet expired
-            )
+            gt(credit.remainingCredits, 0)
           )
         )
         .orderBy(
@@ -313,14 +303,6 @@ export async function consumeCredits({
 
 // get remaining credits
 export async function getRemainingCredits(userId: string): Promise<number> {
-  const currentTime = new Date();
-
-  // Validate current time
-  if (isNaN(currentTime.getTime())) {
-    console.error('[getRemainingCredits] Invalid current time');
-    return 0;
-  }
-
   const [result] = await db()
     .select({
       total: sum(credit.remainingCredits),
@@ -331,19 +313,11 @@ export async function getRemainingCredits(userId: string): Promise<number> {
         eq(credit.userId, userId),
         eq(credit.transactionType, CreditTransactionType.GRANT),
         eq(credit.status, CreditStatus.ACTIVE),
-        gt(credit.remainingCredits, 0),
-        or(
-          isNull(credit.expiresAt), // Never expires
-          and(
-            sql`${credit.expiresAt} IS NOT NULL`,
-            sql`CAST(${credit.expiresAt} AS INTEGER) != 0`, // Exclude NaN (stored as 0 in SQLite)
-            gt(credit.expiresAt, currentTime)
-          )
-        )
+        gt(credit.remainingCredits, 0)
       )
     );
 
-  return parseInt(result?.total || '0');
+  return Number(result?.total || 0);
 }
 
 // grant credits for new user
