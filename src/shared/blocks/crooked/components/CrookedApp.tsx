@@ -403,43 +403,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   }, [canvasToBlob, loadCanvasImage, uploadImageBlob]);
 
   const placeImageLayer = useCallback((base64: string, width: number, height: number, name: string = 'Main Canvas') => {
-    const isMobile = window.innerWidth < 768;
-
-    // 根据侧边栏实际状态计算宽度
-    const leftSidebarWidth = isLeftSidebarCollapsed ? 64 : 320;  // w-16 vs w-80
-    const rightSidebarWidth = isRightSidebarCollapsed ? 64 : 384; // w-16 vs w-96
-    const gaps = 16 * 2; // gap-4 on both sides
-    const sidebarWidth = leftSidebarWidth + rightSidebarWidth + gaps;
-
-    const headerHeight = 100;
-    const padding = 60; // 减小padding，给图片更多空间
-    const availableWidth = isMobile
-      ? window.innerWidth - 40
-      : window.innerWidth - sidebarWidth - padding;
-    const availableHeight = window.innerHeight - headerHeight - padding;
-
-    const scaleX = availableWidth / width;
-    const scaleY = availableHeight / height;
-    const initialScale = Math.min(scaleX, scaleY, 0.75); // 更保守的缩放
-
-    console.log('[placeImageLayer] Layout calculation:', {
-      windowWidth: window.innerWidth,
-      windowHeight: window.innerHeight,
-      leftSidebarWidth,
-      rightSidebarWidth,
-      sidebarWidth,
-      availableWidth,
-      availableHeight,
-      imageWidth: width,
-      imageHeight: height,
-      scaleX,
-      scaleY,
-      initialScale,
-      isMobile,
-      leftCollapsed: isLeftSidebarCollapsed,
-      rightCollapsed: isRightSidebarCollapsed
-    });
-
     const newLayer: Layer = {
       id: crypto.randomUUID(),
       name,
@@ -457,7 +420,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
     setLayers([newLayer]);
     setSelectedLayerId(newLayer.id);
-    setZoom(initialScale);
+    setZoom(1);
     setDragOffset({ x: 0, y: 0 });
   }, []); // 移除依赖，避免侧边栏状态变化时重复创建
 
@@ -467,33 +430,52 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     }
   }, [initialImage, layers.length, placeImageLayer]);
 
-  // 监听侧边栏状态变化，重新计算图片缩放，确保始终在可视区域内
+  const fitCanvasToImage = useCallback(() => {
+    const viewport = mainRef.current;
+    const baseLayer = layers[0];
+    if (!viewport || !baseLayer) return;
+
+    const rect = viewport.parentElement?.getBoundingClientRect() ?? viewport.getBoundingClientRect();
+    const padding = 28;
+    const availableWidth = Math.max(160, rect.width - padding * 2);
+    const availableHeight = Math.max(160, rect.height - padding * 2);
+    const nextZoom = Math.min(
+      availableWidth / baseLayer.width,
+      availableHeight / baseLayer.height,
+      1
+    );
+
+    setZoom(Number.isFinite(nextZoom) && nextZoom > 0 ? nextZoom : 1);
+    setDragOffset({ x: 0, y: 0 });
+  }, [layers]);
+
+  // Fit the visual canvas to the uploaded image and keep it pinned to the top.
   useEffect(() => {
-    if (layers.length > 0) {
-      const isMobile = window.innerWidth < 768;
-      const leftSidebarWidth = isLeftSidebarCollapsed ? 64 : 320;
-      const rightSidebarWidth = isRightSidebarCollapsed ? 64 : 384;
-      const gaps = 16 * 2;
-      const sidebarWidth = leftSidebarWidth + rightSidebarWidth + gaps;
-      const padding = 60;
-      const headerHeight = 100;
-      const availableWidth = isMobile
-        ? window.innerWidth - 40
-        : window.innerWidth - sidebarWidth - padding;
-      const availableHeight = window.innerHeight - headerHeight - padding;
+    if (!layers[0]) return;
 
-      const baseLayer = layers[0];
-      const scaleX = availableWidth / baseLayer.width;
-      const scaleY = availableHeight / baseLayer.height;
-      const newScale = Math.min(scaleX, scaleY, 0.75);
+    const raf = window.requestAnimationFrame(fitCanvasToImage);
+    const viewport = mainRef.current;
+    let observer: ResizeObserver | null = null;
 
-      // 只在缩放比例差异较大时才调整，避免频繁重绘
-      if (Math.abs(newScale - zoom) > 0.05) {
-        setZoom(newScale);
-        setDragOffset({ x: 0, y: 0 });
-      }
+    if (viewport) {
+      observer = new ResizeObserver(() => fitCanvasToImage());
+      observer.observe(viewport);
     }
-  }, [isLeftSidebarCollapsed, isRightSidebarCollapsed, layers, zoom]);
+
+    window.addEventListener('resize', fitCanvasToImage);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      observer?.disconnect();
+      window.removeEventListener('resize', fitCanvasToImage);
+    };
+  }, [
+    fitCanvasToImage,
+    isLeftSidebarCollapsed,
+    isRightSidebarCollapsed,
+    layers.length,
+    layers[0]?.width,
+    layers[0]?.height,
+  ]);
 
   // 从 sessionStorage 读取上传的图片（用于从首页跳转）
   useEffect(() => {
@@ -1948,23 +1930,36 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               <div
                 ref={mainRef}
                 onMouseDown={handleMouseDown}
-                className={`relative flex h-[520px] shrink-0 items-center justify-center overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(95,116,255,0.16),transparent_28%),linear-gradient(180deg,#0c1730,#091328)] md:h-[560px] lg:h-auto lg:min-h-0 lg:flex-1 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                className={`canvas-container relative flex h-[520px] shrink-0 items-start justify-center overflow-auto rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(95,116,255,0.16),transparent_28%),linear-gradient(180deg,#0c1730,#091328)] p-4 md:h-[560px] lg:h-auto lg:min-h-0 lg:flex-1 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                style={
+                  baseLayer
+                    ? {
+                        height: Math.ceil(baseLayer.height * zoom + 32),
+                        maxHeight: '100%',
+                      }
+                    : undefined
+                }
               >
                 <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:48px_48px]" />
                 <div
-                  className="relative flex items-center justify-center"
+                  className="relative z-10 flex w-full items-start justify-center"
                 >
                   <div
-                    className="transition-transform duration-300 ease-out"
+                    className="transition-[width,height] duration-200 ease-out"
                     style={{
-                      transform: `scale(${zoom}) translate(${dragOffset.x}px, ${dragOffset.y}px)`,
-                      transformOrigin: 'center center',
+                      width: baseLayer ? baseLayer.width * zoom : undefined,
+                      height: baseLayer ? baseLayer.height * zoom : undefined,
                     }}
                   >
                   {baseLayer ? (
                     <div
                       className="relative overflow-hidden rounded-[26px] bg-white shadow-[0_36px_120px_rgba(0,0,0,0.45)]"
-                      style={{ width: baseLayer.width, height: baseLayer.height }}
+                      style={{
+                        width: baseLayer.width,
+                        height: baseLayer.height,
+                        transform: `translate(${dragOffset.x * zoom}px, ${dragOffset.y * zoom}px) scale(${zoom})`,
+                        transformOrigin: 'top left',
+                      }}
                     >
                       {viewMode === 'compare' ? (
                         <>
