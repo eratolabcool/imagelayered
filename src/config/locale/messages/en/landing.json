@@ -29,10 +29,34 @@
           "icon": "RiRobot2Line",
           "children": [
             {
-              "title": "AI Photoshop for Posters",
-              "description": "Upload a poster, split it into editable layers, and edit any object by prompt",
+              "title": "Layer Editor",
+              "description": "Split any image into editable layers",
               "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
+            },
+            {
+              "title": "AI Replace",
+              "description": "Replace selected objects without rebuilding the image",
+              "url": "/qwenimagelayered?tool=replace",
+              "icon": "RiImageEditLine"
+            },
+            {
+              "title": "AI Expand",
+              "description": "Expand a visual into a larger composition",
+              "url": "/qwenimagelayered?tool=expand",
+              "icon": "RiExpandDiagonalLine"
+            },
+            {
+              "title": "AI Remove",
+              "description": "Remove selected objects and restore the scene",
+              "url": "/qwenimagelayered?tool=remove",
+              "icon": "RiEraserLine"
+            },
+            {
+              "title": "AI Lookbook",
+              "description": "Build your personal fashion identity from two photos",
+              "url": "/ai-lookbook",
+              "icon": "RiShirtLine"
             }
            
           ]

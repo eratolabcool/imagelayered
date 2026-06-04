@@ -578,6 +578,29 @@ export const project = table(
   ]
 );
 
+export const lookbookCharacter = table(
+  'lookbook_character',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: text('name').notNull().default('My Fashion Persona'),
+    faceImageUrl: text('face_image_url').notNull(),
+    fullBodyImageUrl: text('full_body_image_url').notNull(),
+    characterProfile: text('character_profile').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index('idx_lookbook_character_user_id').on(table.userId),
+    index('idx_lookbook_character_created_at').on(table.createdAt),
+  ]
+);
+
 export const newsletterSubscriber = table(
   'newsletter_subscriber',
   {
@@ -596,4 +619,3 @@ export const newsletterSubscriber = table(
     index('idx_subscriber_created_at').on(table.createdAt),
   ]
 );
-

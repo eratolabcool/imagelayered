@@ -30,10 +30,34 @@
           "icon": "RiRobot2Line",
           "children": [
             {
-              "title": "海报级 AI Photoshop",
-              "description": "上传海报，自动拆成可编辑图层，再用提示词修改任意元素",
+              "title": "Layer Editor",
+              "description": "将任意图片拆分成可编辑图层",
               "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
+            },
+            {
+              "title": "AI Replace",
+              "description": "只替换选中的物体，保留原图构图",
+              "url": "/qwenimagelayered?tool=replace",
+              "icon": "RiImageEditLine"
+            },
+            {
+              "title": "AI Expand",
+              "description": "扩展图片画面和构图",
+              "url": "/qwenimagelayered?tool=expand",
+              "icon": "RiExpandDiagonalLine"
+            },
+            {
+              "title": "AI Remove",
+              "description": "移除选中物体并自然修复画面",
+              "url": "/qwenimagelayered?tool=remove",
+              "icon": "RiEraserLine"
+            },
+            {
+              "title": "AI Lookbook",
+              "description": "用两张照片建立你的个人时尚身份",
+              "url": "/ai-lookbook",
+              "icon": "RiShirtLine"
             }
 
 

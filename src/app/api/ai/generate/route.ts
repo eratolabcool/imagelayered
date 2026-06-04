@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       if (scene === 'image-decomposition') {
         provider = provider || configs.layer_decomposition_provider || 'fal';
         model = model || configs.layer_decomposition_model || 'fal-ai/qwen-image-layered';
-      } else if (['image-recolor', 'image-replace', 'image-remove'].includes(scene)) {
+      } else if (['image-recolor', 'image-replace', 'image-remove', 'lookbook-generate'].includes(scene)) {
         provider = provider || configs.poster_edit_provider || 'fal';
         model = model || configs.poster_edit_model || 'openai/gpt-image-2/edit';
       }
@@ -77,6 +77,8 @@ export async function POST(request: Request) {
         costCredits = 4;
       } else if (scene === 'image-remove') {
         costCredits = 3;
+      } else if (scene === 'lookbook-generate') {
+        costCredits = 8;
       } else if (scene === 'image-to-image') {
         costCredits = 4;
       } else if (scene === 'text-to-image') {
