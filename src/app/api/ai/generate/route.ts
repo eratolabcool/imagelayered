@@ -20,6 +20,33 @@ export const dynamic = 'force-dynamic';
 // 🚀 使用 Node.js Runtime（需要数据库连接）
 export const runtime = 'nodejs';
 
+function hasGeneratedImages(result: any) {
+  if ((result?.taskInfo?.images?.length ?? 0) > 0) {
+    return true;
+  }
+
+  const rawTaskResult = result?.taskResult;
+  if (!rawTaskResult) {
+    return false;
+  }
+
+  try {
+    const taskResult = typeof rawTaskResult === 'string'
+      ? JSON.parse(rawTaskResult)
+      : rawTaskResult;
+
+    return (
+      (Array.isArray(taskResult?.images) && taskResult.images.length > 0) ||
+      (Array.isArray(taskResult?.output) && taskResult.output.length > 0) ||
+      !!taskResult?.image?.url ||
+      !!taskResult?.image_url ||
+      !!taskResult?.url
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     let { provider, mediaType, model, prompt, options, scene } =
@@ -180,8 +207,7 @@ export async function POST(request: Request) {
     // Validate result for image editing scenes
     // For recolor/replace/remove, we must have an image in the result
     if (['image-recolor', 'image-replace', 'image-remove'].includes(scene)) {
-      const hasImage = (result.taskInfo?.images?.length ?? 0) > 0;
-      if (!hasImage && result.taskStatus === AITaskStatus.SUCCESS) {
+      if (!hasGeneratedImages(result) && result.taskStatus === AITaskStatus.SUCCESS) {
         console.error('[generate] Image editing task completed but no image returned:', {
           scene,
           taskInfo: result.taskInfo,
@@ -193,8 +219,7 @@ export async function POST(request: Request) {
 
     // Validate result for decomposition
     if (scene === 'image-decomposition' && result.taskStatus === AITaskStatus.SUCCESS) {
-      const hasLayers = (result.taskInfo?.images?.length ?? 0) > 0;
-      if (!hasLayers) {
+      if (!hasGeneratedImages(result)) {
         console.error('[generate] Decomposition completed but no layers returned:', {
           taskInfo: result.taskInfo,
           taskResult: result.taskResult

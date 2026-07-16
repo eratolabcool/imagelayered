@@ -56,8 +56,8 @@ export class FalProvider implements AIProvider {
       throw new Error('model is required');
     }
 
-    // For qwen-image-layered and qwen-image-layered/lora, prompt is optional
-    // For other models, prompt is required
+    // For qwen-image-layered and qwen-image-layered/lora, prompt is optional.
+    // For other models, prompt is required by the fal schema.
     if (!prompt && model !== 'fal-ai/qwen-image-layered' && model !== 'fal-ai/qwen-image-layered/lora') {
       throw new Error('prompt is required');
     }
@@ -212,8 +212,7 @@ export class FalProvider implements AIProvider {
     model?: string;
     mediaType?: AIMediaType;
   }): Promise<AITaskResult> {
-    // extract first two parts of model name for query url
-    // e.g. fal-ai/bytedance/seedream/v4/edit -> fal-ai/bytedance
+    // fal queue status/result endpoints use the same model path as submit.
     const queryModel = this.getQueryModel(model);
 
     // first check task status
@@ -419,17 +418,9 @@ export class FalProvider implements AIProvider {
     }
   }
 
-  // get query model name (first two parts)
-  // e.g. fal-ai/bytedance/seedream/v4/edit -> fal-ai/bytedance
+  // get query model name
   private getQueryModel(model?: string): string {
-    if (!model) {
-      return '';
-    }
-    const parts = model.split('/');
-    if (parts.length <= 2) {
-      return model;
-    }
-    return `${parts[0]}/${parts[1]}`;
+    return model || '';
   }
 
   // format input
@@ -512,6 +503,28 @@ export class FalProvider implements AIProvider {
       }
       if (options?.openai_api_key) {
         input.openai_api_key = options.openai_api_key;
+      }
+
+      return input;
+    }
+
+    if (model === 'bytedance/seedream/v5/pro/edit') {
+      const imageUrls =
+        options?.image_urls ||
+        options?.image_input ||
+        (options?.image_url ? [options.image_url] : []);
+
+      const input: any = {
+        prompt,
+        image_urls: imageUrls,
+        image_size: options?.image_size || 'auto_2K',
+        num_images: options?.num_images || 1,
+        output_format: options?.output_format || 'png',
+        enable_safety_checker: options?.enable_safety_checker !== false,
+      };
+
+      if (options?.sync_mode !== undefined) {
+        input.sync_mode = options.sync_mode;
       }
 
       return input;

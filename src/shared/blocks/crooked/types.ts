@@ -50,6 +50,11 @@ export interface DecomposeResponse {
 }
 
 export type ExportResolution = '1K' | '2K' | '4K';
+export type DecompositionModel =
+  | 'fal-ai/qwen-image-layered'
+  | 'fal-ai/qwen-image-layered/lora'
+  | 'bytedance/seedream/v5/pro/edit'
+  | 'openai/gpt-image-2/edit';
 
 export interface ExportSettings {
   width: number;
@@ -68,5 +73,5 @@ export interface AdvancedDecompositionConfig {
   autoCaptionLanguageEn: boolean; // True for EN, False for ZH
   guidanceScale: number;
   inferenceSteps: number;
-  model: 'fal-ai/qwen-image-layered' | 'fal-ai/qwen-image-layered/lora';
+  model: DecompositionModel;
 }

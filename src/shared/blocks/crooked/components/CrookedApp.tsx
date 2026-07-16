@@ -3,12 +3,10 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useSession } from '@/core/auth/client';
-import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw } from 'lucide-react';
-import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId } from '../types';
+import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Download, Copy, Wand2, SlidersHorizontal, UploadCloud } from 'lucide-react';
+import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId, DecompositionModel } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
-import CollapsibleLeftSidebar from './CollapsibleLeftSidebar';
-import CollapsibleRightSidebar from './CollapsibleRightSidebar';
 import { Icons } from './Icon';
 import {
   incrementUploadCount,
@@ -26,9 +24,51 @@ interface CrookedAppProps {
   initialImage?: PreparedImagePayload | null;
 }
 
+const decompositionModelOptions: Array<{
+  model: DecompositionModel;
+  provider: 'fal';
+  label: string;
+  shortLabel: string;
+  description: string;
+  badge: string;
+  mode: 'native' | 'design-layering' | 'semantic-edit';
+  idealFor: string;
+}> = [
+  {
+    model: 'fal-ai/qwen-image-layered',
+    provider: 'fal',
+    label: 'Qwen Image Layered',
+    shortLabel: 'Qwen',
+    description: 'Native transparent layer separation',
+    badge: 'Best layers',
+    mode: 'native',
+    idealFor: 'General layer extraction',
+  },
+  {
+    model: 'bytedance/seedream/v5/pro/edit',
+    provider: 'fal',
+    label: 'Seedream Design Layering',
+    shortLabel: 'Seedream Design',
+    description: 'Design-aware layering for posters, product pages, infographics, and text-heavy visuals',
+    badge: 'Design',
+    mode: 'design-layering',
+    idealFor: 'Posters, e-commerce, infographics',
+  },
+  {
+    model: 'openai/gpt-image-2/edit',
+    provider: 'fal',
+    label: 'GPT Image 2',
+    shortLabel: 'GPT Image 2',
+    description: 'Prompt-accurate image understanding',
+    badge: 'Precise',
+    mode: 'semantic-edit',
+    idealFor: 'Semantic local edits',
+  },
+];
+
 const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage = null }) => {
   const copy = useCrookedCopy();
-  const { brand, buttons, empty, editBar, workspace, workflow } = copy;
+  const { brand, editBar, workflow } = copy;
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolType>('select');
@@ -55,12 +95,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<WorkflowPresetId>('poster');
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [editInstruction, setEditInstruction] = useState('');
-  const [viewMode, setViewMode] = useState<'result' | 'compare'>('result');
-  const [comparePosition, setComparePosition] = useState(52);
-
-  // Keep the decomposition controls visible by default; this is the primary action.
-  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -69,10 +103,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const projectIdQuery = searchParams ? searchParams.get('project') : null;
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
-
-  useEffect(() => {
-    setIsLeftSidebarCollapsed(false);
-  }, []);
 
   // 1. On Mount: Load Project if projectIdQuery is present
   useEffect(() => {
@@ -221,12 +251,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   // 4. Exit Intent Detector
   useEffect(() => {
     const subscribed = localStorage.getItem('layered_newsletter_subscribed') === 'true';
-    if (subscribed || isLoggedIn) return;
+    const dismissed = sessionStorage.getItem('layered_exit_intent_dismissed') === 'true';
+    if (subscribed || dismissed || isLoggedIn) return;
 
     const handleMouseLeave = (e: MouseEvent) => {
       if (e.clientY < 20) {
         if (layers.length > 0 && !showExitIntent) {
           setShowExitIntent(true);
+          sessionStorage.setItem('layered_exit_intent_dismissed', 'true');
         }
       }
     };
@@ -265,6 +297,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const selectedWorkflow = React.useMemo(
     () => getWorkflowPreset(selectedWorkflowId),
     [selectedWorkflowId]
+  );
+  const selectedDecompositionModel = React.useMemo(
+    () => decompositionModelOptions.find((option) => option.model === advancedConfig.model) ?? decompositionModelOptions[0],
+    [advancedConfig.model]
   );
 
   const mainRef = useRef<HTMLDivElement>(null);
@@ -470,8 +506,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     };
   }, [
     fitCanvasToImage,
-    isLeftSidebarCollapsed,
-    isRightSidebarCollapsed,
     layers.length,
     layers[0]?.width,
     layers[0]?.height,
@@ -617,6 +651,28 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     e.target.value = '';
   };
 
+  const extractLayerImagesFromPayload = (payload: any) => {
+    if (!payload) return [];
+
+    const normalize = (item: any) => {
+      const url = typeof item === 'string'
+        ? item
+        : item?.imageUrl || item?.image_url || item?.url || item?.image?.url;
+
+      return url ? { imageUrl: url } : null;
+    };
+
+    if (Array.isArray(payload.images)) {
+      return payload.images.map(normalize).filter(Boolean);
+    }
+    if (Array.isArray(payload.output)) {
+      return payload.output.map(normalize).filter(Boolean);
+    }
+
+    const single = normalize(payload);
+    return single ? [single] : [];
+  };
+
   const smartDecompose = async (count: number, targetLayerId?: string) => {
     // Check guest limits before processing
     const isLoggedIn = isUserLoggedIn();
@@ -727,20 +783,57 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       const imageUrl = uploadData.data.urls[0];
       console.log('[smartDecompose] Uploaded image URL:', imageUrl);
 
-      // Call AI generate for decomposition using fal.ai qwen-image-layered
-      // Build options object with advanced config parameters
-      const requestOptions: any = {
-        image_input: [imageUrl],
-        num_layers: count > 0 ? count : 4,
-        num_inference_steps: advancedConfig.inferenceSteps,
-        guidance_scale: advancedConfig.guidanceScale,
-        enable_safety_checker: true,
-        sync_mode: true, // Use synchronous mode - qwen-image-layered supports this
-      };
+      const isNativeLayerModel =
+        advancedConfig.model === 'fal-ai/qwen-image-layered' ||
+        advancedConfig.model === 'fal-ai/qwen-image-layered/lora';
+      const isSeedreamDesignLayering = advancedConfig.model === 'bytedance/seedream/v5/pro/edit';
+      const targetLayerCount = count > 0 ? count : 4;
+      const decompositionPrompt = isNativeLayerModel
+        ? `Decompose this image into ${targetLayerCount} transparent editable layers`
+        : isSeedreamDesignLayering
+          ? [
+              `Seedream Design Layering task.`,
+              `Analyze this image as a professional design file, not a flat picture.`,
+              `Separate the design into up to ${Math.min(Math.max(targetLayerCount, 4), 8)} independent editable PNG layers.`,
+              `Prioritize design semantics: background plate, main subject or product, text blocks, logo or brand marks, decorative objects, foreground effects, shadows, and lighting accents.`,
+              `For posters, e-commerce images, infographics, UI mockups, and text-heavy visuals, preserve the original canvas alignment, element scale, typography placement, spacing, and visual hierarchy.`,
+              `Each returned image should be a clean layer asset with transparent areas where possible, aligned to the original canvas, suitable for dragging, hiding, recoloring, extracting, and recompositing.`,
+              `If the background is covered by a subject, restore the hidden background region naturally so the background layer can stand alone.`,
+              `Do not redesign the composition. Do not merge unrelated elements. Keep text blocks independent from background and subject layers when possible.`,
+            ].join(' ')
+          : [
+              `Analyze this image as an AI layer editing workspace.`,
+              `Create the cleanest editable visual separation possible for ${targetLayerCount} major elements.`,
+              `Preserve the original composition, scale, lighting, and object boundaries.`,
+              `Return production-ready PNG image outputs suitable for layer editing.`,
+            ].join(' ');
+
+      const requestOptions: any = isNativeLayerModel
+        ? {
+            image_input: [imageUrl],
+            num_layers: count > 0 ? count : 4,
+            num_inference_steps: advancedConfig.inferenceSteps,
+            guidance_scale: advancedConfig.guidanceScale,
+            enable_safety_checker: true,
+            sync_mode: true,
+          }
+        : {
+            image_input: [imageUrl],
+            image_urls: [imageUrl],
+            num_images: isSeedreamDesignLayering
+              ? Math.min(Math.max(targetLayerCount, 4), 8)
+              : Math.min(Math.max(targetLayerCount, 1), 4),
+            image_size: advancedConfig.model === 'bytedance/seedream/v5/pro/edit' ? 'auto_2K' : 'auto',
+            quality: 'high',
+            output_format: 'png',
+            sync_mode: true,
+          };
 
       // Add optional parameters if provided
       if (advancedConfig.prompt) {
-        requestOptions.prompt = advancedConfig.prompt;
+        requestOptions.prompt = isNativeLayerModel
+          ? advancedConfig.prompt
+          : `${decompositionPrompt}\n\nAdditional instructions: ${advancedConfig.prompt}`;
       }
       if (advancedConfig.negativePrompt) {
         requestOptions.negative_prompt = advancedConfig.negativePrompt;
@@ -757,11 +850,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         body: JSON.stringify({
           mediaType: 'image',
           scene: 'image-decomposition',
-          provider: 'fal',
+          provider: selectedDecompositionModel.provider,
           model: advancedConfig.model,
-          prompt: count > 0
-            ? `Decompose this image into ${count} layers`
-            : 'Decompose this image into layers',
+          prompt: requestOptions.prompt || decompositionPrompt,
           options: requestOptions,
         }),
       });
@@ -815,6 +906,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               }).filter((img: any) => img.imageUrl);
               console.log('[smartDecompose] Found images in taskInfo:', layerImages.length);
             }
+            if ((!layerImages || layerImages.length === 0) && taskInfo) {
+              layerImages = extractLayerImagesFromPayload(taskInfo);
+              console.log('[smartDecompose] Found generic images in taskInfo:', layerImages.length);
+            }
           } catch (e) {
             console.error('[smartDecompose] Failed to parse immediate taskInfo:', e);
           }
@@ -854,6 +949,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 return { imageUrl: url };
               }).filter((img: any) => img.imageUrl);
               console.log('[smartDecompose] Found images in output:', layerImages.length);
+            }
+            if ((!layerImages || layerImages.length === 0) && parsedResult) {
+              layerImages = extractLayerImagesFromPayload(parsedResult);
+              console.log('[smartDecompose] Found generic images in taskResult:', layerImages.length);
             }
           } catch (e) {
             console.error('[smartDecompose] Failed to parse taskResult:', e);
@@ -941,6 +1040,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   console.log('[smartDecompose] Found images in taskInfo:', layerImages.length);
                   break;
                 }
+                layerImages = extractLayerImagesFromPayload(parsedTaskInfo);
+                if (layerImages.length > 0) {
+                  console.log('[smartDecompose] Found generic images in taskInfo:', layerImages.length);
+                  break;
+                }
               } catch (e) {
                 console.error('[smartDecompose] Failed to parse taskInfo:', e);
               }
@@ -970,6 +1074,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     return { imageUrl: url };
                   }).filter((img: any) => img.imageUrl);
                   console.log('[smartDecompose] Found images in output:', layerImages.length);
+                  break;
+                }
+                layerImages = extractLayerImagesFromPayload(parsedResult);
+                if (layerImages.length > 0) {
+                  console.log('[smartDecompose] Found generic images in taskResult:', layerImages.length);
                   break;
                 }
               } catch (e) {
@@ -1129,6 +1238,12 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const canGenerateLayers = !!layers[0] && layers.length === 1 && !isProcessing;
+  const handleGenerateLayers = () => {
+    if (!layers[0] || isProcessing) return;
+    smartDecompose(layerCount, layers[0].id);
   };
 
   const handleEditAction = async (instruction: string) => {
@@ -1644,28 +1759,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       setOnboardingStep(null);
       localStorage.setItem('layered_tour_completed', 'true');
       toast.success(isZh ? '🎓 恭喜完成新手教程，开始您的创作吧！' : '🎓 Congratulations! You completed the tour. Happy designing!');
-      setIsLeftSidebarCollapsed(false);
-      setIsRightSidebarCollapsed(true);
     } else {
       setOnboardingStep(nextStep);
-      if (nextStep === 1) {
-        setIsLeftSidebarCollapsed(true);
-        setIsRightSidebarCollapsed(true);
-      } else if (nextStep === 2) {
-        setIsLeftSidebarCollapsed(true);
-        setIsRightSidebarCollapsed(false);
-      } else if (nextStep === 3) {
-        setIsLeftSidebarCollapsed(true);
-        setIsRightSidebarCollapsed(true);
-      }
     }
   };
 
   const handleSkipOnboarding = () => {
     setOnboardingStep(null);
     localStorage.setItem('layered_tour_completed', 'true');
-    setIsLeftSidebarCollapsed(false);
-    setIsRightSidebarCollapsed(true);
   };
 
   const tourSteps = [
@@ -1758,14 +1859,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               </div>
               <div className="min-w-0">
                 {layers.length > 0 ? (
-                  <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-3">
-                    <input
-                      type="text"
-                      value={projectName}
-                      onChange={(e) => setProjectName(e.target.value)}
-                      className="max-w-[150px] rounded-xl border border-white/10 bg-[#071123] px-3 py-2 text-base font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition-colors placeholder:text-slate-500 hover:bg-[#0b152b] focus:border-cyan-300/45 focus:bg-[#0b152b] focus:ring-4 focus:ring-cyan-300/10 md:max-w-[220px] md:text-lg"
-                      placeholder="My Poster"
-                    />
+                  <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-3">
+                    <div className="min-w-0">
+                      <h1 className="truncate text-lg font-semibold text-white md:text-xl">
+                        {isZh ? 'Layer Editor' : 'Layer Editor'}
+                      </h1>
+                      <p className="mt-1 text-xs text-cyan-100/58">
+                        {layers.length === 1
+                          ? (isZh ? '已上传图片，点击 Generate 开始分层' : 'Image uploaded. Click Generate to create layers.')
+                          : (isZh ? `${layers.length - 1} 个可编辑图层` : `${layers.length - 1} editable layers`)}
+                      </p>
+                    </div>
                     <div className="flex items-center gap-1 text-[10px] text-cyan-200/60 font-mono px-2 py-0.5 rounded-full bg-white/5 w-fit">
                       {saveStatus === 'saving' && (
                         <>
@@ -1850,110 +1954,371 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
             </div>
           </div>
+          <div className="mt-4 flex flex-col gap-3 rounded-[24px] border border-white/10 bg-[#071123]/62 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] xl:flex-row xl:items-center xl:justify-between">
+            <div className="px-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-100/44">
+                {isZh ? '分层模式' : 'Layering mode'}
+              </p>
+              <p className="mt-1 text-xs text-slate-300/68">
+                {isZh
+                  ? '选择普通分层或 Seedream Design Layering，上传图片后点击 Generate。'
+                  : 'Choose native layers or Seedream Design Layering, upload an image, then click Generate.'}
+              </p>
+            </div>
+            <div className="flex flex-1 flex-col gap-2 lg:flex-row xl:max-w-5xl">
+              <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
+                {decompositionModelOptions.map((option) => (
+                  <button
+                    key={option.model}
+                    onClick={() => setAdvancedConfig(prev => ({ ...prev, model: option.model }))}
+                    className={`group rounded-2xl border px-3 py-3 text-left transition-all ${
+                      advancedConfig.model === option.model
+                        ? 'border-cyan-200/45 bg-cyan-300 text-[#071123] shadow-[0_14px_36px_rgba(34,211,238,0.16)]'
+                        : 'border-white/8 bg-white/[0.045] text-slate-200 hover:border-cyan-200/22 hover:bg-white/[0.075]'
+                    }`}
+                    title={option.description}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-black">{option.shortLabel}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] ${
+                        advancedConfig.model === option.model ? 'bg-[#071123]/10 text-[#071123]/70' : 'bg-cyan-300/10 text-cyan-100/58'
+                      }`}>
+                        {option.badge}
+                      </span>
+                    </span>
+                  <span className={`mt-1 block text-[11px] leading-5 ${
+                    advancedConfig.model === option.model ? 'text-[#071123]/68' : 'text-slate-400'
+                  }`}>
+                    {option.description}
+                  </span>
+                  <span className={`mt-2 block truncate text-[10px] font-bold ${
+                    advancedConfig.model === option.model ? 'text-[#071123]/52' : 'text-cyan-100/42'
+                  }`}>
+                    {option.idealFor}
+                  </span>
+                </button>
+              ))}
+              </div>
+              <button
+                onClick={handleGenerateLayers}
+                disabled={!canGenerateLayers}
+                className="flex min-h-[72px] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-5 py-3 text-sm font-black text-[#071123] shadow-[0_18px_42px_rgba(77,228,255,0.16)] transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-none disabled:bg-white/8 disabled:text-slate-500 disabled:shadow-none"
+              >
+                <Sparkles className="size-4" />
+                {isProcessing
+                  ? (isZh ? 'Generating' : 'Generating')
+                  : layers.length > 1
+                    ? (isZh ? '已生成' : 'Generated')
+                    : layers.length === 1
+                      ? (selectedDecompositionModel.mode === 'design-layering' ? (isZh ? 'Generate Design Layers' : 'Generate Design Layers') : 'Generate')
+                      : (isZh ? '先上传图片' : 'Upload first')}
+              </button>
+            </div>
+          </div>
         </header>
 
-        <section
-          className="flex flex-1 flex-col gap-4 lg:grid lg:h-[calc(100vh-156px)] lg:min-h-[640px]"
-          style={{
-            gridTemplateColumns: `${isLeftSidebarCollapsed ? '72px' : '320px'} minmax(0, 1fr) ${isRightSidebarCollapsed ? '72px' : '400px'}`
-          }}
-        >
-          <aside className="z-20 min-h-0 max-lg:order-1 max-lg:w-full">
-            <CollapsibleLeftSidebar
-              isCollapsed={isLeftSidebarCollapsed}
-              onToggle={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
-              layers={layers}
-              layerCount={layerCount}
-              setLayerCount={setLayerCount}
-              advancedConfig={advancedConfig}
-              setAdvancedConfig={setAdvancedConfig}
-              fileInputRef={fileInputRef}
-              onUploadClick={() => fileInputRef.current?.click()}
-              onDecompose={smartDecompose}
-              onExport={() => setIsExportModalOpen(true)}
-              isProcessing={isProcessing}
-              canDecompose={layers.length > 0}
-              canExport={layers.length > 0}
-              workflowPresets={workflowPresets}
-              selectedWorkflowId={selectedWorkflowId}
-              onSelectWorkflow={handleSelectWorkflow}
-            />
-          </aside>
+        <section className="relative flex flex-1 overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.20),transparent_30%),radial-gradient(circle_at_82%_8%,rgba(77,228,255,0.12),transparent_26%),linear-gradient(180deg,rgba(9,19,40,0.92),rgba(5,11,23,0.98))] shadow-[0_30px_110px_rgba(0,0,0,0.50)] ring-1 ring-white/10">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:56px_56px]" />
+          <div className="pointer-events-none absolute left-7 top-6 z-20 text-2xl font-semibold tracking-tight text-cyan-100/22">AI</div>
 
-          <main
-            className="min-h-0 min-w-0 rounded-[34px] bg-[rgba(9,19,40,0.78)] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.38)] ring-1 ring-white/8 backdrop-blur-[22px] transition-all duration-300 md:p-6 max-lg:order-2"
-          >
-            <div className="flex h-full min-h-0 flex-col gap-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-[#0f172a]/72 px-4 py-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.38em] text-cyan-100/55">Live workflow studio</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-200">
-                    {selectedLayer ? selectedLayer.name : workspace.uploadHint}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {layers.length > 0 && (
-                    <div className="flex rounded-full bg-white/7 p-1 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
-                      {[
-                        { id: 'result' as const, label: isZh ? '结果' : 'Result' },
-                        { id: 'compare' as const, label: isZh ? '前后对比' : 'Before / After' },
-                      ].map((mode) => (
-                        <button
-                          key={mode.id}
-                          onClick={() => setViewMode(mode.id)}
-                          className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${
-                            viewMode === mode.id
-                              ? 'bg-cyan-300 text-[#071123]'
-                              : 'text-slate-300 hover:bg-white/8'
-                          }`}
-                        >
-                          {mode.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {selectedLayer && (
-                    <div className={`rounded-full px-3 py-2 text-xs font-semibold ${
-                      selectedLayer.maskUrl
-                        ? 'bg-emerald-400/12 text-emerald-100 shadow-[inset_0_0_0_1px_rgba(110,231,183,0.22)]'
-                        : 'bg-white/6 text-slate-300 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]'
-                    }`}>
-                      {selectedLayer.maskUrl ? workflow.maskReady : workflow.noMask}
-                    </div>
-                  )}
-                  <div className="rounded-full bg-cyan-300/10 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-cyan-100">
-                    {selectedWorkflow.outcome}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                ref={mainRef}
-                onMouseDown={handleMouseDown}
-                className={`canvas-container relative flex h-[520px] shrink-0 items-start justify-center overflow-auto rounded-[30px] bg-[radial-gradient(circle_at_top,rgba(95,116,255,0.16),transparent_28%),linear-gradient(180deg,#0c1730,#091328)] p-4 md:h-[560px] lg:h-auto lg:min-h-0 lg:flex-1 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
-                style={
-                  baseLayer
-                    ? {
-                        height: Math.ceil(baseLayer.height * zoom + 32),
-                        maxHeight: '100%',
-                      }
-                    : undefined
-                }
-              >
-                <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:48px_48px]" />
+          {layers.length <= 1 ? (
+            <div className="relative flex min-h-[calc(100vh-190px)] flex-1 items-center justify-center p-5 md:p-8">
+              {baseLayer ? (
                 <div
-                  className="relative z-10 flex w-full items-start justify-center"
+                  ref={mainRef}
+                  className="canvas-container relative flex h-full max-h-[calc(100vh-230px)] w-full items-start justify-center overflow-auto p-4"
                 >
                   <div
                     className="transition-[width,height] duration-200 ease-out"
                     style={{
-                      width: baseLayer ? baseLayer.width * zoom : undefined,
-                      height: baseLayer ? baseLayer.height * zoom : undefined,
+                      width: baseLayer.width * zoom,
+                      height: baseLayer.height * zoom,
                     }}
                   >
-                  {baseLayer ? (
                     <div
-                      className="relative overflow-hidden rounded-[26px] bg-white shadow-[0_36px_120px_rgba(0,0,0,0.45)]"
+                      className="relative overflow-hidden rounded-[22px] bg-[#020817] shadow-[0_34px_100px_rgba(0,0,0,0.72)] ring-1 ring-cyan-100/42"
+                      style={{
+                        width: baseLayer.width,
+                        height: baseLayer.height,
+                        transform: `scale(${zoom})`,
+                        transformOrigin: 'top left',
+                      }}
+                    >
+                      <img
+                        src={baseLayer.url}
+                        alt={projectName}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        draggable={false}
+                      />
+                      {!isProcessing && (
+                        <div className="absolute inset-x-4 bottom-4 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/12 bg-[#071123]/82 p-2 backdrop-blur-xl">
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-white/16"
+                          >
+                            {isZh ? '更换图片' : 'Change image'}
+                          </button>
+                          <button
+                            onClick={handleGenerateLayers}
+                            disabled={!canGenerateLayers}
+                            className="rounded-xl bg-cyan-300 px-5 py-2 text-xs font-black text-[#071123] transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {selectedDecompositionModel.mode === 'design-layering'
+                              ? (isZh ? 'Generate 设计图层' : 'Generate design layers')
+                              : (isZh ? 'Generate 分层' : 'Generate layers')}
+                          </button>
+                        </div>
+                      )}
+                      {isProcessing && (
+                        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                          <div className="absolute inset-0 bg-black/20" />
+                          <div className="layer-scan-line absolute inset-x-[-12%] top-0 h-28 bg-[linear-gradient(180deg,transparent,rgba(178,255,245,0.18),rgba(255,255,255,0.68),rgba(114,255,238,0.22),transparent)] blur-[1px]" />
+                          <div className="layer-scan-grid absolute inset-0 opacity-35" />
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/18 bg-black/72 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/86 backdrop-blur-md">
+                            {selectedDecompositionModel.mode === 'design-layering'
+                              ? (isZh ? 'Seedream 正在理解设计图层' : 'Seedream understanding design layers')
+                              : (isZh ? 'AI 正在扫描图层' : 'AI scanning layers')}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="group flex min-h-[460px] w-full max-w-3xl flex-col items-center justify-center rounded-[30px] border border-white/10 bg-[#071123]/58 px-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-all hover:border-cyan-200/24 hover:bg-[#0b152b]/72"
+                >
+                  <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123] transition-transform group-hover:scale-105">
+                    <UploadCloud className="size-7" />
+                  </span>
+                  <span className="mt-7 text-[11px] font-black uppercase tracking-[0.36em] text-cyan-100/52">Image Layered AI</span>
+                  <span className="mt-3 max-w-xl text-3xl font-semibold leading-tight text-white md:text-5xl">
+                    {isZh ? '上传图片，自动拆成可编辑图层' : 'Upload an image, get editable layers'}
+                  </span>
+                  <span className="mt-4 max-w-lg text-sm leading-7 text-slate-300/70">
+                    {isZh ? '处理时会在图片上显示扫描动画，完成后进入左侧图层、右侧画布的编辑工作台。' : 'The image is scanned while the model works, then opens as a layer list beside the canvas.'}
+                  </span>
+                  <span className="mt-5 rounded-full border border-cyan-200/18 bg-cyan-300/10 px-4 py-2 text-xs font-bold text-cyan-100/78">
+                    {isZh ? `当前模型：${selectedDecompositionModel.label}` : `Model: ${selectedDecompositionModel.label}`}
+                  </span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-4 p-4 md:p-5 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)]">
+              <aside className="flex min-h-0 flex-col gap-3 rounded-[28px] border border-white/10 bg-[#071123]/72 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.28em] text-cyan-100/42">{isZh ? '图层' : 'Layers'}</p>
+                    <h2 className="mt-1 max-w-[180px] truncate text-base font-semibold text-white">{isZh ? '图层列表' : 'Layer Stack'}</h2>
+                    <p className="mt-1 text-[10px] font-semibold text-cyan-100/46">{selectedDecompositionModel.shortLabel}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="rounded-full bg-white/8 px-3 py-2 text-[11px] font-bold text-cyan-50/78 transition-colors hover:bg-white/14"
+                    >
+                      {isZh ? '换图' : 'Change'}
+                    </button>
+                    <button
+                      onClick={() => setIsExportModalOpen(true)}
+                      className="rounded-full bg-cyan-300 px-3 py-2 text-[11px] font-black text-[#071123] transition-transform active:scale-95"
+                    >
+                      {isZh ? '导出' : 'Export'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="min-h-0 flex-1 space-y-1.5 overflow-auto pr-1">
+                  {layers.slice().sort((a, b) => b.zIndex - a.zIndex).map((layer, index) => {
+                    const isSelected = selectedLayerId === layer.id;
+                    const label = layer.name || `Layer ${layers.length - index}`;
+
+                    return (
+                      <div
+                        key={layer.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          setSelectedLayerId(layer.id);
+                          if (!layer.visible) {
+                            setLayers(prev => prev.map(item => item.id === layer.id ? { ...item, visible: true } : item));
+                          }
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedLayerId(layer.id);
+                          }
+                        }}
+                        className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left transition-all ${
+                          isSelected
+                            ? 'bg-white text-[#071123] shadow-[0_12px_30px_rgba(34,211,238,0.10)]'
+                            : 'bg-white/[0.065] text-slate-200 hover:bg-white/[0.10]'
+                        }`}
+                      >
+                        <div className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl ${isSelected ? 'bg-black/8' : 'bg-black/28'}`}>
+                          <img src={layer.url} alt={label} className="h-full w-full object-contain" draggable={false} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold tracking-tight">{label}</p>
+                          <p className="mt-0.5 truncate text-[9px] font-black uppercase tracking-[0.14em] opacity-50">
+                            {layer.maskUrl ? (isZh ? '可编辑蒙版' : 'editable mask') : (isZh ? '图像图层' : 'image layer')}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setLayers(prev => prev.map(item => item.id === layer.id ? { ...item, visible: !item.visible } : item));
+                          }}
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+                            isSelected ? 'bg-[#071123]/8 text-[#071123]' : 'bg-white/7 text-slate-300/64'
+                          }`}
+                          aria-label={layer.visible ? 'Hide layer' : 'Show layer'}
+                        >
+                          {layer.visible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {selectedLayer && (
+                  <div className="rounded-[22px] border border-white/10 bg-[#0b152b]/78 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-white">{selectedLayer.name}</p>
+                        <p className="mt-1 text-[11px] text-cyan-100/42">{isZh ? '对当前图层进行局部修改' : 'Edit the selected layer only'}</p>
+                      </div>
+                      <div className="flex rounded-full bg-black/28 p-1">
+                        {[
+                          { tool: 'select' as ToolType, icon: MousePointer, label: 'Select' },
+                          { tool: 'recolor' as ToolType, icon: Palette, label: 'Color' },
+                          { tool: 'replace' as ToolType, icon: Wand2, label: 'Replace' },
+                          { tool: 'remove' as ToolType, icon: X, label: 'Remove' },
+                        ].map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <button
+                              key={item.tool}
+                              onClick={() => setActiveTool(item.tool)}
+                              className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                                activeTool === item.tool ? 'bg-white text-black' : 'text-white/56 hover:bg-white/10 hover:text-white'
+                              }`}
+                              title={item.label}
+                            >
+                              <Icon className="size-4" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-3 rounded-2xl bg-black/26 px-3 py-2.5">
+                      <SlidersHorizontal className="size-4 text-white/52" />
+                      <span className="text-xs font-bold text-white/52">{isZh ? '透明度' : 'Opacity'}</span>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        value={Math.round((selectedLayer.opacity ?? 1) * 100)}
+                        onChange={(event) => {
+                          const opacity = Number(event.target.value) / 100;
+                          setLayers(prev => prev.map(layer => layer.id === selectedLayer.id ? { ...layer, opacity } : layer));
+                        }}
+                        className="h-1 flex-1 accent-white"
+                      />
+                      <span className="w-9 text-right text-xs font-bold text-white/72">{Math.round((selectedLayer.opacity ?? 1) * 100)}%</span>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      {[
+                        { label: isZh ? '更暖' : 'Warmer', prompt: 'Make this selected layer warmer and more cinematic.' },
+                        { label: isZh ? '更亮' : 'Brighter', prompt: 'Brighten this selected layer while preserving its details.' },
+                        { label: isZh ? '高级感' : 'Premium', prompt: 'Make this selected layer look more premium, polished, and advertising-ready.' },
+                      ].map((chip) => (
+                        <button
+                          key={chip.label}
+                          onClick={() => {
+                            setActiveTool('recolor');
+                            setEditInstruction(chip.prompt);
+                          }}
+                          className="rounded-xl bg-white/8 px-3 py-2 text-xs font-bold text-white/70 transition-colors hover:bg-white/14 hover:text-white"
+                        >
+                          {chip.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <textarea
+                      value={editInstruction}
+                      onChange={(event) => setEditInstruction(event.target.value)}
+                      placeholder={editPlaceholder}
+                      className="mt-3 min-h-[76px] w-full resize-none rounded-2xl border border-white/10 bg-[#071123] px-3.5 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-500 focus:border-cyan-200/28"
+                    />
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleEditAction(editInstruction || editPlaceholder)}
+                        disabled={isProcessing}
+                        className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-black transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isProcessing ? (isZh ? '处理中' : 'Working') : (isZh ? '生成修改' : 'Generate Edit')}
+                      </button>
+                      <button
+                        onClick={() => handleDownloadLayer(selectedLayer.id)}
+                        className="flex items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-white/16"
+                      >
+                        <Download className="size-4" />
+                        {isZh ? '提取' : 'Extract'}
+                      </button>
+                    </div>
+
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => handleDuplicateLayer(selectedLayer.id)}
+                        className="flex items-center justify-center gap-1 rounded-xl bg-white/8 px-3 py-2 text-xs font-bold text-white/68 hover:bg-white/14"
+                      >
+                        <Copy className="size-3.5" />
+                        {isZh ? '复制' : 'Copy'}
+                      </button>
+                      <button
+                        onClick={() => handleSoloLayer(selectedLayer.id)}
+                        className="rounded-xl bg-white/8 px-3 py-2 text-xs font-bold text-white/68 hover:bg-white/14"
+                      >
+                        Solo
+                      </button>
+                      <button
+                        onClick={handleShowAllLayers}
+                        className="rounded-xl bg-white/8 px-3 py-2 text-xs font-bold text-white/68 hover:bg-white/14"
+                      >
+                        {isZh ? '显示全部' : 'Show All'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </aside>
+
+              <main
+                ref={mainRef}
+                onMouseDown={handleMouseDown}
+                className={`canvas-container relative flex min-h-[520px] items-start justify-center overflow-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#0b152b,#070d1b)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+              >
+                <div className="pointer-events-none absolute left-5 top-4 z-20 rounded-full border border-white/10 bg-black/26 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/56">
+                  {isZh ? '预览' : 'Preview'}
+                </div>
+                {baseLayer && (
+                  <div
+                    className="transition-[width,height] duration-200 ease-out"
+                    style={{
+                      width: baseLayer.width * zoom,
+                      height: baseLayer.height * zoom,
+                    }}
+                  >
+                    <div
+                      className="relative overflow-hidden rounded-[22px] bg-[#020817] shadow-[0_34px_100px_rgba(0,0,0,0.72)] ring-1 ring-cyan-100/42"
                       style={{
                         width: baseLayer.width,
                         height: baseLayer.height,
@@ -1961,167 +2326,46 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         transformOrigin: 'top left',
                       }}
                     >
-                      {viewMode === 'compare' ? (
-                        <>
-                          <img
-                            src={baseLayer.url}
-                            alt="Before image"
-                            className="absolute inset-0 h-full w-full object-cover"
-                            draggable={false}
-                          />
-                          <div
-                            className="absolute inset-y-0 left-0 overflow-hidden border-r-2 border-cyan-200"
-                            style={{ width: `${comparePosition}%` }}
-                          >
-                            <div
-                              className="relative h-full"
-                              style={{ width: baseLayer.width, height: baseLayer.height }}
-                            >
-                              {renderLayerStack(false)}
-                            </div>
-                          </div>
-                          <div
-                            className="pointer-events-none absolute inset-y-0 flex items-center"
-                            style={{ left: `${comparePosition}%`, transform: 'translateX(-50%)' }}
-                          >
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/80 bg-[#071123]/82 text-[10px] font-black uppercase tracking-[0.08em] text-cyan-100 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
-                              Drag
-                            </div>
-                          </div>
-                          <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-black text-white">
-                            {isZh ? '结果' : 'After'}
-                          </div>
-                          <div className="pointer-events-none absolute right-3 top-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-black text-white">
-                            {isZh ? '原图' : 'Before'}
-                          </div>
-                          <input
-                            type="range"
-                            min="8"
-                            max="92"
-                            value={comparePosition}
-                            onMouseDown={(event) => event.stopPropagation()}
-                            onTouchStart={(event) => event.stopPropagation()}
-                            onChange={(event) => setComparePosition(Number(event.target.value))}
-                            className="absolute inset-x-6 bottom-5 z-30 h-1 cursor-ew-resize appearance-none rounded-full bg-white/30 accent-cyan-300"
-                            aria-label="Before after comparison position"
-                          />
-                        </>
-                      ) : (
-                        renderLayerStack(true)
+                      {renderLayerStack(true)}
+                      {isProcessing && (
+                        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                          <div className="absolute inset-0 bg-black/20" />
+                          <div className="layer-scan-line absolute inset-x-[-12%] top-0 h-28 bg-[linear-gradient(180deg,transparent,rgba(178,255,245,0.18),rgba(255,255,255,0.68),rgba(114,255,238,0.22),transparent)] blur-[1px]" />
+                        </div>
                       )}
                     </div>
-                  ) : (
-                    <div className="relative flex w-full max-w-4xl flex-col gap-5 rounded-[30px] bg-white/5 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] md:p-7">
-                      <div className="grid gap-5 md:grid-cols-[0.92fr_1.08fr] md:items-center">
-                        <div className="text-left">
-                          <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,rgba(97,120,255,0.32),rgba(77,228,255,0.18))]">
-                            <Icons.Upload />
-                          </div>
-                          <p className="mt-5 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-100/60">
-                            Workflow first
-                          </p>
-                          <h3 className="mt-2 text-3xl font-bold leading-tight text-white [font-family:var(--font-display)]">
-                            Choose the result, then upload the image
-                          </h3>
-                          <p className="mt-3 max-w-md text-sm leading-7 text-slate-400">
-                            {selectedWorkflow.goal} The editor will set the layer count,
-                            Qwen prompt, and suggested edit prompts for that workflow.
-                          </p>
-                          <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="mt-5 rounded-full bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-5 py-3 text-sm font-bold text-[#071123]"
-                          >
-                            {buttons.changeImage}
-                          </button>
-                        </div>
-
-                        <div className="grid gap-2">
-                          {workflowPresets.map((preset) => (
-                            <button
-                              key={preset.id}
-                              onClick={() => handleSelectWorkflow(preset.id)}
-                              className={`rounded-2xl border p-4 text-left transition-all ${
-                                selectedWorkflowId === preset.id
-                                  ? 'border-cyan-300/45 bg-cyan-300/12 text-white shadow-[0_14px_34px_rgba(34,211,238,0.08)]'
-                                  : 'border-white/8 bg-white/5 text-slate-300 hover:border-white/14 hover:bg-white/8'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <div>
-                                  <p className="text-sm font-black">{preset.title}</p>
-                                  <p className="mt-1 text-xs leading-5 text-slate-400">{preset.subtitle}</p>
-                                </div>
-                                <span className="rounded-full bg-white/8 px-2.5 py-1 text-[10px] font-black tabular-nums text-cyan-100">
-                                  {preset.layerCount} layers
-                                </span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="grid gap-2 border-t border-white/10 pt-4 md:grid-cols-4">
-                        {selectedWorkflow.steps.map((step, index) => (
-                          <div key={step} className="rounded-2xl bg-black/18 p-3 text-left">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-300/14 text-xs font-black text-cyan-100">
-                              {index + 1}
-                            </span>
-                            <p className="mt-3 text-xs font-semibold leading-5 text-slate-300">{step}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                   </div>
-                </div>
-              </div>
+                )}
+              </main>
             </div>
-          </main>
+          )}
 
-          <aside className="z-20 min-h-0 max-lg:order-3 max-lg:w-full">
-            <CollapsibleRightSidebar
-            isCollapsed={isRightSidebarCollapsed}
-            onToggle={() => setIsRightSidebarCollapsed(!isRightSidebarCollapsed)}
-            layers={layers}
-            selectedLayerId={selectedLayerId}
-            onToggleLayerVisibility={(id) => {
-              setLayers(prev => prev.map(l =>
-                l.id === id ? { ...l, visible: !l.visible } : l
-              ));
-            }}
-            onDeleteLayer={(id) => {
-              setLayers(prev => prev.filter(l => l.id !== id));
-              if (selectedLayerId === id) {
-                setSelectedLayerId(null);
-              }
-            }}
-            onSelectLayer={(id) => {
-              setSelectedLayerId(id);
-              const layer = layers.find(l => l.id === id);
-              if (layer && !layer.visible) {
-                // Auto-show layer when selected
-                setLayers(prev => prev.map(l =>
-                  l.id === id ? { ...l, visible: true } : l
-                ));
-              }
-            }}
-            onUpdateLayer={(id, updates) => {
-              setLayers(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
-            }}
-            onDuplicateLayer={handleDuplicateLayer}
-            onSoloLayer={handleSoloLayer}
-            onShowAllLayers={handleShowAllLayers}
-            onDownloadLayer={handleDownloadLayer}
-            activeTool={activeTool}
-            setActiveTool={setActiveTool}
-            editInstruction={editInstruction}
-            setEditInstruction={setEditInstruction}
-            onGenerateEdit={() => handleEditAction(editInstruction || editPlaceholder)}
-            isProcessing={isProcessing}
-            workflowPreset={selectedWorkflow}
-          />
-          </aside>
+          <style jsx>{`
+            .layer-scan-line {
+              animation: layer-scan 1.55s ease-in-out infinite;
+            }
 
+            .layer-scan-grid {
+              background-image:
+                linear-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+              background-size: 34px 34px;
+            }
+
+            @keyframes layer-scan {
+              0% {
+                transform: translateY(-120%);
+                opacity: 0.2;
+              }
+              45% {
+                opacity: 1;
+              }
+              100% {
+                transform: translateY(720%);
+                opacity: 0.2;
+              }
+            }
+          `}</style>
         </section>
 
         <input
@@ -2234,10 +2478,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               <h3 className="text-2xl font-black text-white tracking-tight">
                 {isZh ? '🎁 挽留礼包：带走您的海报图层' : '🎁 Wait! Keep Your Layers & Master AI Posters'}
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-400">
+              <p className="mt-3 text-sm leading-relaxed text-slate-300">
                 {isZh
-                  ? '不要让您的分层付之东流！订阅我们的 newsletter，免费获得 5 个高清导出额度 + 20+ 海报 AI 提示词终极手册。'
-                  : 'Do not let your layers fade away! Sign up to our newsletter for 5 extra HD exports & our ultimate Guide (20+ premium Poster Prompts).'}
+                  ? '这是一个退出前的保存提醒。留下邮箱即可获得 5 个高清导出额度和 AI 海报提示词手册，方便之后继续完成这张图。'
+                  : 'This is an exit reminder. Leave your email to get 5 HD export credits and our AI poster prompt guide so you can continue this image later.'}
               </p>
             </div>
 
@@ -2248,7 +2492,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 value={exitIntentEmail}
                 onChange={(e) => setExitIntentEmail(e.target.value)}
                 placeholder={isZh ? '输入您的电子邮箱' : 'Enter your email address'}
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none ring-1 ring-transparent focus:ring-cyan-500/20"
+                className="w-full rounded-xl border border-cyan-100/20 bg-white px-4 py-3 text-sm font-semibold text-[#071123] placeholder:text-slate-500 shadow-[inset_0_1px_2px_rgba(15,23,42,0.10)] ring-1 ring-transparent focus:border-cyan-400 focus:outline-none focus:ring-cyan-500/20"
               />
               <button
                 type="submit"
@@ -2311,16 +2555,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         </div>
       )}
 
-      {isProcessing && !isExportModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-            <div className="w-24 h-24 relative">
-                <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
-            </div>
-            <p className="mt-8 text-lg font-black text-white tracking-[0.3em] uppercase italic">{buttons.processingOverlayTitle}</p>
-            <p className="text-sm text-gray-400 mt-2 font-mono uppercase tracking-widest">{buttons.processingOverlaySubtitle}</p>
-        </div>
-      )}
       </div>
     </div>
   );
