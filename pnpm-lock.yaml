@@ -8,6 +8,11 @@ overrides:
   '@types/react': 19.2.2
   '@types/react-dom': 19.2.2
 
+patchedDependencies:
+  '@libsql/isomorphic-ws@0.1.5':
+    hash: 84d945cdbe476d91749fa399dc6975148cadffd064d4eab140e13e78dbe45874
+    path: patches/@libsql__isomorphic-ws@0.1.5.patch
+
 importers:
 
   .:
@@ -9654,7 +9659,7 @@ snapshots:
   '@libsql/hrana-client@0.7.0':
     dependencies:
       '@libsql/isomorphic-fetch': 0.3.1
-      '@libsql/isomorphic-ws': 0.1.5
+      '@libsql/isomorphic-ws': 0.1.5(patch_hash=84d945cdbe476d91749fa399dc6975148cadffd064d4eab140e13e78dbe45874)
       js-base64: 3.7.8
       node-fetch: 3.3.2
     transitivePeerDependencies:
@@ -9663,7 +9668,7 @@ snapshots:
 
   '@libsql/isomorphic-fetch@0.3.1': {}
 
-  '@libsql/isomorphic-ws@0.1.5':
+  '@libsql/isomorphic-ws@0.1.5(patch_hash=84d945cdbe476d91749fa399dc6975148cadffd064d4eab140e13e78dbe45874)':
     dependencies:
       '@types/ws': 8.18.1
       ws: 8.18.3

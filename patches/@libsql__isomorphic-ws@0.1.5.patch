@@ -1,0 +1,61 @@
+diff --git a/package.json b/package.json
+index b8e80dc915001d7d344a86511b1b963b91a9968a..cd21bd43f731bc682dcc914daa15234c19a05c13 100644
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,14 @@
+ {
+   "name": "@libsql/isomorphic-ws",
+   "version": "0.1.5",
+-  "keywords": ["ws", "websocket", "isomorphic", "node", "deno", "workers"],
++  "keywords": [
++    "ws",
++    "websocket",
++    "isomorphic",
++    "node",
++    "deno",
++    "workers"
++  ],
+   "description": "Isomorphic WebSockets in Node, Bun, Deno and Cloudflare Workers",
+   "repository": {
+     "type": "git",
+@@ -10,10 +17,9 @@
+   },
+   "homepage": "https://github.com/libsql/isomorphic-ts/tree/main/isomorphic-ws",
+   "authors": [
+-    "Jan Špaček <honza@chiselstrike.com>"
++    "Jan \u0160pa\u010dek <honza@chiselstrike.com>"
+   ],
+   "license": "MIT",
+-
+   "main": "node.cjs",
+   "types": "index.d.ts",
+   "exports": {
+@@ -22,20 +28,24 @@
+         "bun": "./web.mjs",
+         "deno": "./web.mjs",
+         "workerd": "./web.mjs",
+-        "node": "./node.mjs",
++        "node": "./web.mjs",
+         "default": "./web.mjs"
+       },
+       "require": {
+         "bun": "./web.cjs",
+         "deno": "./web.cjs",
+         "workerd": "./web.cjs",
+-        "node": "./node.cjs",
++        "node": "./web.cjs",
+         "default": "./web.cjs"
+       }
+     }
+   },
+-  "files": ["*.mjs", "*.cjs", "*.js", "*.d.ts"],
+-
++  "files": [
++    "*.mjs",
++    "*.cjs",
++    "*.js",
++    "*.d.ts"
++  ],
+   "dependencies": {
+     "ws": "^8.13.0",
+     "@types/ws": "^8.5.4"

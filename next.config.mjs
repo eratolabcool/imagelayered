@@ -1,8 +1,11 @@
 import bundleAnalyzer from '@next/bundle-analyzer';
 import { createMDX } from 'fumadocs-mdx/next';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const withMDX = createMDX();
+const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -76,7 +79,12 @@ const nextConfig = {
   },
   compress: true,
   poweredByHeader: false,
+  // Ensure @libsql/client is traced as a whole package (nft only copies the
+  // node-entry files otherwise, but esbuild needs lib-esm/web.js for the
+  // workerd condition when bundling the open-next worker).
+  serverExternalPackages: ['@libsql/client'],
   turbopack: {
+    root: projectRoot,
     resolveAlias: {},
   },
   experimental: {

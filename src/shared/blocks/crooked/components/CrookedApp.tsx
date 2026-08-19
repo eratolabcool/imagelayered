@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useSession } from '@/core/auth/client';
 import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Download, Copy, Wand2, SlidersHorizontal, UploadCloud } from 'lucide-react';
-import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId, DecompositionModel } from '../types';
+import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId, DecompositionModel, LayeringMode } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
 import { Icons } from './Icon';
@@ -32,27 +32,33 @@ const decompositionModelOptions: Array<{
   description: string;
   badge: string;
   mode: 'native' | 'design-layering' | 'semantic-edit';
+  layeringMode: LayeringMode;
   idealFor: string;
+  outputHint: string;
 }> = [
   {
     model: 'fal-ai/qwen-image-layered',
     provider: 'fal',
     label: 'Qwen Image Layered',
-    shortLabel: 'Qwen',
+    shortLabel: 'Qwen Layers',
     description: 'Native transparent layer separation',
     badge: 'Best layers',
     mode: 'native',
+    layeringMode: 'native-layering',
     idealFor: 'General layer extraction',
+    outputHint: 'Transparent assets',
   },
   {
     model: 'bytedance/seedream/v5/pro/edit',
     provider: 'fal',
     label: 'Seedream Design Layering',
     shortLabel: 'Seedream Design',
-    description: 'Design-aware layering for posters, product pages, infographics, and text-heavy visuals',
-    badge: 'Design',
+    description: 'Special mode for posters, e-commerce creatives, infographics, and text-heavy layouts',
+    badge: 'Special mode',
     mode: 'design-layering',
+    layeringMode: 'seedream-design-layering',
     idealFor: 'Posters, e-commerce, infographics',
+    outputHint: 'Design semantics',
   },
   {
     model: 'openai/gpt-image-2/edit',
@@ -62,7 +68,9 @@ const decompositionModelOptions: Array<{
     description: 'Prompt-accurate image understanding',
     badge: 'Precise',
     mode: 'semantic-edit',
+    layeringMode: 'semantic-layering',
     idealFor: 'Semantic local edits',
+    outputHint: 'Editable concepts',
   },
 ];
 
@@ -438,12 +446,12 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     return uploadImageBlob(blob, `edited-layer-${Date.now()}.png`);
   }, [canvasToBlob, loadCanvasImage, uploadImageBlob]);
 
-  const placeImageLayer = useCallback((base64: string, width: number, height: number, name: string = 'Main Canvas') => {
+  const placeImageLayer = useCallback((imageUrl: string, width: number, height: number, name: string = 'Main Canvas') => {
     const newLayer: Layer = {
       id: crypto.randomUUID(),
       name,
       type: 'image',
-      url: base64,
+      url: imageUrl,
       x: 0,
       y: 0,
       width,
@@ -634,9 +642,28 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const previewUrl = URL.createObjectURL(file);
+    placeImageLayer(previewUrl, 1024, 1024, file.name || 'Uploaded image');
+
+    const previewImage = new Image();
+    previewImage.onload = () => {
+      setLayers((currentLayers) => {
+        const currentLayer = currentLayers[0];
+        if (!currentLayer || currentLayer.url !== previewUrl) return currentLayers;
+
+        return [{
+          ...currentLayer,
+          width: previewImage.naturalWidth || currentLayer.width,
+          height: previewImage.naturalHeight || currentLayer.height,
+        }];
+      });
+    };
+    previewImage.src = previewUrl;
+
     try {
       const prepared = await prepareImageFile(file);
       placeImageLayer(prepared.base64, prepared.width, prepared.height, prepared.name);
+      URL.revokeObjectURL(previewUrl);
 
       console.log('[handleFileUpload] Image loaded successfully', {
         width: prepared.width,
@@ -644,7 +671,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       });
     } catch (error) {
       console.error('[handleFileUpload] Error processing image:', error);
-      toast.error(copy.notifications.loadImageFail);
+      toast.warning(isZh ? '已显示预览，图片将在生成时重新处理。' : 'Preview loaded. The image will be prepared again when generating.');
     }
 
     // Reset input to allow uploading the same file again
@@ -788,18 +815,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         advancedConfig.model === 'fal-ai/qwen-image-layered/lora';
       const isSeedreamDesignLayering = advancedConfig.model === 'bytedance/seedream/v5/pro/edit';
       const targetLayerCount = count > 0 ? count : 4;
+      const designLayerCount = Math.min(Math.max(targetLayerCount, 6), 8);
       const decompositionPrompt = isNativeLayerModel
         ? `Decompose this image into ${targetLayerCount} transparent editable layers`
         : isSeedreamDesignLayering
           ? [
-              `Seedream Design Layering task.`,
-              `Analyze this image as a professional design file, not a flat picture.`,
-              `Separate the design into up to ${Math.min(Math.max(targetLayerCount, 4), 8)} independent editable PNG layers.`,
-              `Prioritize design semantics: background plate, main subject or product, text blocks, logo or brand marks, decorative objects, foreground effects, shadows, and lighting accents.`,
-              `For posters, e-commerce images, infographics, UI mockups, and text-heavy visuals, preserve the original canvas alignment, element scale, typography placement, spacing, and visual hierarchy.`,
-              `Each returned image should be a clean layer asset with transparent areas where possible, aligned to the original canvas, suitable for dragging, hiding, recoloring, extracting, and recompositing.`,
-              `If the background is covered by a subject, restore the hidden background region naturally so the background layer can stand alone.`,
-              `Do not redesign the composition. Do not merge unrelated elements. Keep text blocks independent from background and subject layers when possible.`,
+              `Seedream Design Layering mode.`,
+              `Treat the uploaded image as a flattened professional design file, not as a simple photo.`,
+              `Create ${designLayerCount} design-understanding layers for poster, e-commerce, infographic, social ad, UI mockup, or text-heavy creative editing.`,
+              `Use this priority order: 1) full canvas background plate, 2) main subject or product, 3) headline text group, 4) logo or brand marks, 5) body copy or information blocks, 6) decorative graphics, 7) shadows and contact reflections, 8) lighting or foreground effects.`,
+              `Every output must be a full-canvas PNG layer aligned exactly to the original image dimensions, with transparent empty areas where possible.`,
+              `Preserve original composition, element scale, typography placement, spacing, reading order, color relationships, and visual hierarchy.`,
+              `Recover the background under removed foreground elements naturally so the background plate can stand alone.`,
+              `Separate text and brand marks from the background whenever possible. Do not merge unrelated copy blocks with subjects or decorative effects.`,
+              `Do not redesign, restyle, crop, stretch, summarize, or invent a new layout. The goal is editable design structure for later user-controlled edits.`,
             ].join(' ')
           : [
               `Analyze this image as an AI layer editing workspace.`,
@@ -817,16 +846,29 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             enable_safety_checker: true,
             sync_mode: true,
           }
-        : {
+          : {
             image_input: [imageUrl],
             image_urls: [imageUrl],
             num_images: isSeedreamDesignLayering
-              ? Math.min(Math.max(targetLayerCount, 4), 8)
+              ? designLayerCount
               : Math.min(Math.max(targetLayerCount, 1), 4),
             image_size: advancedConfig.model === 'bytedance/seedream/v5/pro/edit' ? 'auto_2K' : 'auto',
             quality: 'high',
             output_format: 'png',
             sync_mode: true,
+            layering_mode: selectedDecompositionModel.layeringMode,
+            design_layer_taxonomy: isSeedreamDesignLayering
+              ? [
+                  'background_plate',
+                  'main_subject_or_product',
+                  'headline_text',
+                  'logo_or_brand_mark',
+                  'body_copy_or_info_blocks',
+                  'decorative_graphics',
+                  'shadows_or_reflections',
+                  'lighting_or_foreground_effects',
+                ]
+              : undefined,
           };
 
       // Add optional parameters if provided
@@ -850,6 +892,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         body: JSON.stringify({
           mediaType: 'image',
           scene: 'image-decomposition',
+          layeringMode: selectedDecompositionModel.layeringMode,
           provider: selectedDecompositionModel.provider,
           model: advancedConfig.model,
           prompt: requestOptions.prompt || decompositionPrompt,
@@ -1175,14 +1218,24 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         'ai-image': ['Subject', 'Clothing', 'Object', 'Background', 'Lighting', 'Text', 'Detail'],
         character: ['Face', 'Hair', 'Clothing', 'Body', 'Background', 'Lighting', 'Props'],
       };
-      const names = layerNamePresets[selectedWorkflowId];
+      const designLayerNames = [
+        'Background Plate',
+        'Main Subject / Product',
+        'Headline Text',
+        'Logo / Brand Mark',
+        'Body Copy / Info Blocks',
+        'Decorative Graphics',
+        'Shadows / Reflections',
+        'Lighting / Foreground Effects',
+      ];
+      const names = isSeedreamDesignLayering ? designLayerNames : layerNamePresets[selectedWorkflowId];
 
       // Create a layer for each generated image with correct dimensions
       const newLayers: Layer[] = layerImages.map((img: any, idx: number) => {
         const dims = layerDimensions[idx];
         return {
           id: crypto.randomUUID(),
-          name: names[idx] || `${selectedWorkflow.title} Layer ${idx + 1}`,
+          name: names[idx] || `${isSeedreamDesignLayering ? 'Design' : selectedWorkflow.title} Layer ${idx + 1}`,
           type: 'image',
           url: img.imageUrl,
           x: target.x,
@@ -1957,12 +2010,12 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           <div className="mt-4 flex flex-col gap-3 rounded-[24px] border border-white/10 bg-[#071123]/62 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] xl:flex-row xl:items-center xl:justify-between">
             <div className="px-2">
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-100/44">
-                {isZh ? '分层模式' : 'Layering mode'}
+                {isZh ? '分层工作流' : 'Layering workflow'}
               </p>
               <p className="mt-1 text-xs text-slate-300/68">
                 {isZh
-                  ? '选择普通分层或 Seedream Design Layering，上传图片后点击 Generate。'
-                  : 'Choose native layers or Seedream Design Layering, upload an image, then click Generate.'}
+                  ? '普通图片用 Qwen；海报、电商图、信息图和文字密集图用 Seedream Design Layering。'
+                  : 'Use Qwen for native layers. Use Seedream Design Layering for posters, product creatives, infographics, and text-heavy images.'}
               </p>
             </div>
             <div className="flex flex-1 flex-col gap-2 lg:flex-row xl:max-w-5xl">
@@ -1974,7 +2027,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     className={`group rounded-2xl border px-3 py-3 text-left transition-all ${
                       advancedConfig.model === option.model
                         ? 'border-cyan-200/45 bg-cyan-300 text-[#071123] shadow-[0_14px_36px_rgba(34,211,238,0.16)]'
-                        : 'border-white/8 bg-white/[0.045] text-slate-200 hover:border-cyan-200/22 hover:bg-white/[0.075]'
+                        : option.mode === 'design-layering'
+                          ? 'border-cyan-200/18 bg-cyan-300/[0.075] text-slate-100 hover:border-cyan-200/36 hover:bg-cyan-300/[0.11]'
+                          : 'border-white/8 bg-white/[0.045] text-slate-200 hover:border-cyan-200/22 hover:bg-white/[0.075]'
                     }`}
                     title={option.description}
                   >
@@ -1994,7 +2049,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   <span className={`mt-2 block truncate text-[10px] font-bold ${
                     advancedConfig.model === option.model ? 'text-[#071123]/52' : 'text-cyan-100/42'
                   }`}>
-                    {option.idealFor}
+                    {option.outputHint} · {option.idealFor}
                   </span>
                 </button>
               ))}
@@ -2097,7 +2152,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     {isZh ? '上传图片，自动拆成可编辑图层' : 'Upload an image, get editable layers'}
                   </span>
                   <span className="mt-4 max-w-lg text-sm leading-7 text-slate-300/70">
-                    {isZh ? '处理时会在图片上显示扫描动画，完成后进入左侧图层、右侧画布的编辑工作台。' : 'The image is scanned while the model works, then opens as a layer list beside the canvas.'}
+                    {selectedDecompositionModel.mode === 'design-layering'
+                      ? (isZh
+                          ? 'Seedream 会按设计文件理解画面：背景板、主体、文字、Logo、信息块、阴影和效果层会尽量分开。'
+                          : 'Seedream reads the image like a design file: background plate, subject, text, logo, info blocks, shadows, and effects are separated where possible.')
+                      : (isZh
+                          ? '处理时会在图片上显示扫描动画，完成后进入左侧图层、右侧画布的编辑工作台。'
+                          : 'The image is scanned while the model works, then opens as a layer list beside the canvas.')}
                   </span>
                   <span className="mt-5 rounded-full border border-cyan-200/18 bg-cyan-300/10 px-4 py-2 text-xs font-bold text-cyan-100/78">
                     {isZh ? `当前模型：${selectedDecompositionModel.label}` : `Model: ${selectedDecompositionModel.label}`}

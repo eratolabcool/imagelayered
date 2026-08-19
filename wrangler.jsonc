@@ -1,7 +1,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
-	"name": "shipany-template-two",
+	"name": "imagelayered",
 	"compatibility_date": "2026-01-24",
 	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 	"assets": {
@@ -13,23 +13,21 @@
 			// Self-reference service binding, the service name must match the worker name
 			// see https://opennext.js.org/cloudflare/caching
 			"binding": "WORKER_SELF_REFERENCE",
-			"service": "shipany-template-two"
-		}
-	],
-	"r2_buckets": [
-		// Use R2 incremental cache
-		// See https://opennext.js.org/cloudflare/caching
-		{
-			"binding": "NEXT_INC_CACHE_R2_BUCKET",
-			// Create the bucket before deploying
-			// You can change the bucket name if you want
-			// See https://developers.cloudflare.com/workers/wrangler/commands/#r2-bucket-create
-			"bucket_name": "cache"
+			"service": "imagelayered"
 		}
 	],
 	"images": {
 		// Enable image optimization
 		// see https://opennext.js.org/cloudflare/howtos/image
 		"binding": "IMAGES"
+	},
+	"vars": {
+		"NEXT_PUBLIC_APP_URL": "https://image-layered.app",
+		"NEXT_PUBLIC_APP_NAME": "imagelayered",
+		"NEXT_PUBLIC_THEME": "default",
+		"NEXT_PUBLIC_APPEARANCE": "dark",
+		"DATABASE_PROVIDER": "turso",
+		"DB_SINGLETON_ENABLED": "true",
+		"DB_MAX_CONNECTIONS": "1"
 	}
 }

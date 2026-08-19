@@ -56,6 +56,8 @@ export type DecompositionModel =
   | 'bytedance/seedream/v5/pro/edit'
   | 'openai/gpt-image-2/edit';
 
+export type LayeringMode = 'native-layering' | 'seedream-design-layering' | 'semantic-layering';
+
 export interface ExportSettings {
   width: number;
   height: number;

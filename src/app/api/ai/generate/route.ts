@@ -49,7 +49,7 @@ function hasGeneratedImages(result: any) {
 
 export async function POST(request: Request) {
   try {
-    let { provider, mediaType, model, prompt, options, scene } =
+    let { provider, mediaType, model, prompt, options, scene, layeringMode } =
       await request.json();
 
     if (!mediaType) {
@@ -149,7 +149,7 @@ export async function POST(request: Request) {
         model,
         prompt,
         callbackUrl,
-        options: { ...options, scene }, 
+        options: { ...options, scene, layeringMode }, 
       };
 
       console.log('AI generate params (GUEST):', params);
@@ -183,7 +183,7 @@ export async function POST(request: Request) {
       model,
       prompt,
       callbackUrl,
-      options: { ...options, scene }, // Pass scene in options
+      options: { ...options, scene, layeringMode }, // Pass scene and workflow mode in options
     };
 
     console.log('AI generate params:', params);
@@ -237,7 +237,7 @@ export async function POST(request: Request) {
       model,
       prompt,
       scene,
-      options: options ? JSON.stringify(options) : null,
+      options: options ? JSON.stringify({ ...options, layeringMode }) : null,
       status: result.taskStatus,
       costCredits,
       taskId: result.taskId,
@@ -252,13 +252,14 @@ export async function POST(request: Request) {
         userId: user.id,
         credits: costCredits,
         scene: scene,
-        description: `AI ${mediaType} ${scene} - ${model}`,
+        description: `AI ${mediaType} ${layeringMode || scene} - ${model}`,
         metadata: JSON.stringify({
           taskId: newAITask.id,
           aiTaskId: result.taskId,
           provider,
           model,
           scene,
+          layeringMode,
         }),
       });
       console.log(`[generate] Consumed ${costCredits} credits from user ${user.id}`);
