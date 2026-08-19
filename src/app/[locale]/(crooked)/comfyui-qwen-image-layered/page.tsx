@@ -4,7 +4,6 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'ComfyUI Image Layered Workflow | AI Layer Decomposition Tutorial',
   description: 'Master the ComfyUI workflow for image layered tasks. Step-by-step tutorial teaches you how to install custom nodes and automate AI image layer extraction.',
-  keywords: 'comfyui image layered, image layer decomposition, custom nodes workflow, AI layer extraction, comfyui setup tutorial, automatic object separation',
   authors: [{ name: 'Image Layered AI Team' }],
   creator: 'Image Layered Workflow',
   publisher: 'Image Layered Workflow',
@@ -49,7 +48,6 @@ const tutorialJsonLd = {
     audienceType: 'Designers and developers using ComfyUI',
   },
   educationalLevel: 'Intermediate',
-  keywords: 'ComfyUI, Image Layered, workflow, tutorial, image layer decomposition',
   author: {
     '@type': 'Organization',
     name: 'Image Layered AI Team',

@@ -5,7 +5,6 @@ import React from 'react';
 export const metadata: Metadata = {
   title: 'AI Photoshop for Posters - Free Demo | AI Image Decomposition',
   description: 'Try the ultimate AI poster editor for free. Experience automatic image decomposition and professional-grade layer editing. No signup required.',
-  keywords: 'AI Photoshop, poster editor, image decomposition demo, RGBA layers online test, AI image editing demo',
   authors: [{ name: 'Image Layered Team' }],
   robots: {
     index: true,
@@ -57,7 +56,6 @@ const jsonLd = {
     'Free to use',
     'Instant results',
   ],
-  keywords: 'qwen image layered demo, image layer decomposition test, RGBA layers online test, AI image editing demo',
 };
 
 export default function QuickTestPage() {

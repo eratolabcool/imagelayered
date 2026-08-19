@@ -8,14 +8,12 @@ export function getMetadata(
   options: {
     title?: string;
     description?: string;
-    keywords?: string;
     metadataKey?: string;
     canonicalUrl?: string; // relative path or full url
     imageUrl?: string;
     appName?: string;
     noIndex?: boolean;
     noFollow?: boolean;
-    additionalKeywords?: string[];
     structuredData?: Record<string, any>;
   } = {}
 ) {
@@ -31,7 +29,6 @@ export function getMetadata(
     const passedMetadata = {
       title: options.title,
       description: options.description,
-      keywords: options.keywords,
     };
 
     // default metadata
@@ -62,17 +59,6 @@ export function getMetadata(
       translatedMetadata.description ||
       defaultMetadata.description;
 
-    // Combine keywords with additional long-tail keywords
-    const baseKeywords =
-      passedMetadata.keywords ||
-      translatedMetadata.keywords ||
-      defaultMetadata.keywords ||
-      '';
-    const additionalKeywords = options.additionalKeywords || [];
-    const allKeywords = options.additionalKeywords
-      ? [...baseKeywords.split(',').map((k: string) => k.trim()), ...additionalKeywords].join(', ')
-      : baseKeywords;
-
     // image url
     let imageUrl = options.imageUrl || envConfigs.app_preview_image;
     if (imageUrl.startsWith('http')) {
@@ -101,7 +87,6 @@ export function getMetadata(
     return {
       title,
       description,
-      keywords: allKeywords,
       alternates,
 
       // Explicit meta tags for better SEO
@@ -176,7 +161,6 @@ async function getTranslatedMetadata(metadataKey: string, locale: string) {
   return {
     title: t.has('title') ? t('title') : '',
     description: t.has('description') ? t('description') : '',
-    keywords: t.has('keywords') ? t('keywords') : '',
   };
 }
 

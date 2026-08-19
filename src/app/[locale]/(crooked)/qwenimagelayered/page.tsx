@@ -5,7 +5,6 @@ import CrookedAppWrapper from './CrookedAppWrapper';
 export const metadata: Metadata = {
   title: 'Image Layered | AI Photoshop for Posters',
   description: 'Upload any poster, split it into editable AI layers, edit selected objects with GPT Image 2, and export a polished redesigned poster.',
-  keywords: 'Image Layered, AI Photoshop for posters, poster editor, editable AI layers, GPT Image editing, product replacement, text editing, image masks',
   alternates: {
     canonical: '/qwenimagelayered',
   },

@@ -58,7 +58,6 @@ export async function generateMetadata({
   return {
     title: page.title,
     description: page.description,
-    keywords: [page.keyword, 'Image Layered', 'AI image editor', 'AI layer editor'],
     alternates: {
       canonical: pageUrl(page.market, page.slug),
       languages: Object.fromEntries(
