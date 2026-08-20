@@ -100,16 +100,10 @@ const nextConfig = {
       'react-icons/ri',
       'react-icons/md',
     ],
-    // Only enable optimizeCss in production
-    ...(process.env.NODE_ENV === 'production' ? { optimizeCss: true } : {}),
     optimizeServerReact: true,
   },
   reactCompiler: true,
   productionBrowserSourceMaps: false,
-  // Performance optimizations
-  swcMinify: true,
-  // Optimize CSS
-  cssLoader: false,
 };
 
 export default withBundleAnalyzer(withNextIntl(withMDX(nextConfig)));
