@@ -10,7 +10,6 @@ import {
   MousePointer2,
   PenLine,
   Sparkles,
-  Wand2,
   Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -29,8 +28,22 @@ const copy = {
     chooseFile: 'Choose file',
     loading: 'Loading...',
     secondaryCta: 'Open editor',
+    quotaHint: 'Free trial: 3 images · no sign-up needed',
+    demoTitle: 'Try a preset image — no upload needed',
+    demos: [
+      { label: 'E-commerce background swap', image: '/imgs/features/hero-case-1.jpg', hint: 'Replace background, keep product' },
+      { label: 'Poster slogan rewrite', image: '/imgs/features/10.png', hint: 'Edit one text block only' },
+      { label: 'Subject & background split', image: '/imgs/features/9.png', hint: 'Separate person from scene' },
+    ],
+    socialProof: 'Over 10,000+ layers edited',
     trust: 'Built for ad creatives, e-commerce images, AI posters, and social media assets',
     visualLabel: 'Live workflow preview',
+    studioTitle: 'Layer Studio',
+    stepOriginal: 'Original',
+    stepDecompose: 'AI decompose',
+    stepExport: 'Export',
+    decomposeHint: '5 editable layers detected',
+    exportBadge: 'Edited',
     promptLabel: 'Prompt edit',
     prompt: "Rewrite the headline to 'Summer Drop' and keep the character, fruit, colors, and layout.",
     before: 'Before',
@@ -109,6 +122,14 @@ const copy = {
         q: 'Do I need Photoshop skills?',
         a: 'No. The interface is designed around upload, auto-layer, select a layer, prompt an edit, and export.',
       },
+      {
+        q: 'How is this different from Photoshop or Canva?',
+        a: 'Photoshop and Canva give you manual tools — you select, mask, and rebuild by hand. Image Layered auto-separates the image into RGBA layers first, then you describe the change in plain language. A text swap, product replacement, or background redesign that takes minutes of manual masking is done in one prompt.',
+      },
+      {
+        q: 'Is it just a background remover?',
+        a: 'No. Background removal (Remove.bg) returns one cutout. Image Layered keeps products, people, text, decorations, shadows, and backgrounds as independent layers, so you can revise each one and re-export the whole composition.',
+      },
     ],
   },
   zh: {
@@ -122,8 +143,22 @@ const copy = {
     chooseFile: '选择图片',
     loading: '加载中...',
     secondaryCta: '打开编辑器',
+    quotaHint: '免费试用 3 张 · 无需注册',
+    demoTitle: '先用预设示例体验 — 无需上传',
+    demos: [
+      { label: '电商换背景', image: '/imgs/features/hero-case-1.jpg', hint: '换背景、保留产品' },
+      { label: '海报改标语', image: '/imgs/features/10.png', hint: '只改一处文字' },
+      { label: '人物与背景分离', image: '/imgs/features/9.png', hint: '把人物从场景中拆出' },
+    ],
+    socialProof: '超过 10,000+ 张图片已完成分层',
     trust: '适合广告创意、电商商品图、AI 海报和自媒体视觉素材',
     visualLabel: '工作流预览',
+    studioTitle: '图层工作台',
+    stepOriginal: '原图',
+    stepDecompose: 'AI 自动分层',
+    stepExport: '导出',
+    decomposeHint: '识别出 5 个可编辑图层',
+    exportBadge: '已编辑',
     promptLabel: '提示词编辑',
     prompt: '只把主标题改成 Summer Drop，保持人物、水果、配色和版式不变。',
     before: '原图',
@@ -202,6 +237,14 @@ const copy = {
         q: '需要 Photoshop 技能吗？',
         a: '不需要。核心路径就是上传图片、自动分层、选择图层、输入修改需求、导出结果。',
       },
+      {
+        q: '和 Photoshop / Canva 有什么区别？',
+        a: 'Photoshop 和 Canva 提供的是手动工具——需要自己选区、蒙版、手工重建。Image Layered 会先把图片自动拆成 RGBA 图层，然后用一句话描述改动即可。改文字、换产品、重做背景这些需要几分钟手动抠图的操作，在这里一次提示词就能完成。',
+      },
+      {
+        q: '它只是去背景工具吗？',
+        a: '不是。Remove.bg 这类工具只输出一个主体抠图。Image Layered 会把产品、人物、文字、装饰、阴影和背景拆成独立图层，可以分别修改后再重新合成导出整张图。',
+      },
     ],
   },
 };
@@ -275,6 +318,24 @@ export default function LandingHeroExperience() {
     }
   };
 
+  const handleDemo = async (imagePath: string, label: string) => {
+    setIsPreparing(true);
+    try {
+      const res = await fetch(imagePath);
+      if (!res.ok) throw new Error('preset fetch failed');
+      const blob = await res.blob();
+      const file = new File([blob], label, { type: blob.type || 'image/jpeg' });
+      const prepared = await prepareImageFile(file);
+      sessionStorage.setItem('uploadedImage', JSON.stringify(prepared));
+      window.location.href = editorPath(params?.locale);
+    } catch (error) {
+      console.error('[LandingHeroExperience] demo load failed', error);
+      toast.error(isZh ? '示例加载失败，请直接上传图片。' : 'Failed to load the preset. Please upload an image instead.');
+    } finally {
+      setIsPreparing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#fbf8f1] text-[#161616] [font-family:var(--font-body)]">
       <section className="relative overflow-hidden border-b border-black/10 bg-[#f7efe2]">
@@ -287,8 +348,8 @@ export default function LandingHeroExperience() {
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-8 text-[#4a4037] md:text-lg">{t.description}</p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <label className="group block cursor-pointer">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <label className="group relative block cursor-pointer">
                 <input
                   type="file"
                   accept="image/*"
@@ -301,18 +362,41 @@ export default function LandingHeroExperience() {
                     event.target.value = '';
                   }}
                 />
-                <span className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#101010] px-5 py-3 text-sm font-black text-white shadow-[0_18px_34px_rgba(16,16,16,0.22)] transition-transform group-hover:-translate-y-0.5">
+                <span className="relative inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#0e7490] px-7 py-3 text-sm font-black text-white shadow-[0_0_0_1px_rgba(14,116,144,0.4),0_18px_38px_rgba(14,116,144,0.42)] transition-transform group-hover:-translate-y-0.5 group-active:translate-y-0">
+                  <span className="pointer-events-none absolute inset-0 animate-pulse bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.35)_50%,transparent_75%)] bg-[length:250%_100%] [animation-duration:2.4s]" />
                   <Zap className="size-4" />
                   {isPreparing ? t.loading : t.chooseFile}
                 </span>
               </label>
               <a
                 href={editorPath(params?.locale)}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white/80 px-5 py-3 text-sm font-black text-[#161616] shadow-[0_14px_28px_rgba(16,16,16,0.08)] transition-transform hover:-translate-y-0.5"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-bold text-[#4a4037] transition-colors hover:border-black/20 hover:text-[#161616]"
               >
                 {t.secondaryCta}
                 <ArrowRight className="size-4" />
               </a>
+            </div>
+
+            <p className="mt-3 text-sm font-semibold text-[#0f766e]">{t.quotaHint}</p>
+
+            <div className="mt-6">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-[#6b6258]">{t.demoTitle}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {t.demos.map((demo) => (
+                  <button
+                    key={demo.label}
+                    onClick={() => handleDemo(demo.image, demo.label)}
+                    disabled={isPreparing}
+                    className="group inline-flex items-center gap-2 rounded-lg border border-black/10 bg-white/75 px-3.5 py-2 text-xs font-bold text-[#2b2620] shadow-[0_8px_20px_rgba(16,16,16,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#0e7490]/40 hover:shadow-[0_12px_26px_rgba(14,116,144,0.14)] disabled:opacity-60"
+                  >
+                    <img src={demo.image} alt={demo.label} className="h-7 w-9 rounded-md object-cover" />
+                    <span className="text-left">
+                      <span className="block">{demo.label}</span>
+                      <span className="block font-medium text-[#8a7f73]">{demo.hint}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="mt-5 max-w-[560px] rounded-lg border border-black/10 bg-white/70 p-4 shadow-[0_16px_32px_rgba(16,16,16,0.08)]">
@@ -327,94 +411,115 @@ export default function LandingHeroExperience() {
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#6b6258]">{label}</p>
                 </div>
               ))}
+              <div className="rounded-lg border border-[#0f766e]/25 bg-[#0f766e]/8 px-4 py-3">
+                <p className="text-xl font-black text-[#0f766e]">10,000+</p>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#0f766e]/70">{t.socialProof}</p>
+              </div>
             </div>
 
             <p className="mt-6 max-w-xl text-sm font-semibold leading-6 text-[#5b5046]">{t.trust}</p>
           </div>
 
           <div className="relative pb-8 lg:pb-0">
-            <div className="overflow-hidden rounded-2xl border border-black/10 bg-[#111827] shadow-[0_30px_80px_rgba(17,24,39,0.28)]">
-              <div className="flex items-center justify-between border-b border-white/10 bg-[#0f172a] px-4 py-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200/70">{t.visualLabel}</p>
-                  <p className="mt-1 text-sm font-semibold text-white">Image Layered</p>
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1120] shadow-[0_30px_80px_rgba(2,6,23,0.45)]">
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-[#0f172a]/90 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
+                    <span className="h-3 w-3 rounded-full bg-[#facc15]" />
+                    <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
+                  </div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-cyan-200/80">{t.visualLabel}</p>
                 </div>
-                <div className="flex gap-1.5">
-                  <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
-                  <span className="h-3 w-3 rounded-full bg-[#facc15]" />
-                  <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
-                </div>
+                <p className="truncate text-xs font-semibold text-slate-300">{t.studioTitle}</p>
               </div>
 
-              <div className="grid gap-0 lg:grid-cols-[1fr_220px]">
-                <div className="bg-[#1f2937] p-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="overflow-hidden rounded-xl border border-white/10 bg-white">
-                      <div className="relative aspect-[4/5] bg-[linear-gradient(160deg,#f97316,#fde047_45%,#f43f5e)]">
-                        <img
-                          src="/imgs/features/001.jpeg"
-                          alt="Qwen Image Layered layer separation preview"
-                          className="h-full w-full object-cover object-[18%_62%]"
-                        />
-                        <div className="absolute bottom-3 left-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-black text-white">
-                          {t.before}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1220]">
-                      <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.08)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.08)_75%),linear-gradient(45deg,rgba(255,255,255,0.08)_25%,transparent_25%,transparent_75%,rgba(255,255,255,0.08)_75%)] [background-position:0_0,12px_12px] [background-size:24px_24px]" />
-                      <div className="relative flex aspect-[4/5] items-center justify-center p-6">
-                        <div className="h-[74%] w-[62%] rotate-[-4deg] rounded-xl bg-[#f97316] shadow-[18px_20px_0_rgba(34,211,238,0.22)]" />
-                        <div className="absolute left-[26%] top-[26%] h-[30%] w-[36%] rotate-[5deg] rounded-xl bg-[#f8fafc] shadow-[14px_14px_0_rgba(251,191,36,0.34)]" />
-                        <div className="absolute right-[22%] top-[18%] h-12 w-24 rotate-[-7deg] rounded-md bg-[#f43f5e] shadow-[10px_10px_0_rgba(255,255,255,0.18)]" />
-                        <div className="absolute bottom-[20%] left-[22%] h-16 w-16 rounded-full bg-[#fde047] shadow-[12px_12px_0_rgba(34,197,94,0.24)]" />
-                        <div className="absolute bottom-3 left-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-black text-white">
-                          {t.result}
-                        </div>
-                      </div>
-                    </div>
+              <div className="space-y-4 bg-[#0b1220] p-4 md:p-5">
+                {/* 01 · original */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">01 · {t.stepOriginal}</p>
+                    <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-slate-300">1600×900</span>
                   </div>
-
-                  <div className="mt-4 rounded-xl border border-cyan-200/20 bg-[#0f172a] p-4">
-                    <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-100">
-                      <PenLine className="size-4" />
-                      {t.promptLabel}
+                  <div className="relative overflow-hidden rounded-xl border border-white/10">
+                    <img
+                      src="/imgs/features/hero-case-1.jpg"
+                      alt="Original image before layer decomposition"
+                      className="aspect-[16/9] w-full object-cover"
+                    />
+                    <div className="absolute bottom-2 left-2 rounded-md bg-black/70 px-2.5 py-1 text-[11px] font-black text-white">
+                      {t.before}
                     </div>
-                    <p className="text-sm leading-6 text-slate-200">{t.prompt}</p>
                   </div>
                 </div>
 
-                <aside className="border-l border-white/10 bg-[#0f172a] p-4">
-                  <div className="flex items-center gap-2 text-sm font-black text-white">
-                    <Layers3 className="size-4 text-cyan-200" />
-                    {t.layerStack}
+                {/* 02 · decompose */}
+                <div className="rounded-xl border border-cyan-200/15 bg-[#0f172a] p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-400/15 text-cyan-200">
+                      <Layers3 className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-white">02 · {t.stepDecompose}</p>
+                      <p className="truncate text-[11px] text-slate-400">{t.decomposeHint}</p>
+                    </div>
+                    <div className="ml-auto flex shrink-0 -space-x-1.5">
+                      {['#f97316', '#22d3ee', '#f43f5e', '#fde047', '#a78bfa'].map((color) => (
+                        <span
+                          key={color}
+                          className="h-4 w-4 rounded-full border border-black/40"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="mt-4 space-y-2">
-                    {t.layers.map((layer, index) => (
-                      <div
-                        key={layer}
-                        className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/6 p-2 text-sm text-slate-100"
-                      >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/10 text-xs font-black tabular-nums">
-                          {index + 1}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate font-semibold">{layer}</span>
-                        <CheckCircle2 className="size-4 text-emerald-300" />
-                      </div>
-                    ))}
+                </div>
+
+                {/* layer chips */}
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {t.layers.map((layer, index) => (
+                    <div
+                      key={layer}
+                      className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/6 px-2.5 py-2"
+                    >
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                        style={{ backgroundColor: ['#f97316', '#22d3ee', '#f43f5e', '#fde047', '#a78bfa'][index] }}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-100">{layer}</span>
+                      <CheckCircle2 className="size-3.5 shrink-0 text-emerald-300" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* 03 · export */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">03 · {t.stepExport}</p>
+                    <span className="rounded bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                      {t.exportBadge}
+                    </span>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-3 text-xs font-black text-[#071123]">
-                      <Wand2 className="size-4" />
-                      Edit
-                    </button>
-                    <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-white/10 px-3 text-xs font-black text-white">
-                      <Download className="size-4" />
-                      Export
-                    </button>
+                  <div className="relative overflow-hidden rounded-xl border border-emerald-400/25">
+                    <img
+                      src="/imgs/features/hero-case-1.jpg"
+                      alt="Edited result after layer-aware prompt edit"
+                      className="aspect-[16/9] w-full object-cover brightness-[1.06] saturate-[1.1] contrast-[1.04]"
+                    />
+                    <div className="absolute bottom-2 left-2 rounded-md bg-emerald-600/85 px-2.5 py-1 text-[11px] font-black text-white">
+                      {t.result}
+                    </div>
                   </div>
-                </aside>
+                </div>
+
+                {/* prompt bar */}
+                <div className="rounded-xl border border-cyan-200/20 bg-[#0f172a] p-3.5">
+                  <div className="mb-1.5 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100">
+                    <PenLine className="size-3.5" />
+                    {t.promptLabel}
+                  </div>
+                  <p className="text-xs leading-5 text-slate-300">{t.prompt}</p>
+                </div>
               </div>
             </div>
           </div>

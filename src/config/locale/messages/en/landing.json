@@ -18,7 +18,6 @@
           "url": "/#features",
           "icon": "Sparkles"
         },
-        
         {
           "title": "Pricing",
           "url": "/pricing",
@@ -58,7 +57,6 @@
               "url": "/ai-lookbook",
               "icon": "RiShirtLine"
             }
-           
           ]
         },
         {
@@ -129,16 +127,26 @@
     "nav": {
       "items": [
         {
-          "title": "About",
+          "title": "Product",
           "children": [
             {
-              "title": "Features",
-              "url": "/#features",
+              "title": "Layer Editor",
+              "url": "/qwenimagelayered",
               "target": "_self"
             },
             {
-              "title": "Showcases",
-              "url": "/showcases",
+              "title": "AI Replace",
+              "url": "/qwenimagelayered?tool=replace",
+              "target": "_self"
+            },
+            {
+              "title": "AI Expand",
+              "url": "/qwenimagelayered?tool=expand",
+              "target": "_self"
+            },
+            {
+              "title": "AI Remove",
+              "url": "/qwenimagelayered?tool=remove",
               "target": "_self"
             },
             {
@@ -149,16 +157,46 @@
           ]
         },
         {
+          "title": "Solutions",
+          "children": [
+            {
+              "title": "Change product photo background",
+              "url": "/seo/en/change-background-of-ai-product-image",
+              "target": "_self"
+            },
+            {
+              "title": "Edit AI product photos",
+              "url": "/seo/en/edit-ai-product-photos",
+              "target": "_self"
+            },
+            {
+              "title": "Edit poster without Photoshop",
+              "url": "/seo/en/edit-poster-without-photoshop",
+              "target": "_self"
+            },
+            {
+              "title": "Edit Midjourney images",
+              "url": "/seo/en/modify-ai-character-without-changing-face",
+              "target": "_self"
+            }
+          ]
+        },
+        {
           "title": "Resources",
           "children": [
+            {
+              "title": "Blog",
+              "url": "/blog",
+              "target": "_self"
+            },
             {
               "title": "Documents",
               "url": "/docs",
               "target": "_self"
             },
             {
-              "title": "Blog",
-              "url": "/blog",
+              "title": "Pricing FAQ",
+              "url": "/pricing",
               "target": "_self"
             },
             {
@@ -167,32 +205,11 @@
               "target": "_self"
             }
           ]
-        },
-        {
-          "title": "Friends",
-          "children": [
-            {
-              "title": "Pathwordle",
-              "url": "https://pathwordle.com",
-              "target": "_blank"
-            },
-            {
-              "title": "DisneySolitaire",
-              "url": "https://disneysolitaire.net",
-              "target": "_blank"
-            },
-            {
-              "title": "Hotgame",
-              "url": "https://speedsters1.net",
-              "target": "_blank"
-            }
-          ]
         }
       ]
     },
     "social": {
       "items": [
-       
         {
           "title": "Github",
           "icon": "Github",

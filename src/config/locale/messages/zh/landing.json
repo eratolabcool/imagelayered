@@ -18,8 +18,6 @@
           "url": "/#features",
           "icon": "Sparkles"
         },
-     
-     
         {
           "title": "价格",
           "url": "/pricing",
@@ -59,8 +57,6 @@
               "url": "/ai-lookbook",
               "icon": "RiShirtLine"
             }
-
-
           ]
         },
         {
@@ -131,11 +127,26 @@
     "nav": {
       "items": [
         {
-          "title": "关于我们",
+          "title": "产品",
           "children": [
             {
-              "title": "功能",
-              "url": "/#features",
+              "title": "图层编辑器",
+              "url": "/qwenimagelayered",
+              "target": "_self"
+            },
+            {
+              "title": "AI 替换",
+              "url": "/qwenimagelayered?tool=replace",
+              "target": "_self"
+            },
+            {
+              "title": "AI 扩展",
+              "url": "/qwenimagelayered?tool=expand",
+              "target": "_self"
+            },
+            {
+              "title": "AI 移除",
+              "url": "/qwenimagelayered?tool=remove",
               "target": "_self"
             },
             {
@@ -146,42 +157,52 @@
           ]
         },
         {
-          "title": "资源",
+          "title": "解决方案",
           "children": [
             {
-              "title": "文档",
-              "url": "/docs",
+              "title": "更换商品图背景",
+              "url": "/seo/zh/change-background-of-ai-product-image",
               "target": "_self"
             },
+            {
+              "title": "修改 AI 商品图",
+              "url": "/seo/zh/edit-ai-product-photos",
+              "target": "_self"
+            },
+            {
+              "title": "不用 Photoshop 改海报",
+              "url": "/seo/zh/edit-poster-without-photoshop",
+              "target": "_self"
+            },
+            {
+              "title": "编辑 Midjourney 图片",
+              "url": "/seo/zh/modify-ai-character-without-changing-face",
+              "target": "_self"
+            }
+          ]
+        },
+        {
+          "title": "资源",
+          "children": [
             {
               "title": "博客",
               "url": "/blog",
               "target": "_self"
             },
             {
+              "title": "文档",
+              "url": "/docs",
+              "target": "_self"
+            },
+            {
+              "title": "定价 FAQ",
+              "url": "/pricing",
+              "target": "_self"
+            },
+            {
               "title": "对话",
               "url": "/chat",
-              "target": "_blank"
-            }
-          ]
-        },
-        {
-          "title": "合作伙伴",
-          "children": [
-            {
-              "title": "Pathwordle",
-              "url": "https://pathwordle.com",
-              "target": "_blank"
-            },
-            {
-              "title": "DisneySolitaire",
-              "url": "https://disneysolitaire.net",
-              "target": "_blank"
-            },
-            {
-              "title": "Hotgame",
-              "url": "https://speedsters1.net",
-              "target": "_blank"
+              "target": "_self"
             }
           ]
         }
@@ -189,8 +210,6 @@
     },
     "social": {
       "items": [
-        
-    
         {
           "title": "邮箱",
           "icon": "Mail",
