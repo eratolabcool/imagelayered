@@ -1,3 +1,19 @@
+export type LayerBlendMode =
+  | 'normal'
+  | 'multiply'
+  | 'screen'
+  | 'overlay'
+  | 'soft-light'
+  | 'color'
+  | 'luminosity';
+
+export interface LayerEditMetadata {
+  tool: Extract<ToolType, 'recolor' | 'replace' | 'remove'>;
+  prompt: string;
+  createdAt: number;
+  sourceLayerId: string;
+}
+
 export interface Layer {
   id: string;
   name: string;
@@ -11,8 +27,13 @@ export interface Layer {
   visible: boolean;
   locked: boolean;
   zIndex: number;
+  blendMode?: LayerBlendMode;
   maskUrl?: string; // White editable area derived from the layer alpha channel
   parentId?: string; // For recursive decomposition
+  sourceLayerId?: string; // Original layer retained by a non-destructive AI variation
+  editMetadata?: LayerEditMetadata;
+  groupId?: string;
+  groupName?: string;
 }
 
 export interface CanvasState {

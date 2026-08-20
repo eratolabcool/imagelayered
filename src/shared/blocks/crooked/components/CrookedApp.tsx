@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useSession } from '@/core/auth/client';
-import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Download, Copy, Wand2, SlidersHorizontal, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle } from 'lucide-react';
+import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Wand2, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle, Undo2, Redo2, Search, GripVertical, FolderPlus, Ungroup, Lock, Unlock, Trash2, Command as CommandIcon, Camera, Maximize2, Download, Images } from 'lucide-react';
 import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId, DecompositionModel, LayeringMode } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
@@ -19,11 +19,17 @@ import { toast } from 'sonner';
 import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
 import { getWorkflowPreset, workflowPresets } from '../workflows';
 import WorkspaceSidebar from './WorkspaceSidebar';
+import LayerInspector from './LayerInspector';
+import EditorCommandPalette, { EditorCommand } from './EditorCommandPalette';
+import ProjectVersionPanel, { ProjectSnapshot } from './ProjectVersionPanel';
+import { useLayerHistory } from '../hooks/use-layer-history';
 
 interface CrookedAppProps {
   embedded?: boolean;
   initialImage?: PreparedImagePayload | null;
 }
+
+const LOCAL_DRAFT_KEY = 'image-layered:editor-draft:v1';
 
 const decompositionModelOptions: Array<{
   model: DecompositionModel;
@@ -78,8 +84,19 @@ const decompositionModelOptions: Array<{
 const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage = null }) => {
   const copy = useCrookedCopy();
   const { brand, editBar, workflow } = copy;
-  const [layers, setLayers] = useState<Layer[]>([]);
+  const {
+    layers,
+    setLayers,
+    resetLayers,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useLayerHistory();
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
+  const [selectedLayerIds, setSelectedLayerIds] = useState<Set<string>>(new Set());
+  const [layerSearch, setLayerSearch] = useState('');
+  const [draggedStackLayerId, setDraggedStackLayerId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const [showOriginal, setShowOriginal] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -91,11 +108,25 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     );
   }, []);
 
+  const selectLayer = useCallback((id: string, additive = false) => {
+    setSelectedLayerId(id);
+    setSelectedLayerIds((current) => {
+      if (!additive) return new Set([id]);
+      const next = new Set(current);
+      if (next.has(id) && next.size > 1) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   // Growth & Cloud Save States
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectName, setProjectName] = useState<string>('My Poster');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isVersionPanelOpen, setIsVersionPanelOpen] = useState(false);
+  const [projectSnapshots, setProjectSnapshots] = useState<ProjectSnapshot[]>([]);
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [exitIntentEmail, setExitIntentEmail] = useState('');
   const [exitIntentSubmitting, setExitIntentSubmitting] = useState(false);
@@ -122,6 +153,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const workflowQuery = searchParams ? searchParams.get('workflow') : null;
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
+  const hasRestoredLocalDraft = useRef(false);
 
   useEffect(() => {
     if (workflowQuery && workflowPresets.some((preset) => preset.id === workflowQuery)) {
@@ -148,7 +180,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           setProjectId(id);
           setProjectName(name || 'Untitled Poster');
           if (Array.isArray(loadedLayers)) {
-            setLayers(loadedLayers);
+            resetLayers(loadedLayers);
             if (loadedLayers.length > 0) {
               setSelectedLayerId(loadedLayers[0].id);
             }
@@ -166,7 +198,31 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     };
 
     loadProject();
-  }, [projectIdQuery, isZh]);
+  }, [projectIdQuery, isZh, resetLayers]);
+
+  // Restore an anonymous local draft after a browser or tab restart.
+  useEffect(() => {
+    if (hasRestoredLocalDraft.current || projectIdQuery || initialImage || layers.length > 0 || isLoggedIn) return;
+    hasRestoredLocalDraft.current = true;
+
+    try {
+      const rawDraft = localStorage.getItem(LOCAL_DRAFT_KEY);
+      if (!rawDraft) return;
+
+      const draft = JSON.parse(rawDraft);
+      if (!Array.isArray(draft?.layers) || draft.layers.length === 0) return;
+
+      setProjectId(draft.id || crypto.randomUUID());
+      setProjectName(draft.name || 'Recovered project');
+      resetLayers(draft.layers);
+      setSelectedLayerId(draft.selectedLayerId || draft.layers[0].id);
+      setSaveStatus('saved');
+      toast.success(isZh ? '已恢复上次未完成的项目' : 'Your unfinished project was restored');
+    } catch (error) {
+      console.error('[Draft restore] Failed:', error);
+      localStorage.removeItem(LOCAL_DRAFT_KEY);
+    }
+  }, [initialImage, isLoggedIn, isZh, layers.length, projectIdQuery, resetLayers]);
 
   // 2. Debounced Autosave / Guest Save to sessionStorage
   useEffect(() => {
@@ -181,14 +237,24 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       const draft = {
         id: projectId,
         name: projectName,
-        layers
+        layers,
+        selectedLayerId,
+        updatedAt: Date.now(),
       };
-      sessionStorage.setItem('guest_project_draft', JSON.stringify(draft));
-      setSaveStatus('saved');
+      const serializedDraft = JSON.stringify(draft);
+      sessionStorage.setItem('guest_project_draft', serializedDraft);
+      try {
+        localStorage.setItem(LOCAL_DRAFT_KEY, serializedDraft);
+        setSaveStatus('saved');
+      } catch (error) {
+        console.warn('[Draft save] Local storage quota exceeded:', error);
+        setSaveStatus('error');
+      }
       return;
     }
 
     setSaveStatus('saving');
+    const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
         const bgLayer = layers.find(l => l.zIndex === 0) || layers[0];
@@ -199,6 +265,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           headers: {
             'Content-Type': 'application/json'
           },
+          signal: controller.signal,
           body: JSON.stringify({
             id: projectId,
             name: projectName,
@@ -210,18 +277,42 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         if (!res.ok) throw new Error('Save failed');
         const data = await res.json();
         if (data.code === 0) {
+          localStorage.removeItem(LOCAL_DRAFT_KEY);
           setSaveStatus('saved');
         } else {
           throw new Error(data.message || 'Unknown save error');
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         console.error('[Autosave] Failed:', err);
         setSaveStatus('error');
       }
     }, 1500);
 
-    return () => clearTimeout(timer);
-  }, [layers, projectName, projectId, isLoggedIn]);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [layers, projectName, projectId, isLoggedIn, selectedLayerId]);
+
+  useEffect(() => {
+    if (!projectId) {
+      setProjectSnapshots([]);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(`image-layered:versions:${projectId}`);
+      if (!stored) {
+        setProjectSnapshots([]);
+        return;
+      }
+      const parsed = JSON.parse(stored);
+      setProjectSnapshots(Array.isArray(parsed) ? parsed.slice(0, 12) : []);
+    } catch (error) {
+      console.warn('[Project versions] Failed to load snapshots:', error);
+      setProjectSnapshots([]);
+    }
+  }, [projectId]);
 
   // 3. Session Restore / Auto-Resume after registration
   useEffect(() => {
@@ -233,7 +324,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           if (draft && draft.layers && draft.layers.length > 0) {
             setProjectId(draft.id);
             setProjectName(draft.name || 'My Poster');
-            setLayers(draft.layers);
+            resetLayers(draft.layers);
             if (draft.layers.length > 0) {
               setSelectedLayerId(draft.layers[0].id);
             }
@@ -273,7 +364,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         }
       }
     }
-  }, [isLoggedIn, isZh]);
+  }, [isLoggedIn, isZh, resetLayers]);
 
   // 4. Exit Intent Detector
   useEffect(() => {
@@ -481,11 +572,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       zIndex: 0
     };
 
-    setLayers([newLayer]);
+    resetLayers([newLayer]);
     setSelectedLayerId(newLayer.id);
     setZoom(1);
     setDragOffset({ x: 0, y: 0 });
-  }, []); // 移除依赖，避免侧边栏状态变化时重复创建
+  }, [resetLayers]);
 
   useEffect(() => {
     if (initialImage && layers.length === 0) {
@@ -511,6 +602,69 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     setZoom(Number.isFinite(nextZoom) && nextZoom > 0 ? nextZoom : 1);
     setDragOffset({ x: 0, y: 0 });
   }, [layers]);
+
+  useEffect(() => {
+    const handleFitShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches('input, textarea, [contenteditable="true"]')) return;
+      if (event.key === '0' && layers.length > 0) {
+        event.preventDefault();
+        fitCanvasToImage();
+      }
+    };
+    window.addEventListener('keydown', handleFitShortcut);
+    return () => window.removeEventListener('keydown', handleFitShortcut);
+  }, [fitCanvasToImage, layers.length]);
+
+  const storeProjectSnapshots = useCallback((snapshots: ProjectSnapshot[]) => {
+    if (!projectId) return false;
+    try {
+      const serialized = JSON.stringify(snapshots);
+      if (new Blob([serialized]).size > 4_500_000) {
+        toast.error(isZh ? '版本快照超过浏览器容量，请先删除较早版本。' : 'Snapshots exceed browser storage. Delete an older version first.');
+        return false;
+      }
+      localStorage.setItem(`image-layered:versions:${projectId}`, serialized);
+      setProjectSnapshots(snapshots);
+      return true;
+    } catch (error) {
+      console.warn('[Project versions] Failed to save snapshots:', error);
+      toast.error(isZh ? '版本保存空间不足，请删除较早的快照后重试。' : 'Snapshot storage is full. Delete an older version and try again.');
+      return false;
+    }
+  }, [isZh, projectId]);
+
+  const handleCreateProjectSnapshot = useCallback((requestedName: string) => {
+    if (!projectId || layers.length === 0) return;
+    const snapshot: ProjectSnapshot = {
+      id: crypto.randomUUID(),
+      name: requestedName.slice(0, 80) || `${isZh ? '版本' : 'Version'} ${projectSnapshots.length + 1}`,
+      createdAt: Date.now(),
+      layers: layers.map((layer) => ({ ...layer })),
+      selectedLayerId,
+    };
+    const next = [snapshot, ...projectSnapshots].slice(0, 12);
+    if (storeProjectSnapshots(next)) {
+      pushHistory(isZh ? '保存版本快照' : 'Save version snapshot', snapshot.name);
+      toast.success(isZh ? '版本快照已保存' : 'Version snapshot saved');
+    }
+  }, [isZh, layers, projectId, projectSnapshots, pushHistory, selectedLayerId, storeProjectSnapshots]);
+
+  const handleRestoreProjectSnapshot = useCallback((snapshot: ProjectSnapshot) => {
+    resetLayers(snapshot.layers.map((layer) => ({ ...layer })));
+    const nextSelectedId = snapshot.selectedLayerId && snapshot.layers.some((layer) => layer.id === snapshot.selectedLayerId)
+      ? snapshot.selectedLayerId
+      : snapshot.layers[0]?.id ?? null;
+    setSelectedLayerId(nextSelectedId);
+    setSelectedLayerIds(nextSelectedId ? new Set([nextSelectedId]) : new Set());
+    setIsVersionPanelOpen(false);
+    pushHistory(isZh ? '恢复项目版本' : 'Restore project version', snapshot.name);
+    toast.success(isZh ? '已恢复所选版本' : 'Project version restored');
+  }, [isZh, pushHistory, resetLayers]);
+
+  const handleDeleteProjectSnapshot = useCallback((id: string) => {
+    storeProjectSnapshots(projectSnapshots.filter((snapshot) => snapshot.id !== id));
+  }, [projectSnapshots, storeProjectSnapshots]);
 
   // Fit the visual canvas to the uploaded image and keep it pinned to the top.
   useEffect(() => {
@@ -573,6 +727,41 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   // Handle keyboard events for space key panning
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isEditingText = target?.matches('input, textarea, [contenteditable="true"]');
+      const modifier = e.metaKey || e.ctrlKey;
+
+      if (!isEditingText && modifier && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((open) => !open);
+        return;
+      }
+
+      if (!isEditingText && modifier && e.key.toLowerCase() === 'a' && layers.length > 0) {
+        e.preventDefault();
+        setSelectedLayerIds(new Set(layers.map((layer) => layer.id)));
+        setSelectedLayerId(layers.at(-1)?.id ?? null);
+        return;
+      }
+
+      if (!isEditingText && modifier && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+        return;
+      }
+
+      if (!isEditingText && e.ctrlKey && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      if (isEditingText) return;
+
       if (e.code === 'Space' && !isSpacePressed) {
         setIsSpacePressed(true);
         e.preventDefault();
@@ -592,13 +781,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isSpacePressed]);
+  }, [isSpacePressed, layers, redo, undo]);
 
   // Handle layer dragging
   const handleLayerMouseDown = (e: React.MouseEvent, layer: Layer) => {
     if (layer.locked) return;
     e.stopPropagation();
-    setSelectedLayerId(layer.id);
+    if (!(e.metaKey || e.ctrlKey || e.shiftKey)) selectLayer(layer.id);
     setDraggingLayerId(layer.id);
     setLayerDragOffset({
       x: e.clientX - layer.x,
@@ -642,6 +831,21 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       setSelectedLayerId(layers[0].id);
     }
   }, [activeTool, selectedLayerId, layers]);
+
+  useEffect(() => {
+    if (selectedLayerId && !layers.some((layer) => layer.id === selectedLayerId)) {
+      setSelectedLayerId(layers.at(-1)?.id ?? null);
+    }
+  }, [layers, selectedLayerId]);
+
+  useEffect(() => {
+    setSelectedLayerIds((current) => {
+      const available = new Set(layers.map((layer) => layer.id));
+      const next = new Set([...current].filter((id) => available.has(id)));
+      if (selectedLayerId && available.has(selectedLayerId)) next.add(selectedLayerId);
+      return next;
+    });
+  }, [layers, selectedLayerId]);
 
   useEffect(() => {
     if (isDraggingCanvas || draggingLayerId) {
@@ -1336,9 +1540,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
     setIsProcessing(true);
     try {
-      // Determine scene based on active tool
-      const scene = activeTool === 'recolor' ? 'image-recolor' :
-                    activeTool === 'replace' ? 'image-replace' :
+      // Every AI edit is written to a new layer so the source remains recoverable.
+      const editTool: Extract<ToolType, 'recolor' | 'replace' | 'remove'> =
+        activeTool === 'recolor' || activeTool === 'replace' || activeTool === 'remove'
+          ? activeTool
+          : 'replace';
+      const scene = editTool === 'recolor' ? 'image-recolor' :
+                    editTool === 'replace' ? 'image-replace' :
                     'image-remove';
 
       if (!target.url) {
@@ -1435,13 +1643,35 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           }
         }
 
-        setLayers(prev => prev.map(l =>
-          l.id === selectedLayerId ? { ...l, url: newUrl } : l
-        ));
+        const variationId = crypto.randomUUID();
+        const maxZ = Math.max(...layers.map((layer) => layer.zIndex), 0);
+        const variationNumber = layers.filter((layer) => layer.sourceLayerId === target.id).length + 1;
+        const variation: Layer = {
+          ...target,
+          id: variationId,
+          name: `${target.name} · ${isZh ? '变体' : 'Variation'} ${variationNumber}`,
+          url: newUrl,
+          visible: true,
+          locked: false,
+          zIndex: maxZ + 1,
+          sourceLayerId: target.id,
+          editMetadata: {
+            tool: editTool,
+            prompt: instruction,
+            createdAt: Date.now(),
+            sourceLayerId: target.id,
+          },
+        };
+
+        setLayers(prev => [
+          ...prev.map((layer) => layer.id === target.id ? { ...layer, visible: false } : layer),
+          variation,
+        ]);
+        selectLayer(variationId);
 
         pushHistory(
-          isZh ? 'AI 编辑' : 'AI edit',
-          target.name || (isZh ? '选中图层' : 'Selected layer')
+          isZh ? '创建 AI 变体' : 'Create AI variation',
+          variation.name
         );
 
         // Increment usage count on success for guest users
@@ -1599,6 +1829,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
           // Apply layer opacity
           ctx.globalAlpha = layer.opacity;
+          ctx.globalCompositeOperation = layer.blendMode === 'normal'
+            ? 'source-over'
+            : (layer.blendMode ?? 'source-over');
 
           // When using original size, use the image's natural dimensions
           // Calculate scale factor based on baseLayer's natural size vs stored size
@@ -1788,6 +2021,87 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     toast.success(isZh ? '已显示全部图层' : 'All layers visible');
   }, [isZh]);
 
+  const handleUpdateSelectedLayer = useCallback((changes: Partial<Layer>) => {
+    if (!selectedLayerId) return;
+    setLayers((prev) => prev.map((layer) => (
+      layer.id === selectedLayerId ? { ...layer, ...changes } : layer
+    )));
+  }, [selectedLayerId]);
+
+  const handleBulkUpdate = useCallback((changes: Partial<Layer>) => {
+    if (selectedLayerIds.size === 0) return;
+    setLayers((prev) => prev.map((layer) => (
+      selectedLayerIds.has(layer.id) ? { ...layer, ...changes } : layer
+    )));
+  }, [selectedLayerIds]);
+
+  const handleGroupSelectedLayers = useCallback(() => {
+    if (selectedLayerIds.size < 2) return;
+    const groupId = crypto.randomUUID();
+    const groupNumber = new Set(layers.map((layer) => layer.groupId).filter(Boolean)).size + 1;
+    const groupName = `${isZh ? '分组' : 'Group'} ${groupNumber}`;
+    setLayers((prev) => prev.map((layer) => (
+      selectedLayerIds.has(layer.id) ? { ...layer, groupId, groupName } : layer
+    )));
+    pushHistory(isZh ? '创建图层分组' : 'Group layers', groupName);
+    toast.success(isZh ? '图层已分组' : 'Layers grouped');
+  }, [isZh, layers, pushHistory, selectedLayerIds]);
+
+  const handleUngroupSelectedLayers = useCallback(() => {
+    if (selectedLayerIds.size === 0) return;
+    setLayers((prev) => prev.map((layer) => {
+      if (!selectedLayerIds.has(layer.id)) return layer;
+      return { ...layer, groupId: undefined, groupName: undefined };
+    }));
+    pushHistory(isZh ? '取消图层分组' : 'Ungroup layers', isZh ? '多个图层' : 'Multiple layers');
+  }, [isZh, pushHistory, selectedLayerIds]);
+
+  const handleReorderLayers = useCallback((draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+    setLayers((prev) => {
+      const ordered = [...prev].sort((a, b) => b.zIndex - a.zIndex);
+      const dragged = ordered.find((layer) => layer.id === draggedId);
+      const targetIndex = ordered.findIndex((layer) => layer.id === targetId);
+      if (!dragged || targetIndex < 0 || dragged.locked) return prev;
+      const withoutDragged = ordered.filter((layer) => layer.id !== draggedId);
+      withoutDragged.splice(targetIndex, 0, dragged);
+      const zById = new Map(withoutDragged.map((layer, index) => [layer.id, withoutDragged.length - index - 1]));
+      return prev.map((layer) => ({ ...layer, zIndex: zById.get(layer.id) ?? layer.zIndex }));
+    });
+    pushHistory(isZh ? '调整图层顺序' : 'Reorder layers', isZh ? '图层堆栈' : 'Layer stack');
+  }, [isZh, pushHistory]);
+
+  const handleDeleteSelectedLayer = useCallback(() => {
+    if (!selectedLayerId) return;
+    const target = layers.find((layer) => layer.id === selectedLayerId);
+    if (!target) return;
+    if (layers[0]?.id === selectedLayerId) {
+      toast.error(isZh ? '主画布图层不能删除，请更换图片。' : 'The main canvas layer cannot be deleted. Change the source image instead.');
+      return;
+    }
+
+    setLayers((prev) => prev.filter((layer) => layer.id !== selectedLayerId && layer.parentId !== selectedLayerId));
+    setSelectedLayerId(layers.find((layer) => layer.id !== selectedLayerId)?.id ?? null);
+    pushHistory(isZh ? '删除图层' : 'Delete layer', target.name);
+    toast.success(isZh ? '图层已删除，可使用撤销恢复。' : 'Layer deleted. Use Undo to restore it.');
+  }, [isZh, layers, pushHistory, selectedLayerId]);
+
+  const handleDeleteSelectedLayers = useCallback(() => {
+    const baseId = layers[0]?.id;
+    const deletableIds = new Set([...selectedLayerIds].filter((id) => id !== baseId));
+    if (deletableIds.size === 0) {
+      toast.error(isZh ? '主画布图层不能删除。' : 'The main canvas layer cannot be deleted.');
+      return;
+    }
+    const remaining = layers.filter((layer) => !deletableIds.has(layer.id) && !(layer.parentId && deletableIds.has(layer.parentId)));
+    setLayers(remaining);
+    const nextId = remaining[0]?.id ?? null;
+    setSelectedLayerId(nextId);
+    setSelectedLayerIds(nextId ? new Set([nextId]) : new Set());
+    pushHistory(isZh ? '批量删除图层' : 'Delete selected layers', `${deletableIds.size}`);
+    toast.success(isZh ? '已删除所选图层，可使用撤销恢复。' : 'Selected layers deleted. Use Undo to restore them.');
+  }, [isZh, layers, pushHistory, selectedLayerIds]);
+
   // Copying link helper
   const handleCopyShareLink = () => {
     try {
@@ -1879,6 +2193,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   ];
 
   const selectedLayer = layers.find(layer => layer.id === selectedLayerId) ?? layers[0] ?? null;
+  const filteredStackLayers = layers
+    .filter((layer) => {
+      const query = layerSearch.trim().toLocaleLowerCase();
+      if (!query) return true;
+      return [layer.name, layer.groupName, layer.editMetadata?.prompt]
+        .filter(Boolean)
+        .some((value) => value!.toLocaleLowerCase().includes(query));
+    })
+    .sort((a, b) => b.zIndex - a.zIndex);
   const displayedLayers = layers
     .filter(layer => {
       if (!layer.visible) return false;
@@ -1902,7 +2225,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       return (
         <div
           key={layer.id}
-          className={`absolute transition-all duration-200 ${interactive && selectedLayerId === layer.id ? 'z-20' : ''}`}
+          className={`absolute transition-all duration-200 ${interactive && selectedLayerIds.has(layer.id) ? 'z-20' : ''}`}
           style={{
             left: isRootLayer ? layer.x : 0,
             top: isRootLayer ? layer.y : 0,
@@ -1910,23 +2233,98 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             height: isRootLayer ? layer.height : baseLayer.height,
             opacity: layer.opacity,
             zIndex: layer.zIndex,
+            mixBlendMode: layer.blendMode ?? 'normal',
             backgroundImage: `url(${layer.url})`,
             backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
             backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
             backgroundRepeat: 'no-repeat',
-            outline: interactive && selectedLayerId === layer.id ? '2px solid rgba(113,190,255,0.92)' : 'none',
-            outlineOffset: interactive && selectedLayerId === layer.id ? '2px' : '0',
+            outline: interactive && selectedLayerIds.has(layer.id) ? '2px solid rgba(113,190,255,0.92)' : 'none',
+            outlineOffset: interactive && selectedLayerIds.has(layer.id) ? '2px' : '0',
             pointerEvents: interactive ? 'auto' : 'none',
           }}
           onMouseDown={interactive ? (e) => handleLayerMouseDown(e, layer) : undefined}
           onClick={interactive ? (e) => {
             e.stopPropagation();
-            setSelectedLayerId(layer.id);
+            selectLayer(layer.id, e.metaKey || e.ctrlKey || e.shiftKey);
           } : undefined}
         />
       );
     });
   };
+
+  const editorCommands: EditorCommand[] = [
+    {
+      id: 'undo',
+      label: isZh ? '撤销上一步' : 'Undo last edit',
+      description: isZh ? '回到上一个图层状态' : 'Return to the previous layer state',
+      shortcut: '⌘ Z',
+      icon: Undo2,
+      disabled: !canUndo,
+      run: undo,
+    },
+    {
+      id: 'redo',
+      label: isZh ? '重做' : 'Redo edit',
+      description: isZh ? '恢复刚刚撤销的操作' : 'Restore the last undone change',
+      shortcut: '⇧ ⌘ Z',
+      icon: Redo2,
+      disabled: !canRedo,
+      run: redo,
+    },
+    {
+      id: 'versions',
+      label: isZh ? '打开项目版本' : 'Open project versions',
+      description: isZh ? '保存或恢复版本快照' : 'Save or restore project snapshots',
+      icon: Camera,
+      disabled: layers.length === 0,
+      run: () => setIsVersionPanelOpen(true),
+    },
+    {
+      id: 'fit',
+      label: isZh ? '适应画布' : 'Fit canvas to view',
+      description: isZh ? '重置缩放并完整显示作品' : 'Reset zoom and show the full composition',
+      shortcut: '0',
+      icon: Maximize2,
+      disabled: layers.length === 0,
+      run: fitCanvasToImage,
+    },
+    {
+      id: 'show-all',
+      label: isZh ? '显示全部图层' : 'Show all layers',
+      description: isZh ? '取消所有图层隐藏状态' : 'Make every layer visible',
+      icon: Eye,
+      disabled: layers.length === 0,
+      run: handleShowAllLayers,
+    },
+    {
+      id: 'select-all',
+      label: isZh ? '选择全部图层' : 'Select all layers',
+      description: isZh ? '用于批量锁定、显隐、分组或删除' : 'Prepare layers for bulk visibility, locking, grouping, or deletion',
+      shortcut: '⌘ A',
+      icon: Images,
+      disabled: layers.length === 0,
+      run: () => {
+        setSelectedLayerIds(new Set(layers.map((layer) => layer.id)));
+        setSelectedLayerId(layers.at(-1)?.id ?? null);
+      },
+    },
+    {
+      id: 'export',
+      label: isZh ? '导出图像' : 'Export image',
+      description: isZh ? '打开高清导出设置' : 'Open high-resolution export settings',
+      icon: Download,
+      disabled: layers.length === 0,
+      run: () => setIsExportModalOpen(true),
+    },
+    {
+      id: 'share',
+      label: isZh ? '分享项目' : 'Share project',
+      description: isZh ? '生成可分享的项目链接' : 'Create a shareable project link',
+      icon: Share2,
+      disabled: layers.length === 0,
+      run: () => setIsShareModalOpen(true),
+    },
+  ];
 
   return (
     <div className={`relative w-full overflow-hidden ${embedded ? 'rounded-[36px]' : 'min-h-screen'} bg-[#060e20] text-white [font-family:var(--font-body)]`}>
@@ -2015,6 +2413,53 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-2">
+              {layers.length > 0 && (
+                <div className="flex items-center rounded-xl bg-white/[0.055] p-1" aria-label={isZh ? '编辑历史控制' : 'Edit history controls'}>
+                  <button
+                    type="button"
+                    onClick={undo}
+                    disabled={!canUndo}
+                    className="flex size-9 items-center justify-center rounded-lg text-slate-200 outline-none transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#b89fff] disabled:cursor-not-allowed disabled:opacity-30"
+                    title={isZh ? '撤销（⌘/Ctrl Z）' : 'Undo (⌘/Ctrl Z)'}
+                    aria-label={isZh ? '撤销' : 'Undo'}
+                  >
+                    <Undo2 className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={redo}
+                    disabled={!canRedo}
+                    className="flex size-9 items-center justify-center rounded-lg text-slate-200 outline-none transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#b89fff] disabled:cursor-not-allowed disabled:opacity-30"
+                    title={isZh ? '重做（⌘/Ctrl Shift Z）' : 'Redo (⌘/Ctrl Shift Z)'}
+                    aria-label={isZh ? '重做' : 'Redo'}
+                  >
+                    <Redo2 className="size-4" />
+                  </button>
+                </div>
+              )}
+              {layers.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsCommandPaletteOpen(true)}
+                  className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-slate-200 outline-none transition-colors hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-[#b89fff]"
+                  title={isZh ? '命令面板（⌘/Ctrl K）' : 'Command palette (⌘/Ctrl K)'}
+                >
+                  <CommandIcon className="size-4" />
+                  <span className="hidden sm:inline">{isZh ? '命令' : 'Commands'}</span>
+                  <kbd className="rounded-md bg-black/20 px-1.5 py-0.5 text-[9px] text-slate-400">⌘K</kbd>
+                </button>
+              )}
+              {layers.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsVersionPanelOpen(true)}
+                  className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-slate-200 outline-none transition-colors hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-[#b89fff]"
+                >
+                  <Camera className="size-4" />
+                  <span>{isZh ? '版本' : 'Versions'}</span>
+                  {projectSnapshots.length > 0 && <span className="rounded-full bg-cyan-300 px-1.5 py-0.5 text-[9px] font-black text-[#071123]">{projectSnapshots.length}</span>}
+                </button>
+              )}
               {layers.length > 0 && (
                 <button
                   onClick={() => setIsShareModalOpen(true)}
@@ -2216,8 +2661,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
             </div>
           ) : (
-            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:p-5 md:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
-              <aside className="flex min-h-0 flex-col gap-3 rounded-[28px] border border-white/10 bg-[#071123]/72 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] md:p-5 xl:grid-cols-[minmax(240px,290px)_minmax(0,1fr)_300px]">
+              <aside className="flex min-h-0 flex-col gap-3 rounded-2xl bg-[#071123]/82 p-3 shadow-[0_22px_68px_rgba(0,0,0,0.28)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[9px] font-black uppercase tracking-[0.28em] text-cyan-100/42">{isZh ? '图层' : 'Layers'}</p>
@@ -2240,9 +2685,48 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   </div>
                 </div>
 
+                <label className="flex items-center gap-2 rounded-xl bg-white/[0.065] px-3 py-2.5 focus-within:ring-2 focus-within:ring-[#b89fff]">
+                  <Search className="size-4 shrink-0 text-cyan-100/42" />
+                  <input
+                    value={layerSearch}
+                    onChange={(event) => setLayerSearch(event.target.value)}
+                    placeholder={isZh ? '搜索图层、分组或 AI 提示词' : 'Search layers, groups, or AI prompts'}
+                    className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
+                  />
+                  {layerSearch && (
+                    <button type="button" onClick={() => setLayerSearch('')} className="rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white" aria-label={isZh ? '清除搜索' : 'Clear search'}>
+                      <X className="size-3" />
+                    </button>
+                  )}
+                </label>
+
+                {selectedLayerIds.size > 1 && (
+                  <div className="rounded-xl bg-cyan-300/[0.08] p-2">
+                    <div className="flex items-center justify-between gap-2 px-1 pb-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/70">
+                        {isZh ? `已选 ${selectedLayerIds.size} 个` : `${selectedLayerIds.size} selected`}
+                      </span>
+                      <button type="button" onClick={() => setSelectedLayerIds(selectedLayerId ? new Set([selectedLayerId]) : new Set())} className="text-[10px] font-bold text-slate-400 hover:text-white">
+                        {isZh ? '取消多选' : 'Clear multi-select'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1">
+                      <button type="button" onClick={handleGroupSelectedLayers} className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]" aria-label={isZh ? '创建分组' : 'Group selected layers'}><FolderPlus className="size-3.5" /></button>
+                      <button type="button" onClick={handleUngroupSelectedLayers} className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]" aria-label={isZh ? '取消分组' : 'Ungroup selected layers'}><Ungroup className="size-3.5" /></button>
+                      <button type="button" onClick={() => handleBulkUpdate({ locked: ![...selectedLayerIds].every((id) => layers.find((layer) => layer.id === id)?.locked) })} className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]" aria-label={isZh ? '切换锁定' : 'Toggle lock'}>
+                        {[...selectedLayerIds].every((id) => layers.find((layer) => layer.id === id)?.locked) ? <Unlock className="size-3.5" /> : <Lock className="size-3.5" />}
+                      </button>
+                      <button type="button" onClick={() => handleBulkUpdate({ visible: ![...selectedLayerIds].every((id) => layers.find((layer) => layer.id === id)?.visible) })} className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]" aria-label={isZh ? '切换显示' : 'Toggle visibility'}>
+                        {[...selectedLayerIds].every((id) => layers.find((layer) => layer.id === id)?.visible) ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                      </button>
+                      <button type="button" onClick={handleDeleteSelectedLayers} className="flex h-8 items-center justify-center rounded-lg bg-rose-400/[0.10] text-rose-200 hover:bg-rose-400/[0.18]" aria-label={isZh ? '删除所选图层' : 'Delete selected layers'}><Trash2 className="size-3.5" /></button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="min-h-0 flex-1 space-y-1.5 overflow-auto pr-1">
-                  {layers.slice().sort((a, b) => b.zIndex - a.zIndex).map((layer, index) => {
-                    const isSelected = selectedLayerId === layer.id;
+                  {filteredStackLayers.map((layer, index) => {
+                    const isSelected = selectedLayerIds.has(layer.id);
                     const label = layer.name || `Layer ${layers.length - index}`;
 
                     return (
@@ -2250,16 +2734,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         key={layer.id}
                         role="button"
                         tabIndex={0}
-                        onClick={() => {
-                          setSelectedLayerId(layer.id);
-                          if (!layer.visible) {
-                            setLayers(prev => prev.map(item => item.id === layer.id ? { ...item, visible: true } : item));
-                          }
+                        draggable={!layer.locked}
+                        onDragStart={() => setDraggedStackLayerId(layer.id)}
+                        onDragEnd={() => setDraggedStackLayerId(null)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          if (draggedStackLayerId) handleReorderLayers(draggedStackLayerId, layer.id);
+                          setDraggedStackLayerId(null);
                         }}
+                        onClick={(event) => selectLayer(layer.id, event.metaKey || event.ctrlKey || event.shiftKey)}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' || event.key === ' ') {
                             event.preventDefault();
-                            setSelectedLayerId(layer.id);
+                            selectLayer(layer.id, event.metaKey || event.ctrlKey || event.shiftKey);
                           }
                         }}
                         className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left transition-all ${
@@ -2268,15 +2756,23 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                             : 'bg-white/[0.065] text-slate-200 hover:bg-white/[0.10]'
                         }`}
                       >
+                        <GripVertical className={`size-3.5 shrink-0 ${isSelected ? 'text-[#071123]/35' : 'text-slate-500'} ${layer.locked ? 'cursor-not-allowed' : 'cursor-grab'}`} />
                         <div className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl ${isSelected ? 'bg-black/8' : 'bg-black/28'}`}>
                           <img src={layer.url} alt={label} className="h-full w-full object-contain" draggable={false} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-bold tracking-tight">{label}</p>
                           <p className="mt-0.5 truncate text-[9px] font-black uppercase tracking-[0.14em] opacity-50">
-                            {layer.maskUrl ? (isZh ? '可编辑蒙版' : 'editable mask') : (isZh ? '图像图层' : 'image layer')}
+                            {layer.editMetadata
+                              ? (isZh ? 'AI 变体图层' : 'AI variation')
+                              : layer.groupName
+                                ? layer.groupName
+                                : layer.maskUrl
+                                  ? (isZh ? '可编辑蒙版' : 'editable mask')
+                                  : (isZh ? '图像图层' : 'image layer')}
                           </p>
                         </div>
+                        {layer.locked && <Lock className="size-3 shrink-0 opacity-45" />}
                         <button
                           type="button"
                           onClick={(event) => {
@@ -2293,100 +2789,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       </div>
                     );
                   })}
+                  {filteredStackLayers.length === 0 && (
+                    <div className="rounded-xl bg-white/[0.045] px-4 py-8 text-center">
+                      <Search className="mx-auto size-5 text-slate-500" />
+                      <p className="mt-2 text-xs font-bold text-slate-300">{isZh ? '没有匹配的图层' : 'No matching layers'}</p>
+                      <button type="button" onClick={() => setLayerSearch('')} className="mt-2 text-[11px] font-bold text-cyan-200 hover:text-white">{isZh ? '清除搜索' : 'Clear search'}</button>
+                    </div>
+                  )}
                 </div>
 
-                {selectedLayer && (
-                  <div className="rounded-[22px] border border-white/10 bg-[#0b152b]/78 p-3 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-white">{selectedLayer.name}</p>
-                        <p className="mt-1 text-[11px] text-cyan-100/42">{isZh ? '对当前图层进行局部修改' : 'Edit the selected layer only'}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center gap-3 rounded-2xl bg-black/26 px-3 py-2.5">
-                      <SlidersHorizontal className="size-4 text-white/52" />
-                      <span className="text-xs font-bold text-white/52">{isZh ? '透明度' : 'Opacity'}</span>
-                      <input
-                        type="range"
-                        min="10"
-                        max="100"
-                        value={Math.round((selectedLayer.opacity ?? 1) * 100)}
-                        onChange={(event) => {
-                          const opacity = Number(event.target.value) / 100;
-                          setLayers(prev => prev.map(layer => layer.id === selectedLayer.id ? { ...layer, opacity } : layer));
-                        }}
-                        className="h-1 flex-1 accent-white"
-                      />
-                      <span className="w-9 text-right text-xs font-bold text-white/72">{Math.round((selectedLayer.opacity ?? 1) * 100)}%</span>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {[
-                        { label: isZh ? '更暖' : 'Warmer', prompt: 'Make this selected layer warmer and more cinematic.' },
-                        { label: isZh ? '更亮' : 'Brighter', prompt: 'Brighten this selected layer while preserving its details.' },
-                        { label: isZh ? '高级感' : 'Premium', prompt: 'Make this selected layer look more premium, polished, and advertising-ready.' },
-                      ].map((chip) => (
-                        <button
-                          key={chip.label}
-                          onClick={() => {
-                            setActiveTool('recolor');
-                            setEditInstruction(chip.prompt);
-                          }}
-                          className="rounded-xl bg-white/8 px-3 py-2 text-xs font-bold text-white/70 transition-colors hover:bg-white/14 hover:text-white"
-                        >
-                          {chip.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <textarea
-                      value={editInstruction}
-                      onChange={(event) => setEditInstruction(event.target.value)}
-                      placeholder={editPlaceholder}
-                      className="mt-3 min-h-[76px] w-full resize-none rounded-2xl border border-white/10 bg-[#071123] px-3.5 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-500 focus:border-cyan-200/28"
-                    />
-
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => handleEditAction(editInstruction || editPlaceholder)}
-                        disabled={isProcessing}
-                        className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-black transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isProcessing ? (isZh ? '处理中' : 'Working') : (isZh ? '生成修改' : 'Generate Edit')}
-                      </button>
-                      <button
-                        onClick={() => handleDownloadLayer(selectedLayer.id)}
-                        className="flex items-center justify-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-white/16"
-                      >
-                        <Download className="size-4" />
-                        {isZh ? '提取' : 'Extract'}
-                      </button>
-                    </div>
-
-                    <div className="mt-2 grid grid-cols-3 gap-2">
-                      <button
-                        onClick={() => handleDuplicateLayer(selectedLayer.id)}
-                        className="flex items-center justify-center gap-1 rounded-xl bg-white/8 px-3 py-2 text-xs font-bold text-white/68 hover:bg-white/14"
-                      >
-                        <Copy className="size-3.5" />
-                        {isZh ? '复制' : 'Copy'}
-                      </button>
-                      <button
-                        onClick={() => handleSoloLayer(selectedLayer.id)}
-                        className="rounded-xl bg-white/8 px-3 py-2 text-xs font-bold text-white/68 hover:bg-white/14"
-                      >
-                        Solo
-                      </button>
-                      <button
-                        onClick={handleShowAllLayers}
-                        className="rounded-xl bg-white/8 px-3 py-2 text-xs font-bold text-white/68 hover:bg-white/14"
-                      >
-                        {isZh ? '显示全部' : 'Show All'}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </aside>
 
               <main
@@ -2480,6 +2891,25 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   </div>
                 )}
               </main>
+              {selectedLayer && (
+                <LayerInspector
+                  layer={selectedLayer}
+                  isZh={isZh}
+                  activeTool={activeTool}
+                  editInstruction={editInstruction}
+                  editPlaceholder={editPlaceholder}
+                  isProcessing={isProcessing}
+                  history={editHistory}
+                  selectedCount={selectedLayerIds.size || 1}
+                  onSetTool={setActiveTool}
+                  onInstructionChange={setEditInstruction}
+                  onGenerate={() => handleEditAction(editInstruction || editPlaceholder)}
+                  onUpdate={handleUpdateSelectedLayer}
+                  onDuplicate={() => handleDuplicateLayer(selectedLayer.id)}
+                  onDownload={() => handleDownloadLayer(selectedLayer.id)}
+                  onDelete={handleDeleteSelectedLayer}
+                />
+              )}
             </div>
           )}
 
@@ -2633,6 +3063,23 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         isProcessing={isProcessing}
         initialWidth={layers[0]?.width || 1024}
         initialHeight={layers[0]?.height || 1024}
+      />
+
+      <EditorCommandPalette
+        open={isCommandPaletteOpen}
+        isZh={isZh}
+        commands={editorCommands}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
+
+      <ProjectVersionPanel
+        open={isVersionPanelOpen}
+        isZh={isZh}
+        snapshots={projectSnapshots}
+        onClose={() => setIsVersionPanelOpen(false)}
+        onCreate={handleCreateProjectSnapshot}
+        onRestore={handleRestoreProjectSnapshot}
+        onDelete={handleDeleteProjectSnapshot}
       />
 
       {/* Guest Conversion Modal */}
