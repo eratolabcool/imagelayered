@@ -51,16 +51,16 @@ const EditorCommandPalette = ({ open, isZh, commands, onClose }: EditorCommandPa
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-[#020817]/76 px-4 pt-[12vh] backdrop-blur-sm" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black/75 px-4 pt-[12vh]" onMouseDown={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={isZh ? '编辑器命令' : 'Editor commands'}
         onMouseDown={(event) => event.stopPropagation()}
-        className="w-full max-w-xl overflow-hidden rounded-2xl bg-[#141f38] shadow-[0_28px_90px_rgba(0,0,0,0.55)]"
+        className="w-full max-w-xl overflow-hidden rounded-2xl border border-white/[0.08] bg-[#17141c] shadow-[0_28px_90px_rgba(0,0,0,0.55)]"
       >
-        <label className="flex items-center gap-3 bg-[#192540] px-4 py-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#b89fff]">
-          <Search className="size-5 shrink-0 text-cyan-100/55" />
+        <label className="flex items-center gap-3 bg-[#211d28] px-4 py-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-[#ff6b96]">
+          <Search className="size-5 shrink-0 text-[#ff7ca2]" />
           <input
             ref={inputRef}
             value={query}
@@ -83,9 +83,9 @@ const EditorCommandPalette = ({ open, isZh, commands, onClose }: EditorCommandPa
                   command.run();
                   onClose();
                 }}
-                className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left outline-none transition-colors hover:bg-white/[0.065] focus-visible:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#b89fff] disabled:cursor-not-allowed disabled:opacity-35"
+                className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left outline-none transition-colors hover:bg-white/[0.055] focus-visible:bg-white/[0.07] focus-visible:ring-2 focus-visible:ring-[#ff6b96] disabled:cursor-not-allowed disabled:opacity-35"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-cyan-100 group-hover:bg-cyan-300 group-hover:text-[#071123]">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#f33b72]/10 text-[#ff7ca2] group-hover:bg-[#f33b72] group-hover:text-white">
                   <Icon className="size-4" />
                 </span>
                 <span className="min-w-0 flex-1">

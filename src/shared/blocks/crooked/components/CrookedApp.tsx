@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useSearchParams, useRouter, useParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 import { useSession } from '@/core/auth/client';
-import { Share2, Sparkles, X, Mail, CheckCircle, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Wand2, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle, Undo2, Redo2, Search, GripVertical, FolderPlus, Ungroup, Lock, Unlock, Trash2, Command as CommandIcon, Camera, Maximize2, Download, Images } from 'lucide-react';
+import { Share2, Sparkles, X, Mail, CheckCircle, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Wand2, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle, Undo2, Redo2, Search, GripVertical, FolderPlus, Ungroup, Lock, Unlock, Trash2, Command as CommandIcon, Camera, Maximize2, Download, Images, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
@@ -11,8 +11,7 @@ import { Icons } from './Icon';
 import {
   incrementUploadCount,
   isUploadLimitReached,
-  getRemainingUploads,
-  isUserLoggedIn
+  getRemainingUploads
 } from '@/shared/lib/guest-usage';
 import { useCrookedCopy } from '../i18n';
 import { toast } from 'sonner';
@@ -128,13 +127,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
-  const [layerDragOffset, setLayerDragOffset] = useState({ x: 0, y: 0 });
   const [layerCount, setLayerCount] = useState<number>(6);
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [editInstruction, setEditInstruction] = useState('');
+  const [isLayerSidebarCollapsed, setIsLayerSidebarCollapsed] = useState(false);
+  const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
 
   const searchParams = useSearchParams();
-  const router = useRouter();
   const params = useParams();
   const isZh = params?.locale === 'zh';
   const projectIdQuery = searchParams ? searchParams.get('project') : null;
@@ -181,7 +180,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   // Restore an anonymous local draft after a browser or tab restart.
   useEffect(() => {
-    if (hasRestoredLocalDraft.current || projectIdQuery || initialImage || layers.length > 0 || isLoggedIn) return;
+    if (hasRestoredLocalDraft.current || projectIdQuery || initialImage || layers.length > 0) return;
     hasRestoredLocalDraft.current = true;
 
     try {
@@ -201,7 +200,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       console.error('[Draft restore] Failed:', error);
       localStorage.removeItem(LOCAL_DRAFT_KEY);
     }
-  }, [initialImage, isLoggedIn, isZh, layers.length, projectIdQuery, resetLayers]);
+  }, [initialImage, isZh, layers.length, projectIdQuery, resetLayers]);
 
   // 2. Debounced Autosave / Guest Save to sessionStorage
   useEffect(() => {
@@ -212,23 +211,24 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       return;
     }
 
+    const draft = {
+      id: projectId,
+      name: projectName,
+      layers,
+      selectedLayerId,
+      updatedAt: Date.now(),
+    };
+    const serializedDraft = JSON.stringify(draft);
+    sessionStorage.setItem('guest_project_draft', serializedDraft);
+    try {
+      localStorage.setItem(LOCAL_DRAFT_KEY, serializedDraft);
+      setSaveStatus('saved');
+    } catch (error) {
+      console.warn('[Draft save] Local storage quota exceeded:', error);
+      setSaveStatus('error');
+    }
+
     if (!isLoggedIn) {
-      const draft = {
-        id: projectId,
-        name: projectName,
-        layers,
-        selectedLayerId,
-        updatedAt: Date.now(),
-      };
-      const serializedDraft = JSON.stringify(draft);
-      sessionStorage.setItem('guest_project_draft', serializedDraft);
-      try {
-        localStorage.setItem(LOCAL_DRAFT_KEY, serializedDraft);
-        setSaveStatus('saved');
-      } catch (error) {
-        console.warn('[Draft save] Local storage quota exceeded:', error);
-        setSaveStatus('error');
-      }
       return;
     }
 
@@ -273,6 +273,29 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       controller.abort();
     };
   }, [layers, projectName, projectId, isLoggedIn, selectedLayerId]);
+
+  useEffect(() => {
+    if (!projectId || layers.length === 0) return;
+
+    const persistBeforeLeaving = () => {
+      try {
+        const serializedDraft = JSON.stringify({
+          id: projectId,
+          name: projectName,
+          layers,
+          selectedLayerId,
+          updatedAt: Date.now(),
+        });
+        localStorage.setItem(LOCAL_DRAFT_KEY, serializedDraft);
+        sessionStorage.setItem('guest_project_draft', serializedDraft);
+      } catch (error) {
+        console.warn('[Draft save] Failed before leaving:', error);
+      }
+    };
+
+    window.addEventListener('pagehide', persistBeforeLeaving);
+    return () => window.removeEventListener('pagehide', persistBeforeLeaving);
+  }, [layers, projectId, projectName, selectedLayerId]);
 
   useEffect(() => {
     if (!projectId) {
@@ -366,7 +389,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   // 5. Onboarding Tour logic
   useEffect(() => {
-    if (layers.length > 0) {
+    // Only introduce the workflow for a fresh upload. Restored, already-layered
+    // projects should return users directly to their previous editing context.
+    if (layers.length === 1) {
       const completed = localStorage.getItem('layered_tour_completed') === 'true';
       if (!completed && onboardingStep === null) {
         setOnboardingStep(0);
@@ -744,12 +769,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const handleLayerMouseDown = (e: React.MouseEvent, layer: Layer) => {
     if (layer.locked) return;
     e.stopPropagation();
+    e.preventDefault();
+
+    if (activeTool === 'move' || isSpacePressed) {
+      setIsDraggingCanvas(true);
+      setLastMousePos({ x: e.clientX, y: e.clientY });
+      return;
+    }
+
     if (!(e.metaKey || e.ctrlKey || e.shiftKey)) selectLayer(layer.id);
     setDraggingLayerId(layer.id);
-    setLayerDragOffset({
-      x: e.clientX - layer.x,
-      y: e.clientY - layer.y
-    });
+    setLastMousePos({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -767,16 +797,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
     // Handle layer dragging
     if (draggingLayerId) {
-      const newX = e.clientX - layerDragOffset.x;
-      const newY = e.clientY - layerDragOffset.y;
+      const deltaX = (e.clientX - lastMousePos.x) / zoom;
+      const deltaY = (e.clientY - lastMousePos.y) / zoom;
 
       setLayers(prev => prev.map(l =>
         l.id === draggingLayerId
-          ? { ...l, x: newX, y: newY }
+          ? { ...l, x: l.x + deltaX, y: l.y + deltaY }
           : l
       ));
+      setLastMousePos({ x: e.clientX, y: e.clientY });
     }
-  }, [isDraggingCanvas, lastMousePos, zoom, draggingLayerId, layerDragOffset]);
+  }, [isDraggingCanvas, lastMousePos, zoom, draggingLayerId]);
 
   const handleMouseUp = useCallback(() => {
     setIsDraggingCanvas(false);
@@ -882,7 +913,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   const smartDecompose = async (count: number, targetLayerId?: string) => {
     // Check guest limits before processing
-    const isLoggedIn = isUserLoggedIn();
     if (!isLoggedIn && isUploadLimitReached()) {
       setUpgradeModalType('limit');
       setUpgradeModalOpen(true);
@@ -1480,7 +1510,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   const handleEditAction = async (instruction: string) => {
     // Check guest limits before processing
-    const isLoggedIn = isUserLoggedIn();
     if (!isLoggedIn && isUploadLimitReached()) {
       setUpgradeModalType('limit');
       setUpgradeModalOpen(true);
@@ -1642,19 +1671,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   };
 
   const handleExport = async (settings: ExportSettings) => {
-    // ========================================
-    // GUEST EXPORT CONVERSION TRIGGER
-    // ========================================
-    const isLoggedIn = isUserLoggedIn();
-    if (!isLoggedIn) {
-      setIsProcessing(false);
-      setIsExportModalOpen(false);
-      setUpgradeModalType('export');
-      setUpgradeModalOpen(true);
-      return;
-    }
-    // ========================================
-
     setIsProcessing(true);
     try {
       console.log('[handleExport] Starting export with settings:', settings);
@@ -2121,8 +2137,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       title: isZh ? '1. AI 智能分层' : '1. AI Poster Decomposition',
       content: isZh
-        ? '点击左侧栏的“Smart Decompose”将上传的单一图层海报一键提取并拆分为多个独立的 AI 图层！'
-        : 'Click "Smart Decompose" in the left sidebar to extract and split your uploaded poster into multiple editable layers automatically.',
+        ? '在左侧的分层设置中开始生成，将上传的图像拆分为多个可独立编辑的 AI 图层。'
+        : 'Start generation from Layer settings in the left sidebar to split the uploaded image into independently editable AI layers.',
     },
     {
       title: isZh ? '2. 自由交互式画布' : '2. Interactive Canvas Workspace',
@@ -2168,6 +2184,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     })
     .sort((a, b) => a.zIndex - b.zIndex);
   const baseLayer = layers[0] ?? null;
+  const editorGridClass = isLayerSidebarCollapsed
+    ? isInspectorCollapsed
+      ? 'md:grid-cols-[56px_minmax(0,1fr)] xl:grid-cols-[56px_minmax(0,1fr)_56px]'
+      : 'md:grid-cols-[56px_minmax(0,1fr)] xl:grid-cols-[56px_minmax(0,1fr)_300px]'
+    : isInspectorCollapsed
+      ? 'md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] xl:grid-cols-[minmax(240px,290px)_minmax(0,1fr)_56px]'
+      : 'md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] xl:grid-cols-[minmax(240px,290px)_minmax(0,1fr)_300px]';
   const renderLayerStack = (interactive = true) => {
     if (!baseLayer) return null;
 
@@ -2458,25 +2481,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         className="absolute inset-0 h-full w-full object-cover"
                         draggable={false}
                       />
-                      {!isProcessing && (
-                        <div className="absolute inset-x-4 bottom-4 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/12 bg-[#071123]/82 p-2 backdrop-blur-xl">
-                          <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-white/16"
-                          >
-                            {isZh ? '更换图片' : 'Change image'}
-                          </button>
-                          <button
-                            onClick={handleGenerateLayers}
-                            disabled={!canGenerateLayers}
-                            className="rounded-xl bg-[#f33b72] px-5 py-2 text-xs font-bold text-white shadow-[0_10px_26px_rgba(243,59,114,0.22)] transition-all hover:bg-[#ff4f83] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {selectedDecompositionModel.mode === 'design-layering'
-                              ? (isZh ? 'Generate 设计图层' : 'Generate design layers')
-                              : (isZh ? 'Generate 分层' : 'Generate layers')}
-                          </button>
-                        </div>
-                      )}
                       {isProcessing && (
                         <div className="pointer-events-none absolute inset-0 overflow-hidden">
                           <div className="absolute inset-0 bg-black/20" />
@@ -2512,33 +2516,45 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                           ? '处理时会在图片上显示扫描动画，完成后进入左侧图层、右侧画布的编辑工作台。'
                           : 'The image is scanned while the model works, then opens as a layer list beside the canvas.')}
                   </span>
-                  <span className="mt-5 rounded-full border border-cyan-200/18 bg-cyan-300/10 px-4 py-2 text-xs font-bold text-cyan-100/78">
+                  <span className="mt-5 rounded-lg border border-[#f33b72]/20 bg-[#f33b72]/8 px-4 py-2 text-xs font-bold text-[#ff8aab]">
                     {isZh ? `当前模型：${selectedDecompositionModel.label}` : `Model: ${selectedDecompositionModel.label}`}
                   </span>
                 </button>
               )}
             </div>
           ) : (
-            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] md:p-5 xl:grid-cols-[minmax(240px,290px)_minmax(0,1fr)_300px]">
-              <aside className="flex min-h-0 max-h-[calc(100vh-190px)] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121016] p-3 shadow-[0_22px_68px_rgba(0,0,0,0.28)]">
-                <LayerSettingsPanel
-                  isZh={isZh}
-                  models={decompositionModelOptions}
-                  selectedModel={advancedConfig.model}
-                  onSelectModel={(model) => setAdvancedConfig((prev) => ({ ...prev, model }))}
-                  layerCount={layerCount}
-                  onLayerCountChange={setLayerCount}
-                  onGenerate={handleGenerateLayers}
-                  canGenerate={canGenerateLayers}
-                  isProcessing={isProcessing}
-                  hasImage
-                  hasLayers
-                  compact
-                />
+            <div className={`grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:p-5 ${editorGridClass}`}>
+              <aside className={`flex min-h-[760px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121016] shadow-[0_22px_68px_rgba(0,0,0,0.28)] ${isLayerSidebarCollapsed ? 'items-center p-2' : 'p-3'}`}>
+                {isLayerSidebarCollapsed ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsLayerSidebarCollapsed(false)}
+                    className="flex size-10 items-center justify-center rounded-xl bg-white/[0.055] text-[#9993a3] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                    aria-label={isZh ? '展开图层侧栏' : 'Expand layer sidebar'}
+                    title={isZh ? '展开图层侧栏' : 'Expand layer sidebar'}
+                  >
+                    <PanelLeftOpen className="size-4" />
+                  </button>
+                ) : (
+                  <>
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#77717f]">
+                    {isZh ? '图层面板' : 'Layers panel'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsLayerSidebarCollapsed(true)}
+                    className="flex size-8 items-center justify-center rounded-lg text-[#77717f] outline-none hover:bg-white/[0.055] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                    aria-label={isZh ? '折叠图层侧栏' : 'Collapse layer sidebar'}
+                    title={isZh ? '折叠图层侧栏' : 'Collapse layer sidebar'}
+                  >
+                    <PanelLeftClose className="size-4" />
+                  </button>
+                </div>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="max-w-[180px] truncate text-base font-semibold text-white">{isZh ? '图层列表' : 'Layer stack'}</h2>
-                    <p className="mt-1 text-[10px] font-semibold text-cyan-100/46">{selectedDecompositionModel.shortLabel}</p>
+                    <p className="mt-1 text-[10px] font-semibold text-[#77717f]">{selectedDecompositionModel.shortLabel}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -2556,8 +2572,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   </div>
                 </div>
 
-                <label className="flex items-center gap-2 rounded-xl bg-white/[0.065] px-3 py-2.5 focus-within:ring-2 focus-within:ring-[#b89fff]">
-                  <Search className="size-4 shrink-0 text-cyan-100/42" />
+                <label className="flex items-center gap-2 rounded-xl bg-white/[0.045] px-3 py-2.5 focus-within:ring-2 focus-within:ring-[#ff6b96]">
+                  <Search className="size-4 shrink-0 text-[#77717f]" />
                   <input
                     value={layerSearch}
                     onChange={(event) => setLayerSearch(event.target.value)}
@@ -2595,7 +2611,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   </div>
                 )}
 
-                <div className="min-h-0 flex-1 space-y-1.5 overflow-auto pr-1">
+                <div className="min-h-[410px] flex-1 space-y-1.5 overflow-auto pr-1">
                   {filteredStackLayers.map((layer, index) => {
                     const isSelected = selectedLayerIds.has(layer.id);
                     const label = layer.name || `Layer ${layers.length - index}`;
@@ -2623,11 +2639,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         }}
                         className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left transition-all ${
                           isSelected
-                            ? 'bg-white text-[#071123] shadow-[0_12px_30px_rgba(34,211,238,0.10)]'
-                            : 'bg-white/[0.065] text-slate-200 hover:bg-white/[0.10]'
+                            ? 'bg-[#f33b72]/12 text-white ring-1 ring-[#f33b72]/35'
+                            : 'bg-white/[0.045] text-[#d8d2dc] hover:bg-white/[0.075]'
                         }`}
                       >
-                        <GripVertical className={`size-3.5 shrink-0 ${isSelected ? 'text-[#071123]/35' : 'text-slate-500'} ${layer.locked ? 'cursor-not-allowed' : 'cursor-grab'}`} />
+                        <GripVertical className={`size-3.5 shrink-0 ${isSelected ? 'text-[#ff7ca2]' : 'text-[#5f5966]'} ${layer.locked ? 'cursor-not-allowed' : 'cursor-grab'}`} />
                         <div className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl ${isSelected ? 'bg-black/8' : 'bg-black/28'}`}>
                           <img src={layer.url} alt={label} className="h-full w-full object-contain" draggable={false} />
                         </div>
@@ -2651,7 +2667,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                             setLayers(prev => prev.map(item => item.id === layer.id ? { ...item, visible: !item.visible } : item));
                           }}
                           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-                            isSelected ? 'bg-[#071123]/8 text-[#071123]' : 'bg-white/7 text-slate-300/64'
+                            isSelected ? 'bg-[#f33b72]/12 text-[#ff8aab]' : 'bg-white/[0.055] text-[#9993a3]'
                           }`}
                           aria-label={layer.visible ? 'Hide layer' : 'Show layer'}
                         >
@@ -2668,13 +2684,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     </div>
                   )}
                 </div>
-
+                  </>
+                )}
               </aside>
 
               <main
                 ref={mainRef}
                 onMouseDown={handleMouseDown}
-                className={`canvas-container relative flex min-h-[520px] items-start justify-center overflow-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#0b152b,#070d1b)] p-5 pb-24 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                className={`canvas-container relative flex min-h-[760px] items-start justify-center overflow-auto rounded-2xl border border-white/[0.06] bg-[#0a090c] p-5 pb-24 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
               >
                 <div className="pointer-events-none absolute left-5 top-4 z-20 rounded-full border border-white/10 bg-black/26 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/56">
                   {isZh ? '预览' : 'Preview'}
@@ -2697,7 +2714,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     </button>
                   ))}
                 </div>
-                <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 gap-1 overflow-x-auto rounded-2xl bg-[#141f38]/94 p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+                <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 gap-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-[#191620] p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)]">
                   {[
                     { tool: 'select' as ToolType, icon: MousePointer, label: isZh ? '选择' : 'Select' },
                     { tool: 'move' as ToolType, icon: Hand, label: isZh ? '移动' : 'Move' },
@@ -2713,10 +2730,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         key={item.tool}
                         onClick={() => setActiveTool(item.tool)}
                         aria-pressed={active}
-                        className={`flex min-w-[58px] flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#b89fff] ${
+                        className={`flex min-w-[58px] flex-col items-center gap-1 rounded-lg px-3 py-2 text-[10px] font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#ff6b96] ${
                           active
-                            ? 'bg-[linear-gradient(135deg,#b89fff,#4de4ff)] text-[#071123]'
-                            : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
+                            ? 'bg-[#f33b72] text-white'
+                            : 'text-[#9993a3] hover:bg-white/[0.065] hover:text-white'
                         }`}
                       >
                         <Icon className="size-4" />
@@ -2762,8 +2779,30 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   </div>
                 )}
               </main>
-              {selectedLayer && (
-                <LayerInspector
+              {isInspectorCollapsed ? (
+                <aside className="flex min-h-[760px] items-start justify-center rounded-2xl border border-white/[0.06] bg-[#121016] p-2 md:col-span-2 xl:col-span-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectorCollapsed(false)}
+                    className="flex size-10 items-center justify-center rounded-xl bg-white/[0.055] text-[#9993a3] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                    aria-label={isZh ? '展开属性侧栏' : 'Expand inspector sidebar'}
+                    title={isZh ? '展开属性侧栏' : 'Expand inspector sidebar'}
+                  >
+                    <PanelRightOpen className="size-4" />
+                  </button>
+                </aside>
+              ) : selectedLayer ? (
+                <div className="relative min-h-[760px] md:col-span-2 xl:col-span-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsInspectorCollapsed(true)}
+                    className="absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-lg bg-[#17141c] text-[#77717f] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                    aria-label={isZh ? '折叠属性侧栏' : 'Collapse inspector sidebar'}
+                    title={isZh ? '折叠属性侧栏' : 'Collapse inspector sidebar'}
+                  >
+                    <PanelRightClose className="size-4" />
+                  </button>
+                  <LayerInspector
                   layer={selectedLayer}
                   isZh={isZh}
                   activeTool={activeTool}
@@ -2780,7 +2819,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   onDownload={() => handleDownloadLayer(selectedLayer.id)}
                   onDelete={handleDeleteSelectedLayer}
                 />
-              )}
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -2940,9 +2980,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       />
 
       {isShareModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-[30px] border border-white/10 bg-[#0d1527]/90 p-6 shadow-[0_32px_96px_rgba(0,0,0,0.6)] backdrop-blur-[24px]">
-            <div className="absolute -right-16 -top-16 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.08] bg-[#17141c] p-6 shadow-[0_32px_96px_rgba(0,0,0,0.6)]">
             <button
               onClick={() => setIsShareModalOpen(false)}
               className="absolute right-4 top-4 rounded-full bg-white/5 p-2 text-gray-400 hover:bg-white/10 hover:text-white"
@@ -2951,7 +2990,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             </button>
 
             <div className="flex flex-col items-center text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff7ca2]">
                 <Share2 className="size-6" />
               </div>
               <h3 className="text-xl font-bold text-white">
@@ -2966,7 +3005,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
             <div className="mt-6 space-y-4">
               <div>
-                <label className="text-[10px] uppercase tracking-[0.2em] text-cyan-200/50">
+                <label className="text-[11px] font-semibold text-[#9993a3]">
                   {isZh ? '分享地址' : 'Share Link'}
                 </label>
                 <div className="mt-1.5 flex gap-2 rounded-xl bg-white/5 p-1 ring-1 ring-white/10">
@@ -2978,7 +3017,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   />
                   <button
                     onClick={handleCopyShareLink}
-                    className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-500"
+                    className="shrink-0 rounded-lg bg-[#f33b72] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#ff4f83]"
                   >
                     {isZh ? '复制' : 'Copy'}
                   </button>
@@ -2986,7 +3025,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               </div>
 
               <div className="rounded-2xl border border-white/5 bg-white/5 p-4 flex gap-3">
-                <Sparkles className="size-5 shrink-0 text-cyan-400 animate-pulse" />
+                <Sparkles className="size-5 shrink-0 text-[#ff7ca2]" />
                 <div className="text-left text-xs leading-relaxed text-slate-400">
                   <p className="font-bold text-slate-200">
                     {isZh ? '什么是裂变 Remix？' : 'What is a Remix?'}
@@ -3004,9 +3043,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       )}
 
       {showExitIntent && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-[30px] border border-cyan-500/20 bg-[#070e1c]/90 p-8 shadow-[0_32px_96px_rgba(6,182,212,0.15)] backdrop-blur-[24px]">
-            <div className="absolute -left-16 -top-16 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl animate-pulse" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.08] bg-[#17141c] p-8 shadow-[0_32px_96px_rgba(0,0,0,0.58)]">
             <button
               onClick={() => {
                 setShowExitIntent(false);
@@ -3018,11 +3056,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             </button>
 
             <div className="flex flex-col items-center text-center">
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400">
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff7ca2]">
                 <Mail className="size-7" />
               </div>
               <h3 className="text-2xl font-black text-white tracking-tight">
-                {isZh ? '🎁 挽留礼包：带走您的海报图层' : '🎁 Wait! Keep Your Layers & Master AI Posters'}
+                {isZh ? '保存您的海报图层' : 'Keep your poster layers'}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-slate-300">
                 {isZh
@@ -3038,12 +3076,12 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 value={exitIntentEmail}
                 onChange={(e) => setExitIntentEmail(e.target.value)}
                 placeholder={isZh ? '输入您的电子邮箱' : 'Enter your email address'}
-                className="w-full rounded-xl border border-cyan-100/20 bg-white px-4 py-3 text-sm font-semibold text-[#071123] placeholder:text-slate-500 shadow-[inset_0_1px_2px_rgba(15,23,42,0.10)] ring-1 ring-transparent focus:border-cyan-400 focus:outline-none focus:ring-cyan-500/20"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#0f0d13] px-4 py-3 text-sm font-semibold text-white placeholder:text-[#625c68] outline-none focus:border-[#f33b72]/45 focus:ring-2 focus:ring-[#f33b72]/18"
               />
               <button
                 type="submit"
                 disabled={exitIntentSubmitting}
-                className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50"
+                className="w-full rounded-xl bg-[#f33b72] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_34px_rgba(243,59,114,0.24)] hover:bg-[#ff4f83] active:scale-[0.99] disabled:opacity-50"
               >
                 {exitIntentSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
@@ -3060,9 +3098,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       )}
 
       {onboardingStep !== null && onboardingStep >= 0 && onboardingStep < 4 && (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-[24px] border border-cyan-500/20 bg-[#0d1627]/95 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#17141c] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">
+            <span className="text-[10px] font-bold text-[#ff7ca2]">
               {isZh ? `步骤 ${onboardingStep + 1} / 4` : `Step ${onboardingStep + 1} / 4`}
             </span>
             <button
@@ -3086,14 +3124,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 <div
                   key={s}
                   className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                    s === onboardingStep ? 'bg-cyan-400' : 'bg-white/10'
+                    s === onboardingStep ? 'bg-[#f33b72]' : 'bg-white/10'
                   }`}
                 />
               ))}
             </div>
             <button
               onClick={handleNextOnboardingStep}
-              className="rounded-lg bg-cyan-500 px-4 py-2 text-xs font-bold text-[#071123] transition-all hover:bg-cyan-400 active:scale-95 flex items-center gap-1"
+              className="flex items-center gap-1 rounded-lg bg-[#f33b72] px-4 py-2 text-xs font-bold text-white hover:bg-[#ff4f83] active:scale-95"
             >
               <span>{onboardingStep === 3 ? (isZh ? '完成' : 'Finish') : (isZh ? '下一步' : 'Next')}</span>
             </button>

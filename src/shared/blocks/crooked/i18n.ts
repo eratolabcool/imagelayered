@@ -140,7 +140,7 @@ const fallbackCopy = {
     resolutionPro: 'PRO',
     start: 'Start Export',
     processing: 'Processing high-res export...',
-    disclaimer: '* Advanced exports and AI edits may consume credits',
+    disclaimer: 'PNG export is composited locally and does not consume credits.',
     learnBilling: 'View pricing',
   },
   upgrade: {

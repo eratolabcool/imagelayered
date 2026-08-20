@@ -81,9 +81,9 @@ const LayerInspector = ({
   };
 
   return (
-    <aside className="flex min-h-0 flex-col rounded-2xl bg-[#0b162c] p-3 shadow-[0_22px_68px_rgba(0,0,0,0.3)] md:col-span-2 xl:col-span-1">
-      <div className="flex items-center gap-3 rounded-xl bg-white/[0.055] p-2.5">
-        <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-[#071123]">
+    <aside className="flex h-full min-h-[760px] flex-col rounded-2xl border border-white/[0.06] bg-[#17141c] p-3 shadow-[0_22px_68px_rgba(0,0,0,0.3)]">
+      <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] p-2.5 pr-9">
+        <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-[#0b090d]">
           <img src={layer.url} alt="" className="size-full object-contain" />
         </div>
         <div className="min-w-0 flex-1">
@@ -91,9 +91,9 @@ const LayerInspector = ({
             value={layer.name}
             onChange={(event) => onUpdate({ name: event.target.value })}
             aria-label={isZh ? '图层名称' : 'Layer name'}
-            className="w-full truncate rounded-md bg-transparent px-1 py-0.5 text-sm font-extrabold text-[#dee5ff] outline-none hover:bg-white/[0.05] focus:bg-[#071123] focus:ring-2 focus:ring-[#b89fff]"
+            className="w-full truncate rounded-md bg-transparent px-1 py-0.5 text-sm font-extrabold text-white outline-none hover:bg-white/[0.05] focus:bg-[#0f0d13] focus:ring-2 focus:ring-[#ff6b96]"
           />
-          <p className="mt-1 truncate text-[11px] text-cyan-100/58">
+          <p className="mt-1 truncate text-[11px] text-[#77717f]">
             {layer.maskUrl
               ? isZh
                 ? '可编辑蒙版已就绪'
@@ -106,7 +106,7 @@ const LayerInspector = ({
         <button
           type="button"
           onClick={() => onUpdate({ visible: !layer.visible })}
-          className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-cyan-50 transition-colors outline-none hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#b89fff]"
+          className="flex size-9 items-center justify-center rounded-xl bg-white/[0.055] text-[#aaa4b1] transition-colors outline-none hover:bg-white/[0.09] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
           aria-label={
             layer.visible
               ? isZh
@@ -126,14 +126,14 @@ const LayerInspector = ({
       </div>
 
       {selectedCount > 1 && (
-        <div className="mt-2 flex items-center gap-2 rounded-xl bg-cyan-300/10 px-3 py-2 text-[11px] font-bold text-cyan-100">
+        <div className="mt-2 flex items-center gap-2 rounded-xl bg-[#f33b72]/10 px-3 py-2 text-[11px] font-bold text-[#ff8aab]">
           <Layers3 className="size-4" />
           {isZh ? `已选择 ${selectedCount} 个图层，属性应用于主选图层` : `${selectedCount} layers selected; properties apply to the primary layer`}
         </div>
       )}
 
       <div
-        className="mt-3 grid grid-cols-3 gap-1 rounded-xl bg-[#071123] p-1"
+        className="mt-3 grid grid-cols-3 gap-1 rounded-xl bg-[#0f0d13] p-1"
         role="tablist"
       >
         {tabs.map((item) => (
@@ -143,10 +143,10 @@ const LayerInspector = ({
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className={`rounded-lg px-2 py-2 text-[11px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#b89fff] ${
+            className={`rounded-lg px-2 py-2 text-[11px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b96] ${
               tab === item.id
-                ? 'bg-[#192540] text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#2a2330] text-white'
+                : 'text-[#77717f] hover:text-white'
             }`}
           >
             {item.label}
@@ -207,7 +207,7 @@ const LayerInspector = ({
                 onChange={(event) =>
                   onUpdate({ opacity: Number(event.target.value) / 100 })
                 }
-                className="mt-3 w-full accent-cyan-300"
+                className="mt-3 w-full accent-[#f33b72]"
                 aria-label={isZh ? '图层透明度' : 'Layer opacity'}
               />
               <label className="mt-3 block">
@@ -217,10 +217,10 @@ const LayerInspector = ({
                 <select
                   value={layer.blendMode ?? 'normal'}
                   onChange={(event) => onUpdate({ blendMode: event.target.value as LayerBlendMode })}
-                  className="mt-2 w-full rounded-xl bg-white/[0.055] px-3 py-2.5 text-xs font-bold text-slate-100 outline-none focus:ring-2 focus:ring-[#b89fff]"
+                  className="mt-2 w-full rounded-xl bg-white/[0.045] px-3 py-2.5 text-xs font-bold text-slate-100 outline-none focus:ring-2 focus:ring-[#ff6b96]"
                 >
                   {(['normal', 'multiply', 'screen', 'overlay', 'soft-light', 'color', 'luminosity'] as LayerBlendMode[]).map((mode) => (
-                    <option key={mode} value={mode} className="bg-[#141f38]">
+                    <option key={mode} value={mode} className="bg-[#17141c]">
                       {mode.replace('-', ' ')}
                     </option>
                   ))}
@@ -229,7 +229,7 @@ const LayerInspector = ({
               <button
                 type="button"
                 onClick={() => onUpdate({ locked: !layer.locked })}
-                className="mt-3 flex w-full items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2.5 text-xs font-bold text-slate-200 transition-colors outline-none hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-[#b89fff]"
+                className="mt-3 flex w-full items-center gap-2 rounded-xl bg-white/[0.045] px-3 py-2.5 text-xs font-bold text-slate-200 transition-colors outline-none hover:bg-white/[0.075] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
               >
                 {layer.locked ? (
                   <Lock className="size-4" />
@@ -340,9 +340,9 @@ const LayerInspector = ({
                     type="button"
                     onClick={() => onSetTool(tool.id)}
                     aria-pressed={activeTool === tool.id}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-[10px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#b89fff] ${
+                    className={`flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-[10px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b96] ${
                       activeTool === tool.id
-                        ? 'bg-cyan-300 text-[#071123]'
+                        ? 'bg-[#f33b72] text-white'
                         : 'bg-white/[0.055] text-slate-200 hover:bg-white/[0.09]'
                     }`}
                   >
@@ -357,13 +357,13 @@ const LayerInspector = ({
               onChange={(event) => onInstructionChange(event.target.value)}
               placeholder={editPlaceholder}
               rows={6}
-              className="mt-4 w-full resize-none rounded-xl bg-[#141f38] px-3 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-[#b89fff]"
+              className="mt-4 w-full resize-none rounded-xl bg-[#0f0d13] px-3 py-3 text-sm leading-6 text-white outline-none placeholder:text-[#625c68] focus:ring-2 focus:ring-[#ff6b96]"
             />
             <button
               type="button"
               onClick={onGenerate}
               disabled={isProcessing || !editInstruction.trim()}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#b89fff,#4de4ff)] px-4 py-3 text-sm font-extrabold text-[#071123] transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#f33b72] px-4 py-3 text-sm font-extrabold text-white outline-none hover:bg-[#ff4f83] focus-visible:ring-2 focus-visible:ring-[#ff9ab7] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Sparkles className="size-4" />
               {isProcessing

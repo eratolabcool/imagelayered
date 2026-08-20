@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Icons } from './Icon';
-import { ExportResolution, ExportSettings } from '../types';
+import React, { useEffect, useState } from 'react';
+import { Download, X } from 'lucide-react';
+
+import { ExportSettings } from '../types';
 import { useCrookedCopy } from '../i18n';
 
 interface ExportModalProps {
@@ -20,53 +21,94 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
   onExport,
   isProcessing,
   initialWidth,
-  initialHeight
+  initialHeight,
 }) => {
   const copy = useCrookedCopy().exportModal;
   const [settings, setSettings] = useState<ExportSettings>({
     width: initialWidth,
     height: initialHeight,
-    useOriginalSize: true, // Default to original size to avoid blurriness
-    upscale: true,
-    resolution: '2K'
+    useOriginalSize: true,
+    upscale: false,
+    resolution: '2K',
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setSettings((current) => ({
+      ...current,
+      width: initialWidth,
+      height: initialHeight,
+      useOriginalSize: true,
+      upscale: false,
+    }));
+  }, [initialHeight, initialWidth, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isProcessing) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isProcessing, onClose]);
 
   if (!isOpen) return null;
 
-  const handleExport = () => {
-    onExport(settings);
-  };
-
-  const handleUseOriginalSize = () => {
-    setSettings({
-      ...settings,
+  const useOriginalSize = () => {
+    setSettings((current) => ({
+      ...current,
       useOriginalSize: true,
       width: initialWidth,
-      height: initialHeight
-    });
+      height: initialHeight,
+    }));
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-      <div className="w-full max-w-md rounded-[30px] bg-[rgba(20,31,56,0.92)] p-8 text-white shadow-[0_30px_100px_rgba(0,0,0,0.45)] animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="flex items-center gap-3 text-2xl font-bold text-white">
-            <Icons.Download />
-            {copy.title}
-          </h2>
-          <button onClick={onClose} className="text-slate-400 transition-colors hover:text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !isProcessing) onClose();
+      }}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-dialog-title"
+        className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-[#17141c] p-6 text-white shadow-[0_30px_100px_rgba(0,0,0,0.58)] animate-in fade-in zoom-in-95 duration-200"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="flex size-10 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff7ca2]">
+              <Download className="size-4" />
+            </span>
+            <h2 id="export-dialog-title" className="mt-4 text-xl font-bold tracking-[-0.025em]">
+              {copy.title}
+            </h2>
+            <p className="mt-1.5 text-sm leading-6 text-[#9993a3]">
+              {copy.disclaimer}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isProcessing}
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[#77717f] outline-none hover:bg-white/[0.055] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96] disabled:opacity-40"
+            aria-label="Close export dialog"
+          >
+            <X className="size-4" />
           </button>
         </div>
 
-        <div className="space-y-6">
-          {/* Original Size Button */}
+        <div className="mt-6 space-y-4">
           <button
-            onClick={handleUseOriginalSize}
-            className={`w-full rounded-xl py-3 text-sm font-bold transition-all ${
+            type="button"
+            onClick={useOriginalSize}
+            aria-pressed={settings.useOriginalSize}
+            className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b96] ${
               settings.useOriginalSize
-                ? 'bg-[linear-gradient(135deg,rgba(137,162,255,0.24),rgba(77,228,255,0.18))] text-cyan-50'
-                : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.08]'
+                ? 'border-[#f33b72]/40 bg-[#f33b72]/10 text-white'
+                : 'border-white/[0.07] bg-white/[0.035] text-[#aaa4b1] hover:bg-white/[0.06]'
             }`}
           >
             {settings.useOriginalSize
@@ -74,89 +116,53 @@ const CrookedExportModal: React.FC<ExportModalProps> = ({
               : copy.originalSize.replace('{width}', String(initialWidth)).replace('{height}', String(initialHeight))}
           </button>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">{copy.width}</label>
-              <input
-                type="number"
-                value={settings.width}
-                onChange={(e) => setSettings({ ...settings, width: parseInt(e.target.value) || 0, useOriginalSize: false })}
-                disabled={settings.useOriginalSize}
-                className={`w-full rounded-xl bg-white/[0.05] px-4 py-3 text-white outline-none transition-colors focus:bg-white/[0.08] ${
-                  settings.useOriginalSize ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">{copy.height}</label>
-              <input
-                type="number"
-                value={settings.height}
-                onChange={(e) => setSettings({ ...settings, height: parseInt(e.target.value) || 0, useOriginalSize: false })}
-                disabled={settings.useOriginalSize}
-                className={`w-full rounded-xl bg-white/[0.05] px-4 py-3 text-white outline-none transition-colors focus:bg-white/[0.08] ${
-                  settings.useOriginalSize ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              />
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              ['width', copy.width],
+              ['height', copy.height],
+            ] as const).map(([key, label]) => (
+              <label key={key} className="block">
+                <span className="mb-2 block text-[11px] font-semibold text-[#9993a3]">{label}</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="16384"
+                  value={settings[key]}
+                  onChange={(event) => setSettings((current) => ({
+                    ...current,
+                    [key]: Math.max(1, Math.min(16384, Number(event.target.value) || 1)),
+                    useOriginalSize: false,
+                  }))}
+                  className="w-full rounded-xl border border-white/[0.07] bg-[#0f0d13] px-3 py-3 text-sm font-semibold text-white outline-none focus:border-[#f33b72]/45 focus:ring-2 focus:ring-[#f33b72]/18"
+                />
+              </label>
+            ))}
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-2xl bg-white/[0.05] p-4">
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-white">{copy.aiUpscale}</span>
-                <span className="text-xs text-slate-400">{copy.aiUpscaleSub}</span>
-              </div>
-              <button
-                onClick={() => setSettings({ ...settings, upscale: !settings.upscale })}
-                className={`relative h-6 w-12 rounded-full transition-colors ${settings.upscale ? 'bg-cyan-400' : 'bg-white/10'}`}
-              >
-                <div className={`absolute top-1 h-4 w-4 rounded-full bg-[#071123] transition-all ${settings.upscale ? 'left-7' : 'left-1'}`} />
-              </button>
-            </div>
+          <div className="rounded-xl bg-[#0f0d13] px-4 py-3 text-xs leading-5 text-[#88818f]">
+            PNG · {settings.useOriginalSize ? `${initialWidth} × ${initialHeight}` : `${settings.width} × ${settings.height}`}
+          </div>
 
-            {settings.upscale && (
-              <div className="grid grid-cols-3 gap-3">
-                {(['1K', '2K', '4K'] as ExportResolution[]).map((res) => (
-                  <button
-                    key={res}
-                    onClick={() => setSettings({ ...settings, resolution: res })}
-                    className={`rounded-xl py-3 text-xs font-bold transition-all ${
-                      settings.resolution === res
-                      ? 'bg-[linear-gradient(135deg,rgba(137,162,255,0.24),rgba(77,228,255,0.18))] text-cyan-50'
-                      : 'bg-white/[0.05] text-slate-300 hover:bg-white/[0.08]'
-                    }`}
-                  >
-                    {res} {res === '4K' ? copy.resolutionPro : ''}
-                  </button>
-                ))}
-              </div>
+          <button
+            type="button"
+            onClick={() => onExport(settings)}
+            disabled={isProcessing}
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#f33b72] px-4 py-3 text-sm font-bold text-white shadow-[0_14px_34px_rgba(243,59,114,0.24)] outline-none hover:bg-[#ff4f83] focus-visible:ring-2 focus-visible:ring-[#ff9ab7] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {isProcessing ? (
+              <>
+                <span className="size-4 animate-spin rounded-full border-2 border-white/25 border-t-white" />
+                {copy.processing}
+              </>
+            ) : (
+              <>
+                <Download className="size-4" />
+                {copy.start}
+              </>
             )}
-          </div>
-
-          <div className="pt-4">
-             <button
-              onClick={handleExport}
-              disabled={isProcessing}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] py-4 font-bold text-[#071123] transition-all shadow-xl shadow-cyan-500/10 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#071123]/20 border-t-[#071123]" />
-                  {copy.processing}
-                </>
-              ) : (
-                copy.start
-              )}
-            </button>
-            <p className="mt-4 text-center text-[10px] uppercase tracking-widest leading-relaxed text-slate-500">
-              {copy.disclaimer}
-              <br />
-              <a href="/pricing" className="text-cyan-300 hover:underline">{copy.learnBilling}</a>
-            </p>
-          </div>
+          </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

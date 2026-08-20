@@ -59,11 +59,11 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-[#17141c] p-7 shadow-[0_30px_100px_rgba(0,0,0,0.58)] animate-in fade-in zoom-in-95 duration-200">
         {/* Icon */}
         <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-500">
+          <div className="flex size-14 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff7ca2]">
             {content.icon || <Icons.Star />}
           </div>
         </div>
@@ -77,7 +77,7 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
             {content.message}
           </p>
           {content.subtext && (
-            <p className="text-blue-500 text-xs font-bold mt-3 uppercase tracking-widest">
+            <p className="mt-3 text-xs font-bold text-[#ff7ca2]">
               {content.subtext}
             </p>
           )}
@@ -87,7 +87,7 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
         <div className="space-y-3">
           <button
             onClick={handleSignIn}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#f33b72] py-4 font-bold text-white shadow-[0_14px_34px_rgba(243,59,114,0.24)] outline-none hover:bg-[#ff4f83] focus-visible:ring-2 focus-visible:ring-[#ff9ab7] active:scale-[0.99]"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -98,7 +98,7 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
 
           <button
             onClick={handleUpgrade}
-            className="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-300 font-semibold rounded-xl transition-all border border-white/10"
+            className="w-full rounded-xl border border-white/[0.08] bg-white/[0.035] py-3 font-semibold text-[#d8d2dc] hover:bg-white/[0.065]"
           >
             {t.viewPackages}
           </button>
@@ -112,7 +112,7 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
         </div>
 
         {/* Trust Badges */}
-        <div className="mt-8 pt-6 border-t border-white/5">
+        <div className="mt-8 border-t border-white/[0.06] pt-6">
           <div className="flex items-center justify-center gap-6 text-gray-600 text-xs">
             <div className="flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -123,7 +123,7 @@
       "resolutionPro": "PRO",
       "start": "开始导出",
       "processing": "正在处理高清导出...",
-      "disclaimer": "* 高级导出和 AI 编辑可能消耗积分",
+      "disclaimer": "PNG 导出在本地合成，不消耗积分。",
       "learnBilling": "查看价格"
     },
     "upgrade": {
