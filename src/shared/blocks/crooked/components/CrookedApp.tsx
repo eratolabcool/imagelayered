@@ -2186,9 +2186,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
             </div>
           ) : (
-            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:p-5 lg:grid-cols-[52px_minmax(280px,352px)_minmax(0,1fr)]">
+            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:p-5 md:grid-cols-[52px_minmax(260px,330px)_minmax(0,1fr)]">
               {/* Left tool rail */}
-              <aside className="hidden shrink-0 flex-col items-center gap-2 rounded-[28px] border border-white/10 bg-[#071123]/72 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl lg:flex">
+              <aside className="hidden shrink-0 flex-col items-center gap-2 rounded-[28px] border border-white/10 bg-[#071123]/72 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl md:flex">
                 <span className="mb-1 text-[8px] font-black uppercase tracking-[0.18em] text-cyan-100/40">Tool</span>
                 {[
                   { tool: 'select' as ToolType, icon: MousePointer, label: isZh ? '选择' : 'Select' },
