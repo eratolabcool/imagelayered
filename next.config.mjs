@@ -88,10 +88,6 @@ const nextConfig = {
   },
   compress: true,
   poweredByHeader: false,
-  // Ensure @libsql/client is traced as a whole package (nft only copies the
-  // node-entry files otherwise, but esbuild needs lib-esm/web.js for the
-  // workerd condition when bundling the open-next worker).
-  serverExternalPackages: ['@libsql/client'],
   turbopack: {
     root: projectRoot,
     resolveAlias: {},
@@ -104,10 +100,6 @@ const nextConfig = {
       '@tabler/icons-react',
       'framer-motion',
       'lucide-react',
-      'react-icons',
-      'react-icons/fa',
-      'react-icons/ri',
-      'react-icons/md',
     ],
     optimizeServerReact: true,
   },
