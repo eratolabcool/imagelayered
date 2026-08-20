@@ -41,12 +41,12 @@ export function ConsoleLayout({
         <Link
           key={idx}
           href={item.url || ''}
-          className={`flex items-center space-x-3 rounded-md px-3 py-2 text-sm transition-colors ${
+          className={`flex items-center space-x-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
             item.is_active ||
             pathname.endsWith(item.url as string) ||
             item.url?.endsWith(pathname)
-              ? 'bg-secondary text-secondary-foreground font-medium'
-              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              ? 'bg-[#f33b72]/12 text-[#ff7ca2] font-semibold shadow-[inset_3px_0_0_#f33b72]'
+              : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.045]'
           }`}
         >
           <SmartIcon name={item.icon as string} size={16} />
@@ -57,10 +57,10 @@ export function ConsoleLayout({
   );
 
   return (
-    <div className={`bg-background min-h-screen ${className}`}>
+    <div className={`min-h-screen bg-[#0b090d] ${className}`}>
       {/* Top Navigation */}
       {topNav && (
-        <div className="border-border border-b">
+        <div className="border-white/[0.06] border-b bg-[#0e0c11]/90 backdrop-blur-xl">
           <div className="container">
             <nav className="scrollbar-hide flex items-center gap-4 overflow-x-auto py-0 text-sm">
               {topNav.items.map((item, idx) => (
@@ -85,7 +85,7 @@ export function ConsoleLayout({
       )}
 
       {/* Page Header */}
-      <div className="border-border">
+      <div className="border-white/[0.06] border-b bg-[#0d0b10]">
         <div className="container">
           <div className="flex items-center gap-4 py-8">
             {/* Mobile Menu Trigger */}
@@ -103,7 +103,7 @@ export function ConsoleLayout({
               </SheetContent>
             </Sheet>
 
-            <h1 className="text-foreground text-2xl font-semibold md:text-3xl">
+            <h1 className="text-foreground text-2xl font-bold tracking-[-0.03em] md:text-3xl">
               {title}
             </h1>
           </div>
@@ -114,7 +114,7 @@ export function ConsoleLayout({
       <div className="container">
         <div className="flex flex-wrap gap-8 py-8">
           {/* Left Sidebar (Desktop) */}
-          <div className="hidden w-64 flex-shrink-0 md:block">
+          <div className="hidden w-64 flex-shrink-0 rounded-2xl border border-white/[0.06] bg-[#121016] p-3 md:block">
             {/* Search Box */}
             {/* <div className="relative mb-6">
               <SmartIcon

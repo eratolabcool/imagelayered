@@ -3,8 +3,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useSession } from '@/core/auth/client';
-import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Wand2, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle, Undo2, Redo2, Search, GripVertical, FolderPlus, Ungroup, Lock, Unlock, Trash2, Command as CommandIcon, Camera, Maximize2, Download, Images } from 'lucide-react';
-import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId } from '../types';
+import { Share2, Sparkles, X, Mail, CheckCircle, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Wand2, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle, Undo2, Redo2, Search, GripVertical, FolderPlus, Ungroup, Lock, Unlock, Trash2, Command as CommandIcon, Camera, Maximize2, Download, Images } from 'lucide-react';
+import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
 import { Icons } from './Icon';
@@ -17,13 +17,12 @@ import {
 import { useCrookedCopy } from '../i18n';
 import { toast } from 'sonner';
 import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
-import { getWorkflowPreset, workflowPresets } from '../workflows';
 import WorkspaceSidebar from './WorkspaceSidebar';
 import LayerInspector from './LayerInspector';
 import EditorCommandPalette, { EditorCommand } from './EditorCommandPalette';
 import ProjectVersionPanel, { ProjectSnapshot } from './ProjectVersionPanel';
 import { useLayerHistory } from '../hooks/use-layer-history';
-import LayeringWorkflowPanel, { DecompositionModelOption } from './LayeringWorkflowPanel';
+import LayerSettingsPanel, { DecompositionModelOption } from './LayerSettingsPanel';
 
 interface CrookedAppProps {
   embedded?: boolean;
@@ -130,8 +129,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
   const [layerDragOffset, setLayerDragOffset] = useState({ x: 0, y: 0 });
-  const [layerCount, setLayerCount] = useState<number>(workflowPresets[1].layerCount);
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState<WorkflowPresetId>('poster');
+  const [layerCount, setLayerCount] = useState<number>(6);
   const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
   const [editInstruction, setEditInstruction] = useState('');
 
@@ -140,18 +138,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const params = useParams();
   const isZh = params?.locale === 'zh';
   const projectIdQuery = searchParams ? searchParams.get('project') : null;
-  const workflowQuery = searchParams ? searchParams.get('workflow') : null;
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
   const hasRestoredLocalDraft = useRef(false);
-
-  useEffect(() => {
-    if (workflowQuery && workflowPresets.some((preset) => preset.id === workflowQuery)) {
-      setSelectedWorkflowId(workflowQuery as WorkflowPresetId);
-      const preset = getWorkflowPreset(workflowQuery);
-      setLayerCount(preset.layerCount);
-    }
-  }, [workflowQuery]);
 
   // 1. On Mount: Load Project if projectIdQuery is present
   useEffect(() => {
@@ -391,7 +380,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   // Advanced Settings State
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedDecompositionConfig>({
-    prompt: workflowPresets[1].prompt,
+    prompt: 'Separate the image into clean, editable RGBA layers. Preserve the original composition and isolate major subjects, text, foreground objects, background, shadows, and effects where possible.',
     negativePrompt: '',
     seed: 42,
     randomizeSeed: true,
@@ -402,10 +391,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     model: 'fal-ai/qwen-image-layered'
   });
 
-  const selectedWorkflow = React.useMemo(
-    () => getWorkflowPreset(selectedWorkflowId),
-    [selectedWorkflowId]
-  );
   const selectedDecompositionModel = React.useMemo(
     () => decompositionModelOptions.find((option) => option.model === advancedConfig.model) ?? decompositionModelOptions[0],
     [advancedConfig.model]
@@ -419,24 +404,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     if (activeTool === 'remove') return editBar.removePlaceholder;
     return editBar.defaultPlaceholder;
   }, [activeTool, editBar]);
-
-  const handleSelectWorkflow = useCallback((id: WorkflowPresetId) => {
-    const preset = getWorkflowPreset(id);
-    setSelectedWorkflowId(id);
-    setLayerCount(preset.layerCount);
-    setAdvancedConfig((prev) => ({
-      ...prev,
-      prompt: preset.prompt,
-    }));
-    setActiveTool('select');
-    setEditInstruction('');
-  }, []);
-
-  useEffect(() => {
-    handleSelectWorkflow(selectedWorkflowId);
-    // Initialize the editor with the default workflow preset once.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const getImageFetchUrl = useCallback((url: string) => {
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -1425,12 +1392,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         })
       );
 
-      const layerNamePresets: Record<WorkflowPresetId, string[]> = {
-        product: ['Product', 'Background', 'Shadow', 'Label / Text', 'Props', 'Reflection'],
-        poster: ['Subject', 'Headline Text', 'Logo', 'Product', 'Background', 'Effects', 'Shadow', 'Decoration'],
-        'ai-image': ['Subject', 'Clothing', 'Object', 'Background', 'Lighting', 'Text', 'Detail'],
-        character: ['Face', 'Hair', 'Clothing', 'Body', 'Background', 'Lighting', 'Props'],
-      };
+      const standardLayerNames = ['Main Subject', 'Foreground', 'Text / Graphics', 'Secondary Object', 'Background', 'Shadow', 'Lighting', 'Effects'];
       const designLayerNames = [
         'Background Plate',
         'Main Subject / Product',
@@ -1441,14 +1403,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         'Shadows / Reflections',
         'Lighting / Foreground Effects',
       ];
-      const names = isSeedreamDesignLayering ? designLayerNames : layerNamePresets[selectedWorkflowId];
+      const names = isSeedreamDesignLayering ? designLayerNames : standardLayerNames;
 
       // Create a layer for each generated image with correct dimensions
       const newLayers: Layer[] = layerImages.map((img: any, idx: number) => {
         const dims = layerDimensions[idx];
         return {
           id: crypto.randomUUID(),
-          name: names[idx] || `${isSeedreamDesignLayering ? 'Design' : selectedWorkflow.title} Layer ${idx + 1}`,
+          name: names[idx] || `${isSeedreamDesignLayering ? 'Design' : 'Image'} Layer ${idx + 1}`,
           type: 'image',
           url: img.imageUrl,
           x: target.x,
@@ -2317,16 +2279,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   ];
 
   return (
-    <div className={`relative w-full overflow-hidden ${embedded ? 'rounded-[36px]' : 'min-h-screen'} bg-[#060e20] text-white [font-family:var(--font-body)]`}>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.26),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(255,92,138,0.18),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(68,217,255,0.12),transparent_28%),linear-gradient(180deg,#081121_0%,#060e20_46%,#050b17_100%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:72px_72px]" />
+    <div className={`relative w-full overflow-hidden ${embedded ? 'rounded-[24px]' : 'min-h-screen'} bg-[#0b090d] text-white [font-family:var(--font-body)]`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_-12%,rgba(243,59,114,0.12),transparent_30rem),linear-gradient(180deg,#0d0b10_0%,#0b090d_100%)]" />
       <div className={`relative flex w-full ${embedded ? 'min-h-[920px]' : 'min-h-screen'}`}>
         {!embedded && <WorkspaceSidebar />}
         <div className="flex min-w-0 flex-1 flex-col gap-4 px-3 py-3 md:px-5 md:py-5">
-        <header className="rounded-2xl bg-[rgba(20,31,56,0.78)] px-4 py-4 shadow-[0_20px_64px_rgba(0,0,0,0.3)] backdrop-blur-[18px] md:px-5">
+        <header className="rounded-2xl border border-white/[0.06] bg-[#151219]/92 px-4 py-3.5 shadow-[0_20px_64px_rgba(0,0,0,0.3)] backdrop-blur-xl md:px-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.2)]">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f33b72] text-white shadow-[0_16px_34px_rgba(243,59,114,0.24)]">
                 <Icons.Layer />
               </div>
               <div className="min-w-0">
@@ -2429,7 +2390,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               {layers.length > 0 && (
                 <button
                   onClick={() => setIsShareModalOpen(true)}
-                  className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/10 transition-all active:scale-95"
+                  className="flex items-center gap-2 rounded-xl bg-[#f33b72] px-4 py-2 text-xs font-bold text-white shadow-[0_12px_30px_rgba(243,59,114,0.22)] transition-all hover:bg-[#ff4f83] active:scale-95"
                 >
                   <Share2 className="size-3.5" />
                   <span>{isZh ? '分享海报' : 'Share Poster'}</span>
@@ -2451,22 +2412,18 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           </div>
         </header>
 
-        <section className="relative flex flex-1 overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.20),transparent_30%),radial-gradient(circle_at_82%_8%,rgba(77,228,255,0.12),transparent_26%),linear-gradient(180deg,rgba(9,19,40,0.92),rgba(5,11,23,0.98))] shadow-[0_30px_110px_rgba(0,0,0,0.50)] ring-1 ring-white/10">
-          <div className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:56px_56px]" />
-          <div className="pointer-events-none absolute left-7 top-6 z-20 text-2xl font-semibold tracking-tight text-cyan-100/22">AI</div>
+        <section className="relative flex flex-1 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111015] shadow-[0_30px_110px_rgba(0,0,0,0.50)]">
 
           {layers.length <= 1 ? (
             <div className="relative grid min-h-[calc(100vh-150px)] flex-1 gap-4 p-4 md:grid-cols-[minmax(250px,292px)_minmax(0,1fr)] md:p-5">
               <aside className="relative z-30 self-start md:sticky md:top-5">
-                <LayeringWorkflowPanel
+                <LayerSettingsPanel
                   isZh={isZh}
-                  presets={workflowPresets}
-                  selectedPresetId={selectedWorkflowId}
-                  selectedPreset={selectedWorkflow}
-                  onSelectPreset={handleSelectWorkflow}
                   models={decompositionModelOptions}
                   selectedModel={advancedConfig.model}
                   onSelectModel={(model) => setAdvancedConfig((prev) => ({ ...prev, model }))}
+                  layerCount={layerCount}
+                  onLayerCountChange={setLayerCount}
                   onGenerate={handleGenerateLayers}
                   canGenerate={canGenerateLayers}
                   isProcessing={isProcessing}
@@ -2477,7 +2434,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               {baseLayer ? (
                 <div
                   ref={mainRef}
-                  className="canvas-container relative flex min-h-[520px] w-full items-start justify-center overflow-auto rounded-2xl bg-[#070d1b] p-4"
+                  className="canvas-container relative flex min-h-[520px] w-full items-start justify-center overflow-auto rounded-2xl border border-white/[0.055] bg-[#0a090c] p-4"
                 >
                   <div
                     className="transition-[width,height] duration-200 ease-out"
@@ -2487,7 +2444,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     }}
                   >
                     <div
-                      className="relative overflow-hidden rounded-[22px] bg-[#020817] shadow-[0_34px_100px_rgba(0,0,0,0.72)] ring-1 ring-cyan-100/42"
+                      className="relative overflow-hidden rounded-[18px] bg-[#070609] shadow-[0_34px_100px_rgba(0,0,0,0.72)] ring-1 ring-white/15"
                       style={{
                         width: baseLayer.width,
                         height: baseLayer.height,
@@ -2512,7 +2469,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                           <button
                             onClick={handleGenerateLayers}
                             disabled={!canGenerateLayers}
-                            className="rounded-xl bg-cyan-300 px-5 py-2 text-xs font-black text-[#071123] transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-xl bg-[#f33b72] px-5 py-2 text-xs font-bold text-white shadow-[0_10px_26px_rgba(243,59,114,0.22)] transition-all hover:bg-[#ff4f83] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {selectedDecompositionModel.mode === 'design-layering'
                               ? (isZh ? 'Generate 设计图层' : 'Generate design layers')
@@ -2537,9 +2494,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               ) : (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="group flex min-h-[520px] w-full flex-col items-center justify-center rounded-2xl bg-[#071123]/72 px-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.32)] outline-none transition-colors hover:bg-[#0b152b]/82 focus-visible:ring-2 focus-visible:ring-[#b89fff]"
+                  className="group flex min-h-[520px] w-full flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-[#0f0d12] px-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.32)] outline-none transition-all hover:border-[#f33b72]/25 hover:bg-[#141118] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
                 >
-                  <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123] transition-transform group-hover:scale-105">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f33b72] text-white shadow-[0_18px_44px_rgba(243,59,114,0.25)] transition-transform group-hover:scale-105">
                     <UploadCloud className="size-7" />
                   </span>
                   <span className="mt-7 text-[11px] font-black uppercase tracking-[0.36em] text-cyan-100/52">Image Layered AI</span>
@@ -2563,16 +2520,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             </div>
           ) : (
             <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] md:p-5 xl:grid-cols-[minmax(240px,290px)_minmax(0,1fr)_300px]">
-              <aside className="flex min-h-0 max-h-[calc(100vh-190px)] flex-col gap-3 overflow-hidden rounded-2xl bg-[#071123]/82 p-3 shadow-[0_22px_68px_rgba(0,0,0,0.28)]">
-                <LayeringWorkflowPanel
+              <aside className="flex min-h-0 max-h-[calc(100vh-190px)] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121016] p-3 shadow-[0_22px_68px_rgba(0,0,0,0.28)]">
+                <LayerSettingsPanel
                   isZh={isZh}
-                  presets={workflowPresets}
-                  selectedPresetId={selectedWorkflowId}
-                  selectedPreset={selectedWorkflow}
-                  onSelectPreset={handleSelectWorkflow}
                   models={decompositionModelOptions}
                   selectedModel={advancedConfig.model}
                   onSelectModel={(model) => setAdvancedConfig((prev) => ({ ...prev, model }))}
+                  layerCount={layerCount}
+                  onLayerCountChange={setLayerCount}
                   onGenerate={handleGenerateLayers}
                   canGenerate={canGenerateLayers}
                   isProcessing={isProcessing}
@@ -2594,7 +2549,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     </button>
                     <button
                       onClick={() => setIsExportModalOpen(true)}
-                      className="rounded-full bg-cyan-300 px-3 py-2 text-[11px] font-black text-[#071123] transition-transform active:scale-95"
+                      className="rounded-xl bg-[#f33b72] px-3 py-2 text-[11px] font-bold text-white transition-all hover:bg-[#ff4f83] active:scale-95"
                     >
                       {isZh ? '导出' : 'Export'}
                     </button>
@@ -2887,30 +2842,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               </div>
             </div>
 
-            {/* How it works + FAQ */}
+            {/* FAQ */}
             <div className="space-y-4">
-              <div className="rounded-[28px] border border-white/10 bg-[#071123]/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/14 text-cyan-100">
-                    <Lightbulb className="size-4" />
-                  </span>
-                  <div>
-                    <h2 className="text-sm font-black text-white">{isZh ? '工作原理' : 'How it works'}</h2>
-                    <p className="text-[11px] text-cyan-100/42">{selectedWorkflow.title}</p>
-                  </div>
-                </div>
-                <ol className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {selectedWorkflow.steps.map((step, index) => (
-                    <li key={index} className="flex items-start gap-3 rounded-2xl bg-white/[0.05] px-3 py-2.5">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[10px] font-black text-[#071123]">
-                        {index + 1}
-                      </span>
-                      <span className="text-xs leading-5 text-slate-200">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
               <div className="rounded-[28px] border border-white/10 bg-[#071123]/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/14 text-cyan-100">

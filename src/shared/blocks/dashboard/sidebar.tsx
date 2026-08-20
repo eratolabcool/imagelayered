@@ -22,7 +22,11 @@ export function Sidebar({
   sidebar: SidebarType;
 }) {
   return (
-    <SidebarComponent collapsible={sidebar.collapsible || 'icon'} {...props}>
+    <SidebarComponent
+      collapsible={sidebar.collapsible || 'icon'}
+      className="border-r border-white/[0.06] bg-[#0e0c11]"
+      {...props}
+    >
       {sidebar.header && <SidebarHeader header={sidebar.header} />}
       <SidebarContent>
         {sidebar.buttons && <SidebarButtons buttons={sidebar.buttons} />}

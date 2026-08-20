@@ -25,8 +25,8 @@ export default async function GuidePage({
           icon: UploadCloud,
         },
         {
-          title: '选择图片对应的工作流',
-          body: '商品图、海报、AI 图片和角色图会使用不同的语义拆分方式。',
+          title: '选择分层模型和数量',
+          body: '根据图片结构选择真实可用的模型，并设置希望输出的图层数量。',
           icon: Layers3,
         },
         {
@@ -47,8 +47,8 @@ export default async function GuidePage({
           icon: UploadCloud,
         },
         {
-          title: 'Choose the matching workflow',
-          body: 'Products, posters, AI images, and characters benefit from different semantic structures.',
+          title: 'Choose a model and layer count',
+          body: 'Pick an available model for the image structure and set the number of layers to generate.',
           icon: Layers3,
         },
         {

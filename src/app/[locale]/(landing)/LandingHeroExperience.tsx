@@ -305,16 +305,16 @@ export default function LandingHeroExperience() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbf8f1] text-[#161616] [font-family:var(--font-body)]">
-      <section className="relative overflow-hidden border-b border-black/10 bg-[#f7efe2]">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(14,116,144,0.12),rgba(250,204,21,0.08)_46%,rgba(244,63,94,0.11))]" />
+    <div className="min-h-screen bg-[#0b090d] text-white [font-family:var(--font-body)]">
+      <section className="relative overflow-hidden border-b border-white/[0.06] bg-[#0d0b10]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_12%,rgba(243,59,114,0.16),transparent_32rem),radial-gradient(circle_at_10%_30%,rgba(121,72,255,0.1),transparent_28rem)]" />
         <div className="relative mx-auto grid min-h-[92vh] max-w-[1440px] items-center gap-10 px-4 py-8 md:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:py-12">
           <div className="max-w-3xl pt-16 lg:pt-8">
-            <p className="text-xs font-black uppercase tracking-[0.32em] text-[#0f766e]">{t.eyebrow}</p>
-            <h1 className="mt-6 max-w-4xl text-5xl font-black leading-[0.95] text-[#161616] [font-family:var(--font-display)] md:text-7xl">
+            <p className="text-xs font-black uppercase tracking-[0.32em] text-[#ff6b96]">{t.eyebrow}</p>
+            <h1 className="mt-6 max-w-4xl text-5xl font-black leading-[0.95] text-white [font-family:var(--font-display)] md:text-7xl">
               {t.title}
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-[#4a4037] md:text-lg">{t.description}</p>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-[#aaa4b1] md:text-lg">{t.description}</p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <label className="group relative block cursor-pointer">
@@ -330,7 +330,7 @@ export default function LandingHeroExperience() {
                     event.target.value = '';
                   }}
                 />
-                <span className="relative inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#0e7490] px-7 py-3 text-sm font-black text-white shadow-[0_0_0_1px_rgba(14,116,144,0.4),0_18px_38px_rgba(14,116,144,0.42)] transition-transform group-hover:-translate-y-0.5 group-active:translate-y-0">
+                <span className="relative inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#f33b72] px-7 py-3 text-sm font-black text-white shadow-[0_0_0_1px_rgba(243,59,114,0.35),0_18px_38px_rgba(243,59,114,0.28)] transition-transform group-hover:-translate-y-0.5 group-hover:bg-[#ff4f83] group-active:translate-y-0">
                   <span className="pointer-events-none absolute inset-0 animate-pulse bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.35)_50%,transparent_75%)] bg-[length:250%_100%] [animation-duration:2.4s]" />
                   <Zap className="size-4" />
                   {isPreparing ? t.loading : t.chooseFile}
@@ -338,50 +338,50 @@ export default function LandingHeroExperience() {
               </label>
               <a
                 href={editorPath(params?.locale)}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-black/10 bg-white/70 px-5 py-3 text-sm font-bold text-[#4a4037] transition-colors hover:border-black/20 hover:text-[#161616]"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.045] px-5 py-3 text-sm font-bold text-[#d8d2dc] transition-colors hover:bg-white/[0.08] hover:text-white"
               >
                 {t.secondaryCta}
                 <ArrowRight className="size-4" />
               </a>
             </div>
 
-            <p className="mt-3 text-sm font-semibold text-[#0f766e]">{t.quotaHint}</p>
+            <p className="mt-3 text-sm font-semibold text-[#ff7ca2]">{t.quotaHint}</p>
 
-            <div className="mt-5 max-w-[560px] rounded-lg border border-black/10 bg-white/70 p-4 shadow-[0_16px_32px_rgba(16,16,16,0.08)]">
-              <p className="text-sm font-bold text-[#161616]">{isPreparing ? t.uploadLoading : t.uploadTitle}</p>
-              <p className="mt-1 text-sm leading-6 text-[#63584d]">{t.uploadHint}</p>
+            <div className="mt-5 max-w-[560px] rounded-xl border border-white/[0.07] bg-[#17141c] p-4 shadow-[0_16px_32px_rgba(0,0,0,0.22)]">
+              <p className="text-sm font-bold text-white">{isPreparing ? t.uploadLoading : t.uploadTitle}</p>
+              <p className="mt-1 text-sm leading-6 text-[#9993a3]">{t.uploadHint}</p>
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
               {t.metrics.map(([value, label], index) => (
                 <div key={value} className="flex items-center gap-2 text-sm">
                   {index > 0 && <ArrowRight className="size-4 text-[#b8aa99]" />}
-                  <span className="font-black text-[#161616]">{value}</span>
-                  <span className="font-medium text-[#8a7f73]">{label}</span>
+                  <span className="font-black text-white">{value}</span>
+                  <span className="font-medium text-[#77717f]">{label}</span>
                 </div>
               ))}
             </div>
 
-            <p className="mt-5 max-w-xl text-sm font-medium leading-6 text-[#5b5046]">
+            <p className="mt-5 max-w-xl text-sm font-medium leading-6 text-[#9993a3]">
               {t.socialProof} · {t.trust}
             </p>
           </div>
 
           <div className="relative pb-8 lg:pb-0">
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1120] shadow-[0_30px_80px_rgba(2,6,23,0.45)]">
-              <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-[#0f172a]/90 px-4 py-3">
+            <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#121016] shadow-[0_34px_90px_rgba(0,0,0,0.55)]">
+              <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] bg-[#191620] px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1.5">
                     <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
                     <span className="h-3 w-3 rounded-full bg-[#facc15]" />
                     <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
                   </div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-cyan-200/80">{t.visualLabel}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#ff7ca2]">{t.visualLabel}</p>
                 </div>
                 <p className="truncate text-xs font-semibold text-slate-300">{t.studioTitle}</p>
               </div>
 
-              <div className="space-y-4 bg-[#0b1220] p-4 md:p-5">
+              <div className="space-y-4 bg-[#111015] p-4 md:p-5">
                 {/* 01 · original */}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
@@ -401,9 +401,9 @@ export default function LandingHeroExperience() {
                 </div>
 
                 {/* 02 · decompose */}
-                <div className="rounded-xl border border-cyan-200/15 bg-[#0f172a] p-3">
+                <div className="rounded-xl border border-[#f33b72]/20 bg-[#1b1720] p-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-400/15 text-cyan-200">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f33b72]/14 text-[#ff7ca2]">
                       <Layers3 className="size-4" />
                     </div>
                     <div className="min-w-0">
@@ -440,8 +440,8 @@ export default function LandingHeroExperience() {
                 </div>
 
                 {/* prompt bar */}
-                <div className="rounded-xl border border-cyan-200/20 bg-[#0f172a] p-3.5">
-                  <div className="mb-1.5 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100">
+                <div className="rounded-xl border border-[#f33b72]/20 bg-[#1b1720] p-3.5">
+                  <div className="mb-1.5 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#ff7ca2]">
                     <PenLine className="size-3.5" />
                     {t.promptLabel}
                   </div>
@@ -453,14 +453,14 @@ export default function LandingHeroExperience() {
         </div>
       </section>
 
-      <section className="border-b border-black/10 bg-[#fbf8f1] px-4 py-16 md:px-8 md:py-20">
+      <section className="border-b border-white/[0.06] bg-[#0b090d] px-4 py-16 md:px-8 md:py-20">
         <div className="mx-auto max-w-[1180px]">
           <div className="max-w-3xl">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-[#0f766e]">Workflow</p>
-            <h2 className="mt-4 text-3xl font-black text-[#161616] [font-family:var(--font-display)] md:text-5xl">
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-[#ff6b96]">Process</p>
+            <h2 className="mt-4 text-3xl font-black text-white [font-family:var(--font-display)] md:text-5xl">
               {t.workflowTitle}
             </h2>
-            <p className="mt-4 text-base leading-8 text-[#5b5046]">{t.workflowDescription}</p>
+            <p className="mt-4 text-base leading-8 text-[#9993a3]">{t.workflowDescription}</p>
           </div>
 
           <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -468,12 +468,12 @@ export default function LandingHeroExperience() {
               const icons = [Layers3, MousePointer2, Sparkles, Download];
               const Icon = icons[index] ?? Layers3;
               return (
-                <article key={item.title} className="rounded-xl border border-black/10 bg-white p-5 shadow-[0_14px_36px_rgba(16,16,16,0.06)]">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0f766e] text-white">
+                <article key={item.title} className="rounded-xl border border-white/[0.07] bg-[#17141c] p-5 shadow-[0_18px_46px_rgba(0,0,0,0.2)] transition-transform hover:-translate-y-1">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#f33b72]/14 text-[#ff7ca2]">
                     <Icon className="size-5" />
                   </div>
-                  <h3 className="mt-5 text-lg font-black text-[#161616]">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-[#5b5046]">{item.text}</p>
+                  <h3 className="mt-5 text-lg font-black text-white">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[#9993a3]">{item.text}</p>
                 </article>
               );
             })}
@@ -481,12 +481,12 @@ export default function LandingHeroExperience() {
         </div>
       </section>
 
-      <section className="border-b border-black/10 bg-[#111827] px-4 py-16 text-white md:px-8 md:py-20">
+      <section className="border-b border-white/[0.06] bg-[#0f0d12] px-4 py-16 text-white md:px-8 md:py-20">
         <div className="mx-auto max-w-[1180px]">
           <h2 className="max-w-3xl text-3xl font-black [font-family:var(--font-display)] md:text-5xl">{t.useCasesTitle}</h2>
           <div className="mt-10 grid gap-4 md:grid-cols-2">
             {t.useCases.map((item) => (
-              <article key={item.title} className="rounded-xl border border-white/10 bg-white/6 p-6">
+              <article key={item.title} className="rounded-xl border border-white/[0.07] bg-[#1a1720] p-6 transition-colors hover:border-[#f33b72]/25">
                 <h3 className="text-xl font-black">{item.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-300">{item.text}</p>
               </article>
@@ -495,16 +495,16 @@ export default function LandingHeroExperience() {
         </div>
       </section>
 
-      <section className="grid border-b border-black/10 bg-[#f7efe2] md:grid-cols-[0.88fr_1.12fr]">
+      <section className="grid border-b border-white/[0.06] bg-[#0b090d] md:grid-cols-[0.88fr_1.12fr]">
         <div className="px-4 py-14 md:px-8 md:py-16 lg:pl-[calc((100vw-1180px)/2)]">
-          <h2 className="text-3xl font-black text-[#161616] [font-family:var(--font-display)] md:text-4xl">{t.seoTitle}</h2>
+          <h2 className="text-3xl font-black text-white [font-family:var(--font-display)] md:text-4xl">{t.seoTitle}</h2>
         </div>
-        <div className="grid gap-px bg-black/10 md:grid-cols-2">
+        <div className="grid gap-px bg-white/[0.06] md:grid-cols-2">
           {seoLinks.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="bg-[#fbf8f1] p-5 text-sm font-black text-[#2b2620] transition-colors hover:bg-white"
+              className="bg-[#151219] p-5 text-sm font-black text-[#d8d2dc] transition-colors hover:bg-[#211d28] hover:text-[#ff7ca2]"
             >
               {item.label}
             </a>
@@ -512,14 +512,14 @@ export default function LandingHeroExperience() {
         </div>
       </section>
 
-      <section className="bg-[#fbf8f1] px-4 py-16 md:px-8 md:py-20">
+      <section className="bg-[#0b090d] px-4 py-16 md:px-8 md:py-20">
         <div className="mx-auto max-w-[1180px]">
-          <h2 className="text-3xl font-black text-[#161616] [font-family:var(--font-display)] md:text-4xl">{t.faqTitle}</h2>
+          <h2 className="text-3xl font-black text-white [font-family:var(--font-display)] md:text-4xl">{t.faqTitle}</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {t.faqs.map((faq) => (
-              <article key={faq.q} className="rounded-xl border border-black/10 bg-white p-5">
-                <h3 className="text-base font-black text-[#161616]">{faq.q}</h3>
-                <p className="mt-3 text-sm leading-7 text-[#5b5046]">{faq.a}</p>
+              <article key={faq.q} className="rounded-xl border border-white/[0.07] bg-[#17141c] p-5">
+                <h3 className="text-base font-black text-white">{faq.q}</h3>
+                <p className="mt-3 text-sm leading-7 text-[#9993a3]">{faq.a}</p>
               </article>
             ))}
           </div>

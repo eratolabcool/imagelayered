@@ -24,7 +24,9 @@ export function DashboardLayout({
       {sidebar && (
         <Sidebar variant={sidebar.variant || 'inset'} sidebar={sidebar} />
       )}
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="bg-[#0b090d] md:m-2 md:rounded-2xl md:border md:border-white/[0.06] md:shadow-[0_26px_80px_rgba(0,0,0,0.32)]">
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }
