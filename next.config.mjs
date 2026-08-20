@@ -88,6 +88,7 @@ const nextConfig = {
   },
   compress: true,
   poweredByHeader: false,
+  transpilePackages: ['@libsql/client'],
   turbopack: {
     root: projectRoot,
     resolveAlias: {},
