@@ -29,21 +29,14 @@ const copy = {
     loading: 'Loading...',
     secondaryCta: 'Open editor',
     quotaHint: 'Free trial: 3 images · no sign-up needed',
-    demoTitle: 'Try a preset image — no upload needed',
-    demos: [
-      { label: 'E-commerce background swap', image: '/imgs/features/hero-case-1.jpg', hint: 'Replace background, keep product' },
-      { label: 'Poster slogan rewrite', image: '/imgs/features/10.png', hint: 'Edit one text block only' },
-      { label: 'Subject & background split', image: '/imgs/features/9.png', hint: 'Separate person from scene' },
-    ],
     socialProof: 'Over 10,000+ layers edited',
     trust: 'Built for ad creatives, e-commerce images, AI posters, and social media assets',
     visualLabel: 'Live workflow preview',
     studioTitle: 'Layer Studio',
     stepOriginal: 'Original',
     stepDecompose: 'AI decompose',
-    stepExport: 'Export',
     decomposeHint: '5 editable layers detected',
-    exportBadge: 'Edited',
+    caseBadge: 'Original → Result',
     promptLabel: 'Prompt edit',
     prompt: "Rewrite the headline to 'Summer Drop' and keep the character, fruit, colors, and layout.",
     before: 'Before',
@@ -144,21 +137,14 @@ const copy = {
     loading: '加载中...',
     secondaryCta: '打开编辑器',
     quotaHint: '免费试用 3 张 · 无需注册',
-    demoTitle: '先用预设示例体验 — 无需上传',
-    demos: [
-      { label: '电商换背景', image: '/imgs/features/hero-case-1.jpg', hint: '换背景、保留产品' },
-      { label: '海报改标语', image: '/imgs/features/10.png', hint: '只改一处文字' },
-      { label: '人物与背景分离', image: '/imgs/features/9.png', hint: '把人物从场景中拆出' },
-    ],
     socialProof: '超过 10,000+ 张图片已完成分层',
     trust: '适合广告创意、电商商品图、AI 海报和自媒体视觉素材',
     visualLabel: '工作流预览',
     studioTitle: '图层工作台',
     stepOriginal: '原图',
     stepDecompose: 'AI 自动分层',
-    stepExport: '导出',
     decomposeHint: '识别出 5 个可编辑图层',
-    exportBadge: '已编辑',
+    caseBadge: '原图 → 结果',
     promptLabel: '提示词编辑',
     prompt: '只把主标题改成 Summer Drop，保持人物、水果、配色和版式不变。',
     before: '原图',
@@ -318,24 +304,6 @@ export default function LandingHeroExperience() {
     }
   };
 
-  const handleDemo = async (imagePath: string, label: string) => {
-    setIsPreparing(true);
-    try {
-      const res = await fetch(imagePath);
-      if (!res.ok) throw new Error('preset fetch failed');
-      const blob = await res.blob();
-      const file = new File([blob], label, { type: blob.type || 'image/jpeg' });
-      const prepared = await prepareImageFile(file);
-      sessionStorage.setItem('uploadedImage', JSON.stringify(prepared));
-      window.location.href = editorPath(params?.locale);
-    } catch (error) {
-      console.error('[LandingHeroExperience] demo load failed', error);
-      toast.error(isZh ? '示例加载失败，请直接上传图片。' : 'Failed to load the preset. Please upload an image instead.');
-    } finally {
-      setIsPreparing(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#fbf8f1] text-[#161616] [font-family:var(--font-body)]">
       <section className="relative overflow-hidden border-b border-black/10 bg-[#f7efe2]">
@@ -379,45 +347,24 @@ export default function LandingHeroExperience() {
 
             <p className="mt-3 text-sm font-semibold text-[#0f766e]">{t.quotaHint}</p>
 
-            <div className="mt-6">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-[#6b6258]">{t.demoTitle}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {t.demos.map((demo) => (
-                  <button
-                    key={demo.label}
-                    onClick={() => handleDemo(demo.image, demo.label)}
-                    disabled={isPreparing}
-                    className="group inline-flex items-center gap-2 rounded-lg border border-black/10 bg-white/75 px-3.5 py-2 text-xs font-bold text-[#2b2620] shadow-[0_8px_20px_rgba(16,16,16,0.06)] transition-all hover:-translate-y-0.5 hover:border-[#0e7490]/40 hover:shadow-[0_12px_26px_rgba(14,116,144,0.14)] disabled:opacity-60"
-                  >
-                    <img src={demo.image} alt={demo.label} className="h-7 w-9 rounded-md object-cover" />
-                    <span className="text-left">
-                      <span className="block">{demo.label}</span>
-                      <span className="block font-medium text-[#8a7f73]">{demo.hint}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="mt-5 max-w-[560px] rounded-lg border border-black/10 bg-white/70 p-4 shadow-[0_16px_32px_rgba(16,16,16,0.08)]">
               <p className="text-sm font-bold text-[#161616]">{isPreparing ? t.uploadLoading : t.uploadTitle}</p>
               <p className="mt-1 text-sm leading-6 text-[#63584d]">{t.uploadHint}</p>
             </div>
 
-            <div className="mt-7 flex flex-wrap gap-2">
-              {t.metrics.map(([value, label]) => (
-                <div key={value} className="rounded-lg border border-black/10 bg-white/55 px-4 py-3">
-                  <p className="text-xl font-black text-[#161616]">{value}</p>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#6b6258]">{label}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+              {t.metrics.map(([value, label], index) => (
+                <div key={value} className="flex items-center gap-2 text-sm">
+                  {index > 0 && <ArrowRight className="size-4 text-[#b8aa99]" />}
+                  <span className="font-black text-[#161616]">{value}</span>
+                  <span className="font-medium text-[#8a7f73]">{label}</span>
                 </div>
               ))}
-              <div className="rounded-lg border border-[#0f766e]/25 bg-[#0f766e]/8 px-4 py-3">
-                <p className="text-xl font-black text-[#0f766e]">10,000+</p>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#0f766e]/70">{t.socialProof}</p>
-              </div>
             </div>
 
-            <p className="mt-6 max-w-xl text-sm font-semibold leading-6 text-[#5b5046]">{t.trust}</p>
+            <p className="mt-5 max-w-xl text-sm font-medium leading-6 text-[#5b5046]">
+              {t.socialProof} · {t.trust}
+            </p>
           </div>
 
           <div className="relative pb-8 lg:pb-0">
@@ -448,7 +395,7 @@ export default function LandingHeroExperience() {
                       className="aspect-[16/9] w-full object-cover"
                     />
                     <div className="absolute bottom-2 left-2 rounded-md bg-black/70 px-2.5 py-1 text-[11px] font-black text-white">
-                      {t.before}
+                      {t.caseBadge}
                     </div>
                   </div>
                 </div>
@@ -490,26 +437,6 @@ export default function LandingHeroExperience() {
                       <CheckCircle2 className="size-3.5 shrink-0 text-emerald-300" />
                     </div>
                   ))}
-                </div>
-
-                {/* 03 · export */}
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">03 · {t.stepExport}</p>
-                    <span className="rounded bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
-                      {t.exportBadge}
-                    </span>
-                  </div>
-                  <div className="relative overflow-hidden rounded-xl border border-emerald-400/25">
-                    <img
-                      src="/imgs/features/hero-case-1.jpg"
-                      alt="Edited result after layer-aware prompt edit"
-                      className="aspect-[16/9] w-full object-cover brightness-[1.06] saturate-[1.1] contrast-[1.04]"
-                    />
-                    <div className="absolute bottom-2 left-2 rounded-md bg-emerald-600/85 px-2.5 py-1 text-[11px] font-black text-white">
-                      {t.result}
-                    </div>
-                  </div>
                 </div>
 
                 {/* prompt bar */}
