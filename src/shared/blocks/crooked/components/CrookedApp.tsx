@@ -18,6 +18,7 @@ import { useCrookedCopy } from '../i18n';
 import { toast } from 'sonner';
 import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
 import { getWorkflowPreset, workflowPresets } from '../workflows';
+import WorkspaceSidebar from './WorkspaceSidebar';
 
 interface CrookedAppProps {
   embedded?: boolean;
@@ -118,8 +119,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const params = useParams();
   const isZh = params?.locale === 'zh';
   const projectIdQuery = searchParams ? searchParams.get('project') : null;
+  const workflowQuery = searchParams ? searchParams.get('workflow') : null;
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
+
+  useEffect(() => {
+    if (workflowQuery && workflowPresets.some((preset) => preset.id === workflowQuery)) {
+      setSelectedWorkflowId(workflowQuery as WorkflowPresetId);
+      const preset = getWorkflowPreset(workflowQuery);
+      setLayerCount(preset.layerCount);
+    }
+  }, [workflowQuery]);
 
   // 1. On Mount: Load Project if projectIdQuery is present
   useEffect(() => {
@@ -1922,8 +1932,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     <div className={`relative w-full overflow-hidden ${embedded ? 'rounded-[36px]' : 'min-h-screen'} bg-[#060e20] text-white [font-family:var(--font-body)]`}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.26),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(255,92,138,0.18),transparent_24%),radial-gradient(circle_at_50%_100%,rgba(68,217,255,0.12),transparent_28%),linear-gradient(180deg,#081121_0%,#060e20_46%,#050b17_100%)]" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:72px_72px]" />
-      <div className={`relative w-full flex ${embedded ? 'min-h-[920px]' : 'min-h-screen'} flex-col gap-6 px-4 py-4 md:px-6 md:py-6`}>
-        <header className="rounded-[30px] bg-[rgba(20,31,56,0.72)] px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-[22px] md:px-6">
+      <div className={`relative flex w-full ${embedded ? 'min-h-[920px]' : 'min-h-screen'}`}>
+        {!embedded && <WorkspaceSidebar />}
+        <div className="flex min-w-0 flex-1 flex-col gap-4 px-3 py-3 md:px-5 md:py-5">
+        <header className="rounded-2xl bg-[rgba(20,31,56,0.78)] px-4 py-4 shadow-[0_20px_64px_rgba(0,0,0,0.3)] backdrop-blur-[18px] md:px-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123] shadow-[0_18px_36px_rgba(77,228,255,0.2)]">
@@ -1957,7 +1969,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       )}
                       {saveStatus === 'error' && (
                         <>
-                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-bounce" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
                           <span>Save Error</span>
                         </>
                       )}
@@ -2036,6 +2048,25 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   ? '普通图片用 Qwen；海报、电商图、信息图和文字密集图用 Seedream Design Layering。'
                   : 'Use Qwen for native layers. Use Seedream Design Layering for posters, product creatives, infographics, and text-heavy images.'}
               </p>
+              <div className="mt-3 flex max-w-full gap-1 overflow-x-auto pb-1">
+                {workflowPresets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedWorkflowId(preset.id);
+                      setLayerCount(preset.layerCount);
+                    }}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-extrabold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#b89fff] ${
+                      selectedWorkflowId === preset.id
+                        ? 'bg-white text-[#071123]'
+                        : 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1] hover:text-white'
+                    }`}
+                  >
+                    {preset.title}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex flex-1 flex-col gap-2 lg:flex-row xl:max-w-5xl">
               <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
@@ -2047,7 +2078,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       advancedConfig.model === option.model
                         ? 'border-cyan-200/45 bg-cyan-300 text-[#071123] shadow-[0_14px_36px_rgba(34,211,238,0.16)]'
                         : option.mode === 'design-layering'
-                          ? 'border-cyan-200/18 bg-cyan-300/[0.075] text-slate-100 hover:border-cyan-200/36 hover:bg-cyan-300/[0.11]'
+                          ? 'border-cyan-200/18 bg-cyan-300/[0.075] text-cyan-50 hover:border-cyan-200/36 hover:bg-cyan-300/[0.11]'
                           : 'border-white/8 bg-white/[0.045] text-slate-200 hover:border-cyan-200/22 hover:bg-white/[0.075]'
                     }`}
                     title={option.description}
@@ -2091,7 +2122,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           </div>
         </header>
 
-        <section className="relative flex flex-1 overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.20),transparent_30%),radial-gradient(circle_at_82%_8%,rgba(77,228,255,0.12),transparent_26%),linear-gradient(180deg,rgba(9,19,40,0.92),rgba(5,11,23,0.98))] shadow-[0_30px_110px_rgba(0,0,0,0.50)] ring-1 ring-white/10">
+        <section className="relative flex flex-1 overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.20),transparent_30%),radial-gradient(circle_at_82%_8%,rgba(77,228,255,0.12),transparent_26%),linear-gradient(180deg,rgba(9,19,40,0.92),rgba(5,11,23,0.98))] shadow-[0_30px_110px_rgba(0,0,0,0.50)] ring-1 ring-white/10">
           <div className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:56px_56px]" />
           <div className="pointer-events-none absolute left-7 top-6 z-20 text-2xl font-semibold tracking-tight text-cyan-100/22">AI</div>
 
@@ -2147,7 +2178,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         <div className="pointer-events-none absolute inset-0 overflow-hidden">
                           <div className="absolute inset-0 bg-black/20" />
                           <div className="layer-scan-line absolute inset-x-[-12%] top-0 h-28 bg-[linear-gradient(180deg,transparent,rgba(178,255,245,0.18),rgba(255,255,255,0.68),rgba(114,255,238,0.22),transparent)] blur-[1px]" />
-                          <div className="layer-scan-grid absolute inset-0 opacity-35" />
                           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/18 bg-black/72 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/86 backdrop-blur-md">
                             {selectedDecompositionModel.mode === 'design-layering'
                               ? (isZh ? 'Seedream 正在理解设计图层' : 'Seedream understanding design layers')
@@ -2186,37 +2216,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
             </div>
           ) : (
-            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:p-5 md:grid-cols-[52px_minmax(260px,330px)_minmax(0,1fr)]">
-              {/* Left tool rail */}
-              <aside className="hidden shrink-0 flex-col items-center gap-2 rounded-[28px] border border-white/10 bg-[#071123]/72 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl md:flex">
-                <span className="mb-1 text-[8px] font-black uppercase tracking-[0.18em] text-cyan-100/40">Tool</span>
-                {[
-                  { tool: 'select' as ToolType, icon: MousePointer, label: isZh ? '选择' : 'Select' },
-                  { tool: 'move' as ToolType, icon: Hand, label: isZh ? '移动' : 'Move' },
-                  { tool: 'replace' as ToolType, icon: Wand2, label: isZh ? '替换' : 'Replace' },
-                  { tool: 'remove' as ToolType, icon: Eraser, label: isZh ? '移除' : 'Remove' },
-                  { tool: 'recolor' as ToolType, icon: Palette, label: isZh ? '调色' : 'Recolor' },
-                  { tool: 'scale' as ToolType, icon: Scaling, label: isZh ? '缩放' : 'Scale' },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  const active = activeTool === item.tool;
-                  return (
-                    <button
-                      key={item.tool}
-                      onClick={() => setActiveTool(item.tool)}
-                      title={item.label}
-                      className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all ${
-                        active
-                          ? 'bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123] shadow-[0_10px_24px_rgba(77,228,255,0.24)]'
-                          : 'text-slate-300/70 hover:bg-white/8 hover:text-white'
-                      }`}
-                    >
-                      <Icon className="size-4" />
-                    </button>
-                  );
-                })}
-              </aside>
-
+            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:p-5 md:grid-cols-[minmax(260px,320px)_minmax(0,1fr)]">
               <aside className="flex min-h-0 flex-col gap-3 rounded-[28px] border border-white/10 bg-[#071123]/72 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -2392,7 +2392,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               <main
                 ref={mainRef}
                 onMouseDown={handleMouseDown}
-                className={`canvas-container relative flex min-h-[520px] items-start justify-center overflow-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#0b152b,#070d1b)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                className={`canvas-container relative flex min-h-[520px] items-start justify-center overflow-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#0b152b,#070d1b)] p-5 pb-24 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
               >
                 <div className="pointer-events-none absolute left-5 top-4 z-20 rounded-full border border-white/10 bg-black/26 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/56">
                   {isZh ? '预览' : 'Preview'}
@@ -2414,6 +2414,34 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       {item.label}
                     </button>
                   ))}
+                </div>
+                <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 gap-1 overflow-x-auto rounded-2xl bg-[#141f38]/94 p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+                  {[
+                    { tool: 'select' as ToolType, icon: MousePointer, label: isZh ? '选择' : 'Select' },
+                    { tool: 'move' as ToolType, icon: Hand, label: isZh ? '移动' : 'Move' },
+                    { tool: 'replace' as ToolType, icon: Wand2, label: isZh ? '替换' : 'Replace' },
+                    { tool: 'remove' as ToolType, icon: Eraser, label: isZh ? '移除' : 'Remove' },
+                    { tool: 'recolor' as ToolType, icon: Palette, label: isZh ? '调色' : 'Recolor' },
+                    { tool: 'scale' as ToolType, icon: Scaling, label: isZh ? '缩放' : 'Scale' },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    const active = activeTool === item.tool;
+                    return (
+                      <button
+                        key={item.tool}
+                        onClick={() => setActiveTool(item.tool)}
+                        aria-pressed={active}
+                        className={`flex min-w-[58px] flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#b89fff] ${
+                          active
+                            ? 'bg-[linear-gradient(135deg,#b89fff,#4de4ff)] text-[#071123]'
+                            : 'text-slate-300 hover:bg-white/[0.08] hover:text-white'
+                        }`}
+                      >
+                        <Icon className="size-4" />
+                        {item.label}
+                      </button>
+                    );
+                  })}
                 </div>
                 {baseLayer && (
                   <div
@@ -2458,13 +2486,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           <style jsx>{`
             .layer-scan-line {
               animation: layer-scan 1.55s ease-in-out infinite;
-            }
-
-            .layer-scan-grid {
-              background-image:
-                linear-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
-              background-size: 34px 34px;
             }
 
             @keyframes layer-scan {
@@ -2784,6 +2805,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         </div>
       )}
 
+        </div>
       </div>
     </div>
   );
