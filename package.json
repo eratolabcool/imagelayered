@@ -116,7 +116,6 @@
     "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "19.2.1",
     "react-hook-form": "^7.62.0",
-    "react-icons": "^5.5.0",
     "react-lazy-load-image-component": "^1.6.3",
     "react-use-measure": "^2.1.7",
     "recharts": "2.15.4",
