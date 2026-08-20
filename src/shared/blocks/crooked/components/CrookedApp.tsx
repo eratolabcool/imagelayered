@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useSession } from '@/core/auth/client';
 import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Wand2, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle, Undo2, Redo2, Search, GripVertical, FolderPlus, Ungroup, Lock, Unlock, Trash2, Command as CommandIcon, Camera, Maximize2, Download, Images } from 'lucide-react';
-import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId, DecompositionModel, LayeringMode } from '../types';
+import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
 import { Icons } from './Icon';
@@ -23,6 +23,7 @@ import LayerInspector from './LayerInspector';
 import EditorCommandPalette, { EditorCommand } from './EditorCommandPalette';
 import ProjectVersionPanel, { ProjectSnapshot } from './ProjectVersionPanel';
 import { useLayerHistory } from '../hooks/use-layer-history';
+import LayeringWorkflowPanel, { DecompositionModelOption } from './LayeringWorkflowPanel';
 
 interface CrookedAppProps {
   embedded?: boolean;
@@ -31,18 +32,7 @@ interface CrookedAppProps {
 
 const LOCAL_DRAFT_KEY = 'image-layered:editor-draft:v1';
 
-const decompositionModelOptions: Array<{
-  model: DecompositionModel;
-  provider: 'fal';
-  label: string;
-  shortLabel: string;
-  description: string;
-  badge: string;
-  mode: 'native' | 'design-layering' | 'semantic-edit';
-  layeringMode: LayeringMode;
-  idealFor: string;
-  outputHint: string;
-}> = [
+const decompositionModelOptions: DecompositionModelOption[] = [
   {
     model: 'fal-ai/qwen-image-layered',
     provider: 'fal',
@@ -2388,30 +2378,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2 rounded-full bg-cyan-300/14 px-3 py-2 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.24)]">
-                <Sparkles className="size-3.5" />
-                {selectedWorkflow.title}
-              </div>
-              {[
-                { label: workflow.upload, active: layers.length > 0 },
-                { label: workflow.decompose, active: layers.length > 1 },
-                { label: workflow.edit, active: !!selectedLayer?.maskUrl },
-              ].map((step, idx) => (
-                <div
-                  key={step.label}
-                  className={`flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] ${
-                    step.active
-                      ? 'bg-cyan-300/14 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.24)]'
-                      : 'bg-white/5 text-slate-400 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
-                  }`}
-                >
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[10px]">{idx + 1}</span>
-                  {step.label}
-                </div>
-              ))}
-            </div>
-
             <div className="flex flex-wrap items-center justify-end gap-2">
               {layers.length > 0 && (
                 <div className="flex items-center rounded-xl bg-white/[0.055] p-1" aria-label={isZh ? '编辑历史控制' : 'Edit history controls'}>
@@ -2483,88 +2449,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
             </div>
           </div>
-          <div className="mt-4 flex flex-col gap-3 rounded-[24px] border border-white/10 bg-[#071123]/62 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] xl:flex-row xl:items-center xl:justify-between">
-            <div className="px-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-100/44">
-                {isZh ? '分层工作流' : 'Layering workflow'}
-              </p>
-              <p className="mt-1 text-xs text-slate-300/68">
-                {isZh
-                  ? '普通图片用 Qwen；海报、电商图、信息图和文字密集图用 Seedream Design Layering。'
-                  : 'Use Qwen for native layers. Use Seedream Design Layering for posters, product creatives, infographics, and text-heavy images.'}
-              </p>
-              <div className="mt-3 flex max-w-full gap-1 overflow-x-auto pb-1">
-                {workflowPresets.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedWorkflowId(preset.id);
-                      setLayerCount(preset.layerCount);
-                    }}
-                    className={`shrink-0 rounded-full px-3 py-1.5 text-[10px] font-extrabold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#b89fff] ${
-                      selectedWorkflowId === preset.id
-                        ? 'bg-white text-[#071123]'
-                        : 'bg-white/[0.06] text-slate-300 hover:bg-white/[0.1] hover:text-white'
-                    }`}
-                  >
-                    {preset.title}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-1 flex-col gap-2 lg:flex-row xl:max-w-5xl">
-              <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-3">
-                {decompositionModelOptions.map((option) => (
-                  <button
-                    key={option.model}
-                    onClick={() => setAdvancedConfig(prev => ({ ...prev, model: option.model }))}
-                    className={`group rounded-2xl border px-3 py-3 text-left transition-all ${
-                      advancedConfig.model === option.model
-                        ? 'border-cyan-200/45 bg-cyan-300 text-[#071123] shadow-[0_14px_36px_rgba(34,211,238,0.16)]'
-                        : option.mode === 'design-layering'
-                          ? 'border-cyan-200/18 bg-cyan-300/[0.075] text-cyan-50 hover:border-cyan-200/36 hover:bg-cyan-300/[0.11]'
-                          : 'border-white/8 bg-white/[0.045] text-slate-200 hover:border-cyan-200/22 hover:bg-white/[0.075]'
-                    }`}
-                    title={option.description}
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-black">{option.shortLabel}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] ${
-                        advancedConfig.model === option.model ? 'bg-[#071123]/10 text-[#071123]/70' : 'bg-cyan-300/10 text-cyan-100/58'
-                      }`}>
-                        {option.badge}
-                      </span>
-                    </span>
-                  <span className={`mt-1 block text-[11px] leading-5 ${
-                    advancedConfig.model === option.model ? 'text-[#071123]/68' : 'text-slate-400'
-                  }`}>
-                    {option.description}
-                  </span>
-                  <span className={`mt-2 block truncate text-[10px] font-bold ${
-                    advancedConfig.model === option.model ? 'text-[#071123]/52' : 'text-cyan-100/42'
-                  }`}>
-                    {option.outputHint} · {option.idealFor}
-                  </span>
-                </button>
-              ))}
-              </div>
-              <button
-                onClick={handleGenerateLayers}
-                disabled={!canGenerateLayers}
-                className="flex min-h-[72px] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] px-5 py-3 text-sm font-black text-[#071123] shadow-[0_18px_42px_rgba(77,228,255,0.16)] transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-none disabled:bg-white/8 disabled:text-slate-500 disabled:shadow-none"
-              >
-                <Sparkles className="size-4" />
-                {isProcessing
-                  ? (isZh ? 'Generating' : 'Generating')
-                  : layers.length > 1
-                    ? (isZh ? '已生成' : 'Generated')
-                    : layers.length === 1
-                      ? (selectedDecompositionModel.mode === 'design-layering' ? (isZh ? 'Generate Design Layers' : 'Generate Design Layers') : 'Generate')
-                      : (isZh ? '先上传图片' : 'Upload first')}
-              </button>
-            </div>
-          </div>
         </header>
 
         <section className="relative flex flex-1 overflow-hidden rounded-2xl bg-[radial-gradient(circle_at_20%_0%,rgba(89,120,255,0.20),transparent_30%),radial-gradient(circle_at_82%_8%,rgba(77,228,255,0.12),transparent_26%),linear-gradient(180deg,rgba(9,19,40,0.92),rgba(5,11,23,0.98))] shadow-[0_30px_110px_rgba(0,0,0,0.50)] ring-1 ring-white/10">
@@ -2572,11 +2456,28 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           <div className="pointer-events-none absolute left-7 top-6 z-20 text-2xl font-semibold tracking-tight text-cyan-100/22">AI</div>
 
           {layers.length <= 1 ? (
-            <div className="relative flex min-h-[calc(100vh-190px)] flex-1 items-center justify-center p-5 md:p-8">
+            <div className="relative grid min-h-[calc(100vh-150px)] flex-1 gap-4 p-4 md:grid-cols-[minmax(250px,292px)_minmax(0,1fr)] md:p-5">
+              <aside className="relative z-30 self-start md:sticky md:top-5">
+                <LayeringWorkflowPanel
+                  isZh={isZh}
+                  presets={workflowPresets}
+                  selectedPresetId={selectedWorkflowId}
+                  selectedPreset={selectedWorkflow}
+                  onSelectPreset={handleSelectWorkflow}
+                  models={decompositionModelOptions}
+                  selectedModel={advancedConfig.model}
+                  onSelectModel={(model) => setAdvancedConfig((prev) => ({ ...prev, model }))}
+                  onGenerate={handleGenerateLayers}
+                  canGenerate={canGenerateLayers}
+                  isProcessing={isProcessing}
+                  hasImage={layers.length === 1}
+                  hasLayers={false}
+                />
+              </aside>
               {baseLayer ? (
                 <div
                   ref={mainRef}
-                  className="canvas-container relative flex h-full max-h-[calc(100vh-230px)] w-full items-start justify-center overflow-auto p-4"
+                  className="canvas-container relative flex min-h-[520px] w-full items-start justify-center overflow-auto rounded-2xl bg-[#070d1b] p-4"
                 >
                   <div
                     className="transition-[width,height] duration-200 ease-out"
@@ -2636,7 +2537,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               ) : (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="group flex min-h-[460px] w-full max-w-3xl flex-col items-center justify-center rounded-[30px] border border-white/10 bg-[#071123]/58 px-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_24px_80px_rgba(0,0,0,0.32)] backdrop-blur-xl transition-all hover:border-cyan-200/24 hover:bg-[#0b152b]/72"
+                  className="group flex min-h-[520px] w-full flex-col items-center justify-center rounded-2xl bg-[#071123]/72 px-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.32)] outline-none transition-colors hover:bg-[#0b152b]/82 focus-visible:ring-2 focus-visible:ring-[#b89fff]"
                 >
                   <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123] transition-transform group-hover:scale-105">
                     <UploadCloud className="size-7" />
@@ -2662,11 +2563,26 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             </div>
           ) : (
             <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] md:p-5 xl:grid-cols-[minmax(240px,290px)_minmax(0,1fr)_300px]">
-              <aside className="flex min-h-0 flex-col gap-3 rounded-2xl bg-[#071123]/82 p-3 shadow-[0_22px_68px_rgba(0,0,0,0.28)]">
+              <aside className="flex min-h-0 max-h-[calc(100vh-190px)] flex-col gap-3 overflow-hidden rounded-2xl bg-[#071123]/82 p-3 shadow-[0_22px_68px_rgba(0,0,0,0.28)]">
+                <LayeringWorkflowPanel
+                  isZh={isZh}
+                  presets={workflowPresets}
+                  selectedPresetId={selectedWorkflowId}
+                  selectedPreset={selectedWorkflow}
+                  onSelectPreset={handleSelectWorkflow}
+                  models={decompositionModelOptions}
+                  selectedModel={advancedConfig.model}
+                  onSelectModel={(model) => setAdvancedConfig((prev) => ({ ...prev, model }))}
+                  onGenerate={handleGenerateLayers}
+                  canGenerate={canGenerateLayers}
+                  isProcessing={isProcessing}
+                  hasImage
+                  hasLayers
+                  compact
+                />
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.28em] text-cyan-100/42">{isZh ? '图层' : 'Layers'}</p>
-                    <h2 className="mt-1 max-w-[180px] truncate text-base font-semibold text-white">{isZh ? '图层列表' : 'Layer Stack'}</h2>
+                    <h2 className="max-w-[180px] truncate text-base font-semibold text-white">{isZh ? '图层列表' : 'Layer stack'}</h2>
                     <p className="mt-1 text-[10px] font-semibold text-cyan-100/46">{selectedDecompositionModel.shortLabel}</p>
                   </div>
                   <div className="flex items-center gap-2">
