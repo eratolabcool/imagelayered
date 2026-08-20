@@ -1,20 +1,25 @@
 "use client";
 
 import { cn } from "@/shared/lib/utils";
-import { type ComponentProps, memo } from "react";
-import { Streamdown } from "streamdown";
+import { type HTMLAttributes, memo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-type ResponseProps = ComponentProps<typeof Streamdown>;
+export type ResponseProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
+  children?: string;
+};
 
 export const Response = memo(
-  ({ className, ...props }: ResponseProps) => (
-    <Streamdown
+  ({ className, children = "", ...props }: ResponseProps) => (
+    <div
       className={cn(
         "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className
       )}
       {...props}
-    />
+    >
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{children}</ReactMarkdown>
+    </div>
   ),
   (prevProps, nextProps) => prevProps.children === nextProps.children
 );
