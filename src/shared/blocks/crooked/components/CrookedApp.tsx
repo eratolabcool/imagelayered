@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useSession } from '@/core/auth/client';
-import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Download, Copy, Wand2, SlidersHorizontal, UploadCloud } from 'lucide-react';
+import { Share2, Sparkles, X, Mail, CheckCircle, Lightbulb, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Download, Copy, Wand2, SlidersHorizontal, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle } from 'lucide-react';
 import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig, WorkflowPresetId, DecompositionModel, LayeringMode } from '../types';
 import CrookedExportModal from './CrookedExportModal';
 import CrookedUpgradeModal from './CrookedUpgradeModal';
@@ -80,6 +80,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [layers, setLayers] = useState<Layer[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ToolType>('select');
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [editHistory, setEditHistory] = useState<Array<{ id: string; time: number; action: string; layer: string }>>([]);
+
+  const pushHistory = useCallback((action: string, layer: string) => {
+    setEditHistory((prev) =>
+      [{ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, time: Date.now(), action, layer }, ...prev].slice(0, 30)
+    );
+  }, []);
 
   // Growth & Cloud Save States
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -1255,6 +1264,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       setLayers(prev => [...prev, ...newLayers]);
       if (newLayers.length > 0) setSelectedLayerId(newLayers[0].id);
+      pushHistory(
+        isZh ? 'AI 自动分层' : 'AI decompose',
+        isZh ? `${newLayers.length} 个图层` : `${newLayers.length} layers`
+      );
 
       // Auto-expand the parent if it was collapsed
       setCollapsedLayerIds(prev => {
@@ -1415,6 +1428,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         setLayers(prev => prev.map(l =>
           l.id === selectedLayerId ? { ...l, url: newUrl } : l
         ));
+
+        pushHistory(
+          isZh ? 'AI 编辑' : 'AI edit',
+          target.name || (isZh ? '选中图层' : 'Selected layer')
+        );
 
         // Increment usage count on success for guest users
         if (!isLoggedIn) {
@@ -1745,6 +1763,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
     setLayers((prev) => [...prev, copyLayer]);
     setSelectedLayerId(copyLayer.id);
+    pushHistory(isZh ? '复制图层' : 'Duplicate layer', layer.name || '');
     toast.success(isZh ? '已复制图层' : 'Layer duplicated');
   }, [isZh, layers]);
 
@@ -2167,7 +2186,37 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
             </div>
           ) : (
-            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-4 p-4 md:p-5 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)]">
+            <div className="grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:p-5 lg:grid-cols-[52px_minmax(280px,352px)_minmax(0,1fr)]">
+              {/* Left tool rail */}
+              <aside className="hidden shrink-0 flex-col items-center gap-2 rounded-[28px] border border-white/10 bg-[#071123]/72 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl lg:flex">
+                <span className="mb-1 text-[8px] font-black uppercase tracking-[0.18em] text-cyan-100/40">Tool</span>
+                {[
+                  { tool: 'select' as ToolType, icon: MousePointer, label: isZh ? '选择' : 'Select' },
+                  { tool: 'move' as ToolType, icon: Hand, label: isZh ? '移动' : 'Move' },
+                  { tool: 'replace' as ToolType, icon: Wand2, label: isZh ? '替换' : 'Replace' },
+                  { tool: 'remove' as ToolType, icon: Eraser, label: isZh ? '移除' : 'Remove' },
+                  { tool: 'recolor' as ToolType, icon: Palette, label: isZh ? '调色' : 'Recolor' },
+                  { tool: 'scale' as ToolType, icon: Scaling, label: isZh ? '缩放' : 'Scale' },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const active = activeTool === item.tool;
+                  return (
+                    <button
+                      key={item.tool}
+                      onClick={() => setActiveTool(item.tool)}
+                      title={item.label}
+                      className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-all ${
+                        active
+                          ? 'bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123] shadow-[0_10px_24px_rgba(77,228,255,0.24)]'
+                          : 'text-slate-300/70 hover:bg-white/8 hover:text-white'
+                      }`}
+                    >
+                      <Icon className="size-4" />
+                    </button>
+                  );
+                })}
+              </aside>
+
               <aside className="flex min-h-0 flex-col gap-3 rounded-[28px] border border-white/10 bg-[#071123]/72 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -2252,28 +2301,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold text-white">{selectedLayer.name}</p>
                         <p className="mt-1 text-[11px] text-cyan-100/42">{isZh ? '对当前图层进行局部修改' : 'Edit the selected layer only'}</p>
-                      </div>
-                      <div className="flex rounded-full bg-black/28 p-1">
-                        {[
-                          { tool: 'select' as ToolType, icon: MousePointer, label: 'Select' },
-                          { tool: 'recolor' as ToolType, icon: Palette, label: 'Color' },
-                          { tool: 'replace' as ToolType, icon: Wand2, label: 'Replace' },
-                          { tool: 'remove' as ToolType, icon: X, label: 'Remove' },
-                        ].map((item) => {
-                          const Icon = item.icon;
-                          return (
-                            <button
-                              key={item.tool}
-                              onClick={() => setActiveTool(item.tool)}
-                              className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-                                activeTool === item.tool ? 'bg-white text-black' : 'text-white/56 hover:bg-white/10 hover:text-white'
-                              }`}
-                              title={item.label}
-                            >
-                              <Icon className="size-4" />
-                            </button>
-                          );
-                        })}
                       </div>
                     </div>
 
@@ -2370,6 +2397,24 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 <div className="pointer-events-none absolute left-5 top-4 z-20 rounded-full border border-white/10 bg-black/26 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/56">
                   {isZh ? '预览' : 'Preview'}
                 </div>
+                <div className="pointer-events-auto absolute right-4 top-4 z-20 flex gap-1 rounded-full border border-white/10 bg-black/34 p-1 backdrop-blur-md">
+                  {[
+                    { key: 'result' as const, label: isZh ? '结果' : 'Result' },
+                    { key: 'original' as const, label: isZh ? '原图' : 'Original' },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      onClick={() => setShowOriginal(item.key === 'original')}
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-colors ${
+                        (item.key === 'original') === showOriginal
+                          ? 'bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123]'
+                          : 'text-slate-300/70 hover:text-white'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
                 {baseLayer && (
                   <div
                     className="transition-[width,height] duration-200 ease-out"
@@ -2387,7 +2432,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                         transformOrigin: 'top left',
                       }}
                     >
-                      {renderLayerStack(true)}
+                      {showOriginal ? (
+                        <img
+                          src={baseLayer.url}
+                          alt="Original image"
+                          className="absolute inset-0 h-full w-full object-cover"
+                          draggable={false}
+                        />
+                      ) : (
+                        renderLayerStack(true)
+                      )}
                       {isProcessing && (
                         <div className="pointer-events-none absolute inset-0 overflow-hidden">
                           <div className="absolute inset-0 bg-black/20" />
@@ -2428,6 +2482,120 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             }
           `}</style>
         </section>
+
+        {layers.length > 1 && (
+          <section className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            {/* Edit history */}
+            <div className="rounded-[28px] border border-white/10 bg-[#071123]/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/14 text-cyan-100">
+                  <History className="size-4" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-black text-white">{isZh ? '编辑历史' : 'Edit history'}</h2>
+                  <p className="text-[11px] text-cyan-100/42">{isZh ? '本项目的最近操作记录' : 'Recent actions in this project'}</p>
+                </div>
+              </div>
+              <div className="mt-4 max-h-[260px] space-y-2 overflow-auto pr-1">
+                {editHistory.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-center text-xs text-slate-400">
+                    {isZh ? '暂无操作记录，生成图层或编辑后会自动显示。' : 'No actions yet. Generate layers or edit to see history here.'}
+                  </p>
+                ) : (
+                  editHistory.map((entry, index) => (
+                    <div key={entry.id} className="flex items-center gap-3 rounded-2xl bg-white/[0.05] px-3 py-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/8 text-[10px] font-black text-cyan-100/70">
+                        {editHistory.length - index}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold text-white">{entry.action}</p>
+                        <p className="truncate text-[10px] text-slate-400">{entry.layer}</p>
+                      </div>
+                      <span className="shrink-0 text-[10px] font-semibold text-slate-500">
+                        {new Date(entry.time).toLocaleTimeString(isZh ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* How it works + FAQ */}
+            <div className="space-y-4">
+              <div className="rounded-[28px] border border-white/10 bg-[#071123]/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/14 text-cyan-100">
+                    <Lightbulb className="size-4" />
+                  </span>
+                  <div>
+                    <h2 className="text-sm font-black text-white">{isZh ? '工作原理' : 'How it works'}</h2>
+                    <p className="text-[11px] text-cyan-100/42">{selectedWorkflow.title}</p>
+                  </div>
+                </div>
+                <ol className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {selectedWorkflow.steps.map((step, index) => (
+                    <li key={index} className="flex items-start gap-3 rounded-2xl bg-white/[0.05] px-3 py-2.5">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[10px] font-black text-[#071123]">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs leading-5 text-slate-200">{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="rounded-[28px] border border-white/10 bg-[#071123]/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/14 text-cyan-100">
+                    <HelpCircle className="size-4" />
+                  </span>
+                  <h2 className="text-sm font-black text-white">{isZh ? '常见问题' : 'FAQ'}</h2>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {[
+                    {
+                      q: isZh ? '如何把图片拆成可编辑图层？' : 'How do I split an image into editable layers?',
+                      a: isZh
+                        ? '上传图片后点击 Generate，AI 会把产品、人物、文字、背景、阴影等拆成透明 RGBA 图层，每个图层都可以单独编辑。'
+                        : 'Upload an image and click Generate. The AI separates products, people, text, background, and shadows into transparent RGBA layers — each editable independently.',
+                    },
+                    {
+                      q: isZh ? '可以只修改一个物体而不影响其他部分吗？' : 'Can I edit only one object without affecting the rest?',
+                      a: isZh
+                        ? '可以。在左侧图层列表选中目标图层，输入修改需求即可只对该图层生效，其余图层保持不变。'
+                        : 'Yes. Select the target layer in the layer list, then describe the change — only that layer is edited and the rest stays untouched.',
+                    },
+                    {
+                      q: isZh ? '和 Remove.bg 之类的去背景工具有什么区别？' : 'How is this different from background removers like Remove.bg?',
+                      a: isZh
+                        ? '去背景工具只输出一个主体抠图；这里会把整张图拆成多个可编辑图层，还能对每个图层做 AI 提示词编辑、调色、替换和删除。'
+                        : 'Background removers return one cutout. Image Layered splits the whole image into multiple editable layers and lets you prompt-edit, recolor, replace, or delete each one.',
+                    },
+                    {
+                      q: isZh ? '编辑结果如何导出？' : 'How do I export the result?',
+                      a: isZh
+                        ? '点击右上角导出，可导出合成后的整图，也可以单独提取某个图层用于广告、店铺和设计稿。'
+                        : 'Click Export in the top-right to download the composited result, or extract a single layer for ads, stores, and design files.',
+                    },
+                  ].map((faq, index) => (
+                    <div key={index} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05]">
+                      <button
+                        onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                      >
+                        <span className="text-xs font-bold text-slate-100">{faq.q}</span>
+                        <ChevronDown className={`size-4 shrink-0 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180' : ''}`} />
+                      </button>
+                      {openFaq === index && (
+                        <p className="border-t border-white/8 px-4 py-3 text-xs leading-6 text-slate-300">{faq.a}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         <input
         type="file"
