@@ -31,6 +31,9 @@ Image Layered should feel like a focused professional AI editor: compact control
 ## Editor interaction rules
 
 - The canvas is the quietest and darkest region.
+- The canvas viewport has a stable height and width independent of the uploaded artwork ratio; artwork fits, pans, and zooms inside it.
+- AI Replace, Remove, Recolor, Rewrite, and Restyle appear as actions for the selected layer, never as separate editor products.
+- The left panel owns layer structure and locks; the right inspector owns object properties, preserve rules, and contextual AI actions; Ask AI spans the canvas footer.
 - The settings panel exposes only real choices: model, output layer count, and generate.
 - Primary action buttons are solid pink; secondary actions are restrained dark surfaces.
 - Motion lasts 180–420ms with ease-out curves. Use subtle entry, hover lift, and focus feedback only.

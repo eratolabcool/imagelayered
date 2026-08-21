@@ -23,6 +23,8 @@ export interface Layer {
   y: number;
   width: number;
   height: number;
+  rotation?: number;
+  blur?: number;
   opacity: number;
   visible: boolean;
   locked: boolean;
@@ -34,6 +36,12 @@ export interface Layer {
   editMetadata?: LayerEditMetadata;
   groupId?: string;
   groupName?: string;
+  preserve?: {
+    shape?: boolean;
+    logo?: boolean;
+    label?: boolean;
+    shadow?: boolean;
+  };
 }
 
 export interface CanvasState {

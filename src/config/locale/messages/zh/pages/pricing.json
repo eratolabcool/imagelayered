@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "价格方案 - Image Layered AI 海报编辑器",
-    "description": "可编辑 AI 图层、海报改图、物体替换和高清导出的简单定价。可按需购买积分，也可使用 Pro 订阅节省开支。",
+    "description": "按实际创作成果选择方案：分层项目、对象级修改、生产导出和可重复的活动素材制作。",
     "keywords": "AI海报编辑器价格, 可编辑AI图层价格, 图像分层费用, GPT图像编辑积分, Pro订阅"
   },
   "page": {
@@ -10,34 +10,34 @@
       "pricing": {
         "id": "pricing",
         "title": "选择您的方案",
-        "description": "按需购买积分，或使用 Pro 订阅节省开支。所有方案均包含无限 AI 分层、高清导出和商业使用授权。",
+        "description": "根据需要处理的项目和结果选择方案。积分仅在后台用于计算处理成本，不再作为主要购买语言。",
         "groups": [
           {
             "name": "one-time",
-            "title": "按需购买"
+            "title": "Starter 项目包"
           },
           {
             "name": "monthly",
-            "title": "月度订阅",
+            "title": "Creator 月度",
             "is_featured": true,
             "label": "最受欢迎"
           },
           {
             "name": "yearly",
-            "title": "年度订阅",
+            "title": "Studio 年度",
             "label": "立省 40%"
           }
         ],
         "items": [
           {
-            "title": "积分包",
-            "description": "灵活的按需购买选项。需要时购买积分。",
-            "features_title": "您将获得",
+            "title": "Starter 项目包",
+            "description": "适合偶尔处理商品图、海报和活动素材的一次性方案。",
+            "features_title": "可完成的工作",
             "features": [
-              "100 积分包",
-              "每次 AI 分层消耗 5 积分",
-              "可进行 20 次图像分层",
-              "积分永不过期",
+              "大约 20 次图像分层生成",
+              "专业 Canvas 与 Layer Inspector",
+              "AI 替换、移除、改色和重塑",
+              "项目保存与版本历史",
               "4K 高清导出",
               "无水印",
               "商业使用授权",
@@ -50,9 +50,9 @@
             "original_price": "",
             "unit": "/包",
             "is_featured": false,
-            "tip": "适合偶尔使用的用户。无定期收费。",
+            "tip": "适合偶尔处理项目，包含的使用量永不过期。",
             "button": {
-              "title": "购买积分",
+              "title": "开始项目",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
@@ -63,15 +63,15 @@
             "group": "one-time"
           },
           {
-            "title": "Pro 月度订阅",
-            "description": "常创作者的最佳选择。无限访问所有功能。",
+            "title": "Creator 月度",
+            "description": "适合每月持续制作分层素材和可控修改的创作者。",
             "label": "热门",
-            "features_title": "包含所有功能",
+            "features_title": "每月生产能力",
             "features": [
-              "每月 500 积分",
               "最多 100 次图像分层",
-              "积分自动续费",
-              "未用积分可累积",
+              "图层编辑与对象级 AI Actions",
+              "项目保存、历史和可恢复变体",
+              "品牌关键图层锁定",
               "优先处理队列",
               "4K 高清导出",
               "无水印",
@@ -85,9 +85,9 @@
             "original_price": "",
             "unit": "/月",
             "is_featured": true,
-            "tip": "随时取消。最灵活的选项。",
+            "tip": "适合稳定的创作工作，可随时取消。",
             "button": {
-              "title": "立即订阅",
+              "title": "选择 Creator",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
@@ -99,16 +99,16 @@
             "plan_name": "Pro"
           },
           {
-            "title": "Pro 年度订阅",
-            "description": "年付立省 40%。专业创作者的最佳选择。",
+            "title": "Studio 年度",
+            "description": "适合高频活动素材生产，并提供最低的月均成本。",
             "label": "超值",
-            "features_title": "包含月度所有功能，外加",
+            "features_title": "年度生产能力",
             "features": [
-              "每年 6000 积分",
-              "最多 1200 次图像分层",
-              "相当于每月 500 积分",
-              "积分自动续费",
-              "最大累积额度",
+              "每年最多 1200 次图像分层",
+              "图层编辑与对象级 AI Actions",
+              "项目保存、历史和可恢复变体",
+              "品牌关键图层锁定",
+              "最大包含使用量累积额度",
               "优先处理队列",
               "4K 高清导出",
               "无水印",
@@ -123,9 +123,9 @@
             "original_price": "$16.90",
             "unit": "/月",
             "is_featured": true,
-            "tip": "按年计费。每年节省 $68.40。",
+            "tip": "按年计费，适合持续生产的团队。",
             "button": {
-              "title": "订阅并省钱",
+              "title": "选择 Studio",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },

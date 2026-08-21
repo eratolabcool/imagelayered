@@ -24,7 +24,7 @@
           "icon": "DollarSign"
         },
         {
-          "title": "AI",
+          "title": "Studio",
           "icon": "RiRobot2Line",
           "children": [
             {
@@ -32,28 +32,16 @@
               "description": "Split any image into editable layers",
               "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
-            },
-            {
-              "title": "AI Replace",
-              "description": "Replace selected objects without rebuilding the image",
-              "url": "/qwenimagelayered?tool=replace",
-              "icon": "RiImageEditLine"
-            },
-            {
-              "title": "AI Expand",
-              "description": "Expand a visual into a larger composition",
-              "url": "/qwenimagelayered?tool=expand",
-              "icon": "RiExpandDiagonalLine"
-            },
-            {
-              "title": "AI Remove",
-              "description": "Remove selected objects and restore the scene",
-              "url": "/qwenimagelayered?tool=remove",
-              "icon": "RiEraserLine"
-            },
+            }
+          ]
+        },
+        {
+          "title": "Experiments",
+          "icon": "FlaskConical",
+          "children": [
             {
               "title": "AI Lookbook",
-              "description": "Build your personal fashion identity from two photos",
+              "description": "Experimental personal fashion generator",
               "url": "/ai-lookbook",
               "icon": "RiShirtLine"
             }

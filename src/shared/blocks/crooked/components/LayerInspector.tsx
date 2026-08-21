@@ -14,6 +14,10 @@ import {
   Unlock,
   Wand2,
   Layers3,
+  RotateCw,
+  ShieldCheck,
+  Type,
+  ImageIcon,
 } from 'lucide-react';
 
 import { Layer, LayerBlendMode, ToolType } from '../types';
@@ -41,6 +45,7 @@ interface LayerInspectorProps {
   onDuplicate: () => void;
   onDownload: () => void;
   onDelete: () => void;
+  onLockOthers: () => void;
 }
 
 type InspectorTab = 'properties' | 'ai' | 'history';
@@ -61,8 +66,38 @@ const LayerInspector = ({
   onDuplicate,
   onDownload,
   onDelete,
+  onLockOthers,
 }: LayerInspectorProps) => {
   const [tab, setTab] = useState<InspectorTab>('properties');
+  const normalizedName = layer.name.toLowerCase();
+  const layerKind = layer.type === 'text' || /text|headline|title|copy|typography|文字|标题|文案/.test(normalizedName)
+    ? 'text'
+    : /background|backdrop|scene|背景/.test(normalizedName)
+      ? 'background'
+      : 'object';
+  const KindIcon = layerKind === 'text' ? Type : layerKind === 'background' ? ImageIcon : Layers3;
+  const kindLabel = layerKind === 'text'
+    ? (isZh ? '文字对象' : 'Text object')
+    : layerKind === 'background'
+      ? (isZh ? '背景对象' : 'Background object')
+      : (isZh ? '图像对象' : 'Image object');
+  const aiActions = layerKind === 'text'
+    ? [
+        { id: 'replace' as ToolType, label: isZh ? '重写' : 'Rewrite', icon: Wand2 },
+        { id: 'recolor' as ToolType, label: isZh ? '改色' : 'Recolor', icon: Palette },
+        { id: 'remove' as ToolType, label: isZh ? '移除' : 'Remove', icon: Trash2 },
+      ]
+    : layerKind === 'background'
+      ? [
+          { id: 'replace' as ToolType, label: isZh ? '替换' : 'Replace', icon: Wand2 },
+          { id: 'recolor' as ToolType, label: isZh ? '重塑' : 'Restyle', icon: Palette },
+          { id: 'remove' as ToolType, label: isZh ? '移除' : 'Remove', icon: Trash2 },
+        ]
+      : [
+          { id: 'replace' as ToolType, label: isZh ? '替换' : 'Replace', icon: Wand2 },
+          { id: 'remove' as ToolType, label: isZh ? '移除' : 'Remove', icon: Trash2 },
+          { id: 'recolor' as ToolType, label: isZh ? '重塑' : 'Restyle', icon: Palette },
+        ];
   const tabs: Array<{ id: InspectorTab; label: string }> = [
     { id: 'properties', label: isZh ? '属性' : 'Properties' },
     { id: 'ai', label: 'AI' },
@@ -93,14 +128,9 @@ const LayerInspector = ({
             aria-label={isZh ? '图层名称' : 'Layer name'}
             className="w-full truncate rounded-md bg-transparent px-1 py-0.5 text-sm font-extrabold text-white outline-none hover:bg-white/[0.05] focus:bg-[#0f0d13] focus:ring-2 focus:ring-[#ff6b96]"
           />
-          <p className="mt-1 truncate text-[11px] text-[#77717f]">
-            {layer.maskUrl
-              ? isZh
-                ? '可编辑蒙版已就绪'
-                : 'Editable mask ready'
-              : isZh
-                ? '图像图层'
-                : 'Image layer'}
+          <p className="mt-1 flex items-center gap-1.5 truncate text-[11px] text-[#9993a3]">
+            <KindIcon className="size-3" />
+            {kindLabel}{layer.maskUrl ? (isZh ? ' · 蒙版就绪' : ' · Mask ready') : ''}
           </p>
         </div>
         <button
@@ -188,6 +218,19 @@ const LayerInspector = ({
                   </label>
                 ))}
               </div>
+              <label className="mt-2 flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2.5">
+                <RotateCw className="size-3.5 text-[#9993a3]" />
+                <span className="text-[10px] font-bold text-[#9993a3]">{isZh ? '旋转' : 'Rotate'}</span>
+                <input
+                  type="number"
+                  min="-360"
+                  max="360"
+                  value={Math.round(layer.rotation ?? 0)}
+                  onChange={(event) => onUpdate({ rotation: Number(event.target.value) || 0 })}
+                  className="min-w-0 flex-1 bg-transparent text-right text-xs font-bold text-white outline-none"
+                />
+                <span className="text-[10px] text-[#77717f]">°</span>
+              </label>
             </section>
 
             <section>
@@ -244,6 +287,22 @@ const LayerInspector = ({
                     ? '锁定图层'
                     : 'Lock layer'}
               </button>
+              {layerKind === 'background' && (
+                <label className="mt-3 block rounded-xl bg-white/[0.045] px-3 py-2.5">
+                  <span className="flex items-center justify-between text-[10px] font-bold text-[#9993a3]">
+                    <span>{isZh ? '背景模糊' : 'Background blur'}</span>
+                    <span>{Math.round(layer.blur ?? 0)}px</span>
+                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="40"
+                    value={layer.blur ?? 0}
+                    onChange={(event) => onUpdate({ blur: Number(event.target.value) })}
+                    className="mt-2 w-full accent-[#f33b72]"
+                  />
+                </label>
+              )}
             </section>
 
             {(layer.maskUrl || layer.editMetadata || layer.groupName) && (
@@ -307,32 +366,19 @@ const LayerInspector = ({
 
         {tab === 'ai' && (
           <div>
-            <h3 className="text-xs font-extrabold text-[#dee5ff]">
-              {isZh ? '局部 AI 编辑' : 'Local AI edit'}
-            </h3>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-xs font-extrabold text-white">
+                {isZh ? '对象 AI 操作' : 'AI actions'}
+              </h3>
+              <span className="rounded-md bg-[#f33b72]/12 px-2 py-1 text-[9px] font-bold text-[#ff8aab]">{kindLabel}</span>
+            </div>
             <p className="mt-2 text-xs leading-5 text-cyan-100/58">
               {isZh
-                ? '生成独立变体图层，原图层会保留并隐藏，可随时恢复。'
-                : 'Create a separate variation while retaining the hidden original for recovery.'}
+                ? '所有 AI 操作只作用于当前对象，并生成可恢复的独立变体。'
+                : 'Every AI action targets this object and creates a recoverable variation.'}
             </p>
             <div className="mt-4 grid grid-cols-3 gap-2">
-              {[
-                {
-                  id: 'replace' as ToolType,
-                  label: isZh ? '替换' : 'Replace',
-                  icon: Wand2,
-                },
-                {
-                  id: 'recolor' as ToolType,
-                  label: isZh ? '调色' : 'Recolor',
-                  icon: Palette,
-                },
-                {
-                  id: 'remove' as ToolType,
-                  label: isZh ? '移除' : 'Remove',
-                  icon: Trash2,
-                },
-              ].map((tool) => {
+              {aiActions.map((tool) => {
                 const Icon = tool.icon;
                 return (
                   <button
@@ -352,6 +398,39 @@ const LayerInspector = ({
                 );
               })}
             </div>
+            <button
+              type="button"
+              onClick={onLockOthers}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#f33b72]/20 bg-[#f33b72]/8 px-3 py-2.5 text-xs font-bold text-[#ff9ab7] outline-none transition-colors hover:bg-[#f33b72]/14 focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+            >
+              <ShieldCheck className="size-4" />
+              {isZh ? '锁定其他图层，只修改当前对象' : 'Lock others, edit only this object'}
+            </button>
+            {layerKind === 'object' && (
+              <section className="mt-4 rounded-xl bg-white/[0.04] p-3">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.12em] text-[#9993a3]">
+                  {isZh ? '保留特征' : 'Preserve'}
+                </h4>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {([
+                    ['shape', isZh ? '轮廓' : 'Shape'],
+                    ['logo', 'Logo'],
+                    ['label', isZh ? '标签' : 'Label'],
+                    ['shadow', isZh ? '阴影' : 'Shadow'],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg bg-white/[0.045] px-2.5 py-2 text-[10px] font-bold text-[#d8d2dc]">
+                      <input
+                        type="checkbox"
+                        checked={layer.preserve?.[key] ?? false}
+                        onChange={(event) => onUpdate({ preserve: { ...layer.preserve, [key]: event.target.checked } })}
+                        className="accent-[#f33b72]"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </section>
+            )}
             <textarea
               value={editInstruction}
               onChange={(event) => onInstructionChange(event.target.value)}

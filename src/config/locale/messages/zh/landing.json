@@ -24,7 +24,7 @@
           "icon": "DollarSign"
         },
         {
-          "title": "AI",
+          "title": "Studio",
           "icon": "RiRobot2Line",
           "children": [
             {
@@ -32,28 +32,16 @@
               "description": "将任意图片拆分成可编辑图层",
               "url": "/qwenimagelayered",
               "icon": "RiImage2Line"
-            },
-            {
-              "title": "AI Replace",
-              "description": "只替换选中的物体，保留原图构图",
-              "url": "/qwenimagelayered?tool=replace",
-              "icon": "RiImageEditLine"
-            },
-            {
-              "title": "AI Expand",
-              "description": "扩展图片画面和构图",
-              "url": "/qwenimagelayered?tool=expand",
-              "icon": "RiExpandDiagonalLine"
-            },
-            {
-              "title": "AI Remove",
-              "description": "移除选中物体并自然修复画面",
-              "url": "/qwenimagelayered?tool=remove",
-              "icon": "RiEraserLine"
-            },
+            }
+          ]
+        },
+        {
+          "title": "实验功能",
+          "icon": "FlaskConical",
+          "children": [
             {
               "title": "AI Lookbook",
-              "description": "用两张照片建立你的个人时尚身份",
+              "description": "实验性的个人时尚生成器",
               "url": "/ai-lookbook",
               "icon": "RiShirtLine"
             }

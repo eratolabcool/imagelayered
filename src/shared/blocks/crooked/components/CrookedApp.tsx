@@ -571,8 +571,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     const baseLayer = layers[0];
     if (!viewport || !baseLayer) return;
 
-    const rect = viewport.parentElement?.getBoundingClientRect() ?? viewport.getBoundingClientRect();
-    const padding = 28;
+    const rect = viewport.getBoundingClientRect();
+    const padding = 64;
     const availableWidth = Math.max(160, rect.width - padding * 2);
     const availableHeight = Math.max(160, rect.height - padding * 2);
     const nextZoom = Math.min(
@@ -802,12 +802,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       setLayers(prev => prev.map(l =>
         l.id === draggingLayerId
-          ? { ...l, x: l.x + deltaX, y: l.y + deltaY }
+          ? activeTool === 'scale'
+            ? { ...l, width: Math.max(24, l.width + deltaX), height: Math.max(24, l.height + deltaY) }
+            : { ...l, x: l.x + deltaX, y: l.y + deltaY }
           : l
       ));
       setLastMousePos({ x: e.clientX, y: e.clientY });
     }
-  }, [isDraggingCanvas, lastMousePos, zoom, draggingLayerId]);
+  }, [activeTool, isDraggingCanvas, lastMousePos, zoom, draggingLayerId]);
 
   const handleMouseUp = useCallback(() => {
     setIsDraggingCanvas(false);
@@ -852,6 +854,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (layers.length > 1) {
+      handleCreateProjectSnapshot(isZh ? '更换图片前' : 'Before changing image');
+    }
 
     const previewUrl = URL.createObjectURL(file);
     placeImageLayer(previewUrl, 1024, 1024, file.name || 'Uploaded image');
@@ -1438,10 +1444,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       // Create a layer for each generated image with correct dimensions
       const newLayers: Layer[] = layerImages.map((img: any, idx: number) => {
         const dims = layerDimensions[idx];
+        const layerName = names[idx] || `${isSeedreamDesignLayering ? 'Design' : 'Image'} Layer ${idx + 1}`;
         return {
           id: crypto.randomUUID(),
-          name: names[idx] || `${isSeedreamDesignLayering ? 'Design' : 'Image'} Layer ${idx + 1}`,
-          type: 'image',
+          name: layerName,
+          type: /text|headline|copy|typography/i.test(layerName) ? 'text' : 'image',
           url: img.imageUrl,
           x: target.x,
           y: target.y,
@@ -1529,6 +1536,21 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       const scene = editTool === 'recolor' ? 'image-recolor' :
                     editTool === 'replace' ? 'image-replace' :
                     'image-remove';
+      const preserveParts = Object.entries(target.preserve ?? {})
+        .filter(([, enabled]) => enabled)
+        .map(([part]) => part);
+      const lockedLayerNames = layers
+        .filter((layer) => layer.locked && layer.id !== target.id)
+        .map((layer) => layer.name)
+        .slice(0, 12);
+      const effectiveInstruction = [
+        instruction.trim(),
+        preserveParts.length > 0 ? `Preserve the object's ${preserveParts.join(', ')}.` : '',
+        lockedLayerNames.length > 0
+          ? `Keep these locked elements unchanged: ${lockedLayerNames.join(', ')}.`
+          : '',
+        'Keep the original composition and every unselected element unchanged.',
+      ].filter(Boolean).join('\n');
 
       if (!target.url) {
         throw new Error('Invalid image data. Please upload a valid image.');
@@ -1593,7 +1615,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         body: JSON.stringify({
           mediaType: 'image',
           scene,
-          prompt: instruction,
+          prompt: effectiveInstruction,
           options: {
             image_urls: [imageUrl],
             image_size: 'auto',
@@ -1638,7 +1660,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           sourceLayerId: target.id,
           editMetadata: {
             tool: editTool,
-            prompt: instruction,
+            prompt: effectiveInstruction,
             createdAt: Date.now(),
             sourceLayerId: target.id,
           },
@@ -1801,33 +1823,29 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             ? 'source-over'
             : (layer.blendMode ?? 'source-over');
 
-          // When using original size, use the image's natural dimensions
-          // Calculate scale factor based on baseLayer's natural size vs stored size
+          // Apply the stored object geometry in export coordinates.
           if (settings.useOriginalSize) {
-            // Calculate the ratio between natural and stored dimensions for base layer
             const baseScaleX = baseNaturalWidth / baseLayer.width;
             const baseScaleY = baseNaturalHeight / baseLayer.height;
-
-            // Apply this scale to position and size
-            ctx.drawImage(
-              img,
-              layer.x * baseScaleX,
-              layer.y * baseScaleY,
-              layer.width * baseScaleX,
-              layer.height * baseScaleY
-            );
+            const drawX = layer.x * baseScaleX;
+            const drawY = layer.y * baseScaleY;
+            const drawWidth = layer.width * baseScaleX;
+            const drawHeight = layer.height * baseScaleY;
+            ctx.translate(drawX + drawWidth / 2, drawY + drawHeight / 2);
+            ctx.rotate(((layer.rotation ?? 0) * Math.PI) / 180);
+            ctx.filter = layer.blur ? `blur(${layer.blur * Math.max(baseScaleX, baseScaleY)}px)` : 'none';
+            ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
           } else {
-            // Scale to match target export size
             const scaleX = targetWidth / baseLayer.width;
             const scaleY = targetHeight / baseLayer.height;
-
-            ctx.drawImage(
-              img,
-              layer.x * scaleX,
-              layer.y * scaleY,
-              layer.width * scaleX,
-              layer.height * scaleY
-            );
+            const drawX = layer.x * scaleX;
+            const drawY = layer.y * scaleY;
+            const drawWidth = layer.width * scaleX;
+            const drawHeight = layer.height * scaleY;
+            ctx.translate(drawX + drawWidth / 2, drawY + drawHeight / 2);
+            ctx.rotate(((layer.rotation ?? 0) * Math.PI) / 180);
+            ctx.filter = layer.blur ? `blur(${layer.blur * Math.max(scaleX, scaleY)}px)` : 'none';
+            ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
           }
 
           // Restore context state
@@ -2002,6 +2020,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       selectedLayerIds.has(layer.id) ? { ...layer, ...changes } : layer
     )));
   }, [selectedLayerIds]);
+
+  const handleLockOtherLayers = useCallback(() => {
+    if (!selectedLayerId) return;
+    setLayers((prev) => prev.map((layer) => ({
+      ...layer,
+      locked: layer.id !== selectedLayerId,
+    })));
+    const targetName = layers.find((layer) => layer.id === selectedLayerId)?.name ?? '';
+    pushHistory(isZh ? '锁定其他图层' : 'Lock other layers', targetName);
+    toast.success(isZh ? '其他图层已锁定，AI 只会修改当前对象。' : 'Other layers are locked. AI will edit only the selected object.');
+  }, [isZh, layers, pushHistory, selectedLayerId]);
 
   const handleGroupSelectedLayers = useCallback(() => {
     if (selectedLayerIds.size < 2) return;
@@ -2209,6 +2238,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             opacity: layer.opacity,
             zIndex: layer.zIndex,
             mixBlendMode: layer.blendMode ?? 'normal',
+            transform: `rotate(${layer.rotation ?? 0}deg)`,
+            transformOrigin: 'center center',
+            filter: layer.blur ? `blur(${layer.blur}px)` : undefined,
             backgroundImage: `url(${layer.url})`,
             backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
             backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
@@ -2222,7 +2254,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             e.stopPropagation();
             selectLayer(layer.id, e.metaKey || e.ctrlKey || e.shiftKey);
           } : undefined}
-        />
+        >
+          {interactive && selectedLayerIds.has(layer.id) && activeTool === 'scale' && (
+            <>
+              <span className="pointer-events-none absolute -left-1.5 -top-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
+              <span className="pointer-events-none absolute -right-1.5 -top-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
+              <span className="pointer-events-none absolute -bottom-1.5 -left-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
+              <span className="pointer-events-none absolute -bottom-1.5 -right-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
+            </>
+          )}
+        </div>
       );
     });
   };
@@ -2412,6 +2453,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
               {layers.length > 0 && (
                 <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-[#d8d2dc] outline-none transition-colors hover:bg-white/[0.09] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                >
+                  <UploadCloud className="size-4" />
+                  <span>{isZh ? '更换图片' : 'Change image'}</span>
+                </button>
+              )}
+              {layers.length > 0 && (
+                <button
                   onClick={() => setIsShareModalOpen(true)}
                   className="flex items-center gap-2 rounded-xl bg-[#f33b72] px-4 py-2 text-xs font-bold text-white shadow-[0_12px_30px_rgba(243,59,114,0.22)] transition-all hover:bg-[#ff4f83] active:scale-95"
                 >
@@ -2457,7 +2508,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               {baseLayer ? (
                 <div
                   ref={mainRef}
-                  className="canvas-container relative flex min-h-[520px] w-full items-start justify-center overflow-auto rounded-2xl border border-white/[0.055] bg-[#0a090c] p-4"
+                  className="canvas-container relative flex h-[min(720px,calc(100vh-190px))] min-h-[520px] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/[0.055] bg-[#0a090c] p-12"
                 >
                   <div
                     className="transition-[width,height] duration-200 ease-out"
@@ -2523,8 +2574,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               )}
             </div>
           ) : (
-            <div className={`grid min-h-[calc(100vh-190px)] flex-1 gap-3 p-4 md:p-5 ${editorGridClass}`}>
-              <aside className={`flex min-h-[760px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121016] shadow-[0_22px_68px_rgba(0,0,0,0.28)] ${isLayerSidebarCollapsed ? 'items-center p-2' : 'p-3'}`}>
+            <div className="flex min-w-0 flex-1 flex-col">
+            <div className={`grid flex-1 gap-3 p-4 md:p-5 ${editorGridClass}`}>
+              <aside className={`flex h-[min(760px,calc(100vh-190px))] min-h-[620px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121016] shadow-[0_22px_68px_rgba(0,0,0,0.28)] ${isLayerSidebarCollapsed ? 'items-center p-2' : 'p-3'}`}>
                 {isLayerSidebarCollapsed ? (
                   <button
                     type="button"
@@ -2659,7 +2711,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                                   : (isZh ? '图像图层' : 'image layer')}
                           </p>
                         </div>
-                        {layer.locked && <Lock className="size-3 shrink-0 opacity-45" />}
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setLayers((prev) => prev.map((item) => item.id === layer.id ? { ...item, locked: !item.locked } : item));
+                          }}
+                          className={`flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors ${layer.locked ? 'bg-[#f33b72]/12 text-[#ff8aab]' : 'text-[#5f5966] hover:bg-white/[0.06] hover:text-[#d8d2dc]'}`}
+                          aria-label={layer.locked ? (isZh ? '解锁图层' : 'Unlock layer') : (isZh ? '锁定图层' : 'Lock layer')}
+                        >
+                          {layer.locked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />}
+                        </button>
                         <button
                           type="button"
                           onClick={(event) => {
@@ -2691,10 +2753,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               <main
                 ref={mainRef}
                 onMouseDown={handleMouseDown}
-                className={`canvas-container relative flex min-h-[760px] items-start justify-center overflow-auto rounded-2xl border border-white/[0.06] bg-[#0a090c] p-5 pb-24 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                className={`canvas-container relative flex h-[min(760px,calc(100vh-190px))] min-h-[620px] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a090c] p-16 pb-24 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                style={{
+                  backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.025) 25%,transparent 25%),linear-gradient(-45deg,rgba(255,255,255,.025) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,rgba(255,255,255,.025) 75%),linear-gradient(-45deg,transparent 75%,rgba(255,255,255,.025) 75%)',
+                  backgroundSize: '24px 24px',
+                  backgroundPosition: '0 0,0 12px,12px -12px,-12px 0',
+                }}
               >
-                <div className="pointer-events-none absolute left-5 top-4 z-20 rounded-full border border-white/10 bg-black/26 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100/56">
-                  {isZh ? '预览' : 'Preview'}
+                <div className="pointer-events-none absolute left-4 top-4 z-20 rounded-lg border border-white/[0.07] bg-[#17141c]/95 px-3 py-1.5 text-[10px] font-bold text-[#9993a3]">
+                  {isZh ? '画布' : 'Canvas'} · {baseLayer?.width ?? 0} × {baseLayer?.height ?? 0}
                 </div>
                 <div className="pointer-events-auto absolute right-4 top-4 z-20 flex gap-1 rounded-full border border-white/10 bg-black/34 p-1 backdrop-blur-md">
                   {[
@@ -2706,7 +2773,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       onClick={() => setShowOriginal(item.key === 'original')}
                       className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-colors ${
                         (item.key === 'original') === showOriginal
-                          ? 'bg-[linear-gradient(135deg,#89a2ff,#4de4ff)] text-[#071123]'
+                          ? 'bg-[#f33b72] text-white'
                           : 'text-slate-300/70 hover:text-white'
                       }`}
                     >
@@ -2714,13 +2781,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                     </button>
                   ))}
                 </div>
-                <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 gap-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-[#191620] p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)]">
+                <div className="pointer-events-auto absolute bottom-4 left-4 z-30 flex gap-1 rounded-xl border border-white/[0.07] bg-[#191620] p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)]">
                   {[
                     { tool: 'select' as ToolType, icon: MousePointer, label: isZh ? '选择' : 'Select' },
                     { tool: 'move' as ToolType, icon: Hand, label: isZh ? '移动' : 'Move' },
-                    { tool: 'replace' as ToolType, icon: Wand2, label: isZh ? '替换' : 'Replace' },
-                    { tool: 'remove' as ToolType, icon: Eraser, label: isZh ? '移除' : 'Remove' },
-                    { tool: 'recolor' as ToolType, icon: Palette, label: isZh ? '调色' : 'Recolor' },
                     { tool: 'scale' as ToolType, icon: Scaling, label: isZh ? '缩放' : 'Scale' },
                   ].map((item) => {
                     const Icon = item.icon;
@@ -2741,6 +2805,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       </button>
                     );
                   })}
+                </div>
+                <div className="pointer-events-auto absolute bottom-4 right-4 z-30 flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#191620] p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)]">
+                  <button type="button" onClick={() => setZoom((value) => Math.max(0.1, value - 0.1))} className="flex size-8 items-center justify-center rounded-lg text-sm font-bold text-[#9993a3] hover:bg-white/[0.07] hover:text-white" aria-label={isZh ? '缩小画布' : 'Zoom out'}>−</button>
+                  <button type="button" onClick={fitCanvasToImage} className="min-w-14 rounded-lg px-2 py-2 text-[10px] font-bold text-[#d8d2dc] hover:bg-white/[0.07]" aria-label={isZh ? '适应画布' : 'Fit canvas'}>{Math.round(zoom * 100)}%</button>
+                  <button type="button" onClick={() => setZoom((value) => Math.min(4, value + 0.1))} className="flex size-8 items-center justify-center rounded-lg text-sm font-bold text-[#9993a3] hover:bg-white/[0.07] hover:text-white" aria-label={isZh ? '放大画布' : 'Zoom in'}>+</button>
                 </div>
                 {baseLayer && (
                   <div
@@ -2780,7 +2849,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 )}
               </main>
               {isInspectorCollapsed ? (
-                <aside className="flex min-h-[760px] items-start justify-center rounded-2xl border border-white/[0.06] bg-[#121016] p-2 md:col-span-2 xl:col-span-1">
+                <aside className="flex h-[min(760px,calc(100vh-190px))] min-h-[620px] items-start justify-center rounded-2xl border border-white/[0.06] bg-[#121016] p-2 md:col-span-2 xl:col-span-1">
                   <button
                     type="button"
                     onClick={() => setIsInspectorCollapsed(false)}
@@ -2792,7 +2861,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   </button>
                 </aside>
               ) : selectedLayer ? (
-                <div className="relative min-h-[760px] md:col-span-2 xl:col-span-1">
+                <div className="relative h-[min(760px,calc(100vh-190px))] min-h-[620px] md:col-span-2 xl:col-span-1">
                   <button
                     type="button"
                     onClick={() => setIsInspectorCollapsed(true)}
@@ -2818,9 +2887,41 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   onDuplicate={() => handleDuplicateLayer(selectedLayer.id)}
                   onDownload={() => handleDownloadLayer(selectedLayer.id)}
                   onDelete={handleDeleteSelectedLayer}
+                  onLockOthers={handleLockOtherLayers}
                 />
                 </div>
               ) : null}
+            </div>
+            <div className="mx-4 mb-4 flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#17141c] p-2 shadow-[0_18px_54px_rgba(0,0,0,0.34)] md:mx-5 md:mb-5">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff8aab]">
+                <Sparkles className="size-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <label htmlFor="studio-ai-instruction" className="sr-only">{isZh ? '向 AI 描述如何修改当前图层' : 'Ask AI how to edit the selected layer'}</label>
+                <input
+                  id="studio-ai-instruction"
+                  value={editInstruction}
+                  onChange={(event) => setEditInstruction(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && editInstruction.trim() && !isProcessing && !selectedLayer?.locked) {
+                      handleEditAction(editInstruction);
+                    }
+                  }}
+                  placeholder={isZh ? `向 AI 描述如何修改“${selectedLayer?.name ?? '当前图层'}”，其他图层保持不变` : `Ask AI to edit “${selectedLayer?.name ?? 'selected layer'}” while keeping everything else unchanged`}
+                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#625c68]"
+                />
+                <p className="mt-1 text-[10px] text-[#77717f]">{isZh ? '锁定图层与保留特征会自动加入 AI 指令' : 'Layer locks and preserved features are automatically enforced'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleEditAction(editInstruction)}
+                disabled={!editInstruction.trim() || isProcessing || !selectedLayer || selectedLayer.locked}
+                className="flex min-h-10 items-center gap-2 rounded-xl bg-[#f33b72] px-4 text-xs font-extrabold text-white outline-none transition-colors hover:bg-[#ff4f83] focus-visible:ring-2 focus-visible:ring-[#ff9ab7] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Sparkles className="size-4" />
+                {isProcessing ? (isZh ? '生成中' : 'Generating') : (isZh ? '生成' : 'Generate')}
+              </button>
+            </div>
             </div>
           )}
 

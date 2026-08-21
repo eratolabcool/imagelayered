@@ -1,6 +1,7 @@
 import { setRequestLocale } from 'next-intl/server';
 
 import { getMetadata } from '@/shared/lib/seo';
+import ImageLayeredSeoGuide from '@/shared/blocks/crooked/components/ImageLayeredSeoGuide';
 
 import LandingHeroExperience from './LandingHeroExperience';
 
@@ -19,5 +20,10 @@ export default async function LandingPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  return <LandingHeroExperience />;
+  return (
+    <>
+      <LandingHeroExperience />
+      <ImageLayeredSeoGuide locale={locale} surface="home" />
+    </>
+  );
 }

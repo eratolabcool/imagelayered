@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 
+import ImageLayeredSeoGuide from '@/shared/blocks/crooked/components/ImageLayeredSeoGuide';
+
 import CrookedAppWrapper from './CrookedAppWrapper';
 
 export const metadata: Metadata = {
@@ -32,7 +34,13 @@ const jsonLd = {
     'Upload a poster, automatically split it into editable AI layers, edit selected objects by prompt, and export a redesigned visual.',
 };
 
-export default function QwenImageLayeredPage() {
+export default async function QwenImageLayeredPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+
   return (
     <>
       <script
@@ -40,6 +48,7 @@ export default function QwenImageLayeredPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <CrookedAppWrapper />
+      <ImageLayeredSeoGuide locale={locale} surface="tool" />
     </>
   );
 }

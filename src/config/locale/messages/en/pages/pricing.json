@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "Pricing - Image Layered AI Poster Editor",
-    "description": "Simple pricing for editable AI layers, poster edits, object replacement, and high-resolution exports. Buy credits as needed or save with Pro subscriptions.",
+    "description": "Plans for real creative output: layered projects, controlled object edits, production exports, and repeatable campaign work.",
     "keywords": "AI poster editor pricing, editable AI layers pricing, image layer decomposition cost, GPT image editing credits, Pro subscription"
   },
   "page": {
@@ -10,34 +10,34 @@
       "pricing": {
         "id": "pricing",
         "title": "Choose Your Plan",
-        "description": "Pay as you go with credits, or save with Pro subscriptions. All plans include unlimited AI layer decomposition, high-resolution export, and commercial use license.",
+        "description": "Choose the amount of layered production you need. Usage is shown as projects and results; credits remain behind the scenes for processing.",
         "groups": [
           {
             "name": "one-time",
-            "title": "Pay As You Go"
+            "title": "Starter Pack"
           },
           {
             "name": "monthly",
-            "title": "Monthly Subscription",
+            "title": "Creator Monthly",
             "is_featured": true,
             "label": "Most Popular"
           },
           {
             "name": "yearly",
-            "title": "Yearly Subscription",
+            "title": "Studio Yearly",
             "label": "Save 40%"
           }
         ],
         "items": [
           {
-            "title": "Credits Pack",
-            "description": "Flexible pay-as-you-go option. Buy credits when you need them.",
-            "features_title": "What You Get",
+            "title": "Starter Project Pack",
+            "description": "A one-time pack for occasional product, poster, and campaign revisions.",
+            "features_title": "Production capacity",
             "features": [
-              "100 Credits per pack",
-              "5 credits per AI decomposition",
-              "20 image decompositions total",
-              "Credits never expire",
+              "About 20 layer generations",
+              "Professional layer canvas and inspector",
+              "AI Replace, Remove, Recolor, and Restyle actions",
+              "Project save and version history",
               "4K high-resolution export",
               "No watermarks",
               "Commercial use license",
@@ -50,9 +50,9 @@
             "original_price": "",
             "unit": "/pack",
             "is_featured": false,
-            "tip": "Perfect for occasional users. No recurring charges.",
+            "tip": "Best for occasional projects. Included usage never expires.",
             "button": {
-              "title": "Buy Credits",
+              "title": "Start a Project",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
@@ -63,15 +63,15 @@
             "group": "one-time"
           },
           {
-            "title": "Pro Monthly",
-            "description": "Best value for regular creators. Unlimited access to all features.",
+            "title": "Creator Monthly",
+            "description": "For creators producing layered assets and controlled revisions every month.",
             "label": "Popular",
-            "features_title": "Everything Included",
+            "features_title": "Monthly production capacity",
             "features": [
-              "500 credits per month",
-              "Up to 100 image decompositions",
-              "Credits renew automatically",
-              "Unused credits roll over",
+              "Up to 100 layer generations",
+              "Layer editing and object-level AI actions",
+              "Project save, history, and recoverable variations",
+              "Brand-critical layer locks",
               "Priority processing queue",
               "4K high-resolution export",
               "No watermarks",
@@ -85,9 +85,9 @@
             "original_price": "",
             "unit": "/month",
             "is_featured": true,
-            "tip": "Cancel anytime. Most flexible option.",
+            "tip": "Built for regular creative work. Cancel anytime.",
             "button": {
-              "title": "Subscribe Now",
+              "title": "Choose Creator",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },
@@ -99,16 +99,16 @@
             "plan_name": "Pro"
           },
           {
-            "title": "Pro Yearly",
-            "description": "Save 40% with annual billing. Best for serious creators.",
+            "title": "Studio Yearly",
+            "description": "For high-volume campaign production with the lowest monthly cost.",
             "label": "Best Value",
-            "features_title": "Everything in Monthly, Plus",
+            "features_title": "Annual production capacity",
             "features": [
-              "6000 credits per year",
-              "Up to 1200 image decompositions",
-              "Equivalent to 500 credits/month",
-              "Credits renew automatically",
-              "Maximum rollover allowance",
+              "Up to 1200 layer generations per year",
+              "Layer editing and object-level AI actions",
+              "Project save, history, and recoverable variations",
+              "Brand-critical layer locks",
+              "Maximum included usage rollover",
               "Priority processing queue",
               "4K high-resolution export",
               "No watermarks",
@@ -123,9 +123,9 @@
             "original_price": "$16.90",
             "unit": "/month",
             "is_featured": true,
-            "tip": "Billed annually. Save $68.40 per year.",
+            "tip": "Billed annually. Best value for production teams.",
             "button": {
-              "title": "Subscribe & Save",
+              "title": "Choose Studio",
               "url": "/qwenimagelayered",
               "icon": "RiFlashlightFill"
             },

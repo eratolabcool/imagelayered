@@ -16,7 +16,7 @@ Image Layered turns a flat image into independently visible and editable layers.
 
 ## Positioning
 
-Unlike a background remover or a full-image generator, Image Layered recovers a multi-layer working structure and lets the user protect the parts that already work while changing only the selected visual element.
+Unlike a background remover or a full-image generator, Image Layered is the Figma/Photoshop-style workspace for post-generative AI editing: it recovers a multi-layer working structure and lets the user protect the parts that already work while changing only the selected visual element.
 
 ## Operating Context
 
@@ -27,6 +27,8 @@ The core workflow is upload, choose a decomposition workflow or model, generate 
 - Accepts image uploads and decomposes them with supported AI models.
 - Supports poster, product, character, text, and general semantic-layer workflows.
 - Provides layer visibility, opacity, duplication, solo, extraction, prompt editing, comparison, project saving, sharing, and export.
+- Treats layers as objects with position, size, rotation, opacity, blend, lock, and contextual AI actions.
+- Carries layer locks and preserve rules into AI instructions so approved brand elements remain stable.
 - The main editor must remain usable on desktop and mobile web.
 - Existing authentication, credits, model APIs, project persistence, sharing, export, localization, and SEO behavior must be preserved.
 
@@ -49,6 +51,8 @@ The product name is Image Layered. Its voice is direct, capable, and workflow-or
 - Preserve successful parts of an image and localize change to the selected layer.
 - Reveal advanced model and layer controls progressively.
 - Give returning users fast access to projects, workflows, and guidance.
+- Build repeated commercial output from one master creative; Variants follow the core canvas, lock, history, and export workflow.
+- Keep unrelated generation experiments, including AI Lookbook, outside the core product navigation.
 
 ## Accessibility & Inclusion
 
