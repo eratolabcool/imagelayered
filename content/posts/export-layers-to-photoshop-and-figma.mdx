@@ -1,0 +1,46 @@
+---
+title: 'Getting Your Layers Out: Export to Photoshop, Figma, and Beyond'
+description: Decomposition is only half the value. The other half is each layer as a transparent PNG that opens wherever your real work happens.
+created_at: 2026-08-04
+author_name: Admin
+author_image: /logo.png
+image: /imgs/features/001.jpeg
+tags: ['Export', 'Photoshop', 'Figma', 'Tutorial']
+categories: ['Tutorials']
+---
+
+# Exporting Layers to Photoshop and Figma
+
+The point of splitting an image into layers is not to live in one tool forever. You'll decompose in the browser and finish somewhere else — Photoshop for retouching, Figma for layout, Canva for the social resize, a marketplace listing that needs the product on pure white.
+
+So the export story matters more than people give it credit for when they're comparing tools.
+
+## What export gives you
+
+Two paths, both in the [editor](/qwenimagelayered):
+
+**Individual layers as transparent PNGs.** Select any layer, download it. What you get is that element on transparency, at source resolution, positioned nowhere — a clean asset ready to drop into anything. This is the one that matters for cross-tool work.
+
+**The full composite as PNG.** Every visible layer rendered together, exactly as you see them on the canvas — positions, stacking, opacity, blend modes all applied. Use it when the image is finished and you just need the result.
+
+One detail worth knowing: composite export runs locally in your browser. It doesn't consume credits. Decomposition is the paid step; getting your result out is not, at any resolution the editor supports.
+
+## The Photoshop round-trip
+
+Photoshop opens transparent PNGs natively, so the workflow is short: download the layers you need, drop them into a PSD, and they arrive as separate layers in the right order — select them all, and drag them into an open document.
+
+Where this earns its keep is precision work. Decomposition gives you structure in seconds; Photoshop gives you pixel-level control over the seams. The combination is stronger than either alone: you skip the hour of manual masking that would have created those layers, and keep the tools you'd have used to refine them anyway.
+
+One habit: export every layer you might touch, not just the obvious ones. The background you didn't plan to edit is the one you'll want when the client asks for "just a small change" to it, and re-running decomposition to recover it costs credits the original run didn't.
+
+## The Figma / Canva direction
+
+Same asset, different job. A separated subject layer dropped into Figma becomes a design component — reusable across frames with the layout rebuilt around it. In Canva, layers slot into templates for the social-size variants that every campaign eventually needs.
+
+The pattern to internalize: decomposition output is *generic* material. Any tool that accepts a PNG accepts your layers, which means the browser editor is a front door, not a destination.
+
+## What doesn't survive the trip
+
+Be aware of what a PNG layer can't carry: no editable text, no adjustment layers, no effects stacks. A text layer exports as rasterized type — fine for composition, not for re-typesetting. If you need the wording changed, change it [in the editor](/blog/edit-a-flat-poster-without-the-psd) where the text is still an addressable layer, then export.
+
+That's the practical division of labor: semantic edits where the structure lives, pixel edits where the precision lives. The PNG in between is the handshake.

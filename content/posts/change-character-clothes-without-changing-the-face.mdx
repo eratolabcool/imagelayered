@@ -1,0 +1,50 @@
+---
+title: Change a Character's Clothes Without Changing the Face
+description: Character consistency is the hardest part of AI art revision. Here's the layer workflow that keeps identity pixels out of the edit entirely.
+created_at: 2026-08-16
+author_name: Admin
+author_image: /logo.png
+image: /imgs/features/001.jpeg
+tags: ['AI', 'Characters', 'Tutorial', 'Layer Editing']
+categories: ['Tutorials']
+---
+
+# Change Clothes Without Changing the Face
+
+If you've tried outfit swaps with a full-image editor, you know the pattern. You ask for a new jacket. You get the jacket — plus a slightly different face. Different cheekbones, different expression, the uncanny feeling of meeting a stranger wearing your character's clothes.
+
+For hobby art that's annoying. If it's a character with a following, a VTuber persona, a game concept, or a brand mascot, it's disqualifying.
+
+## Why the face keeps drifting
+
+The face changes because every pixel goes back through the model. Full-image editing has no concept of "the face is correct, leave it alone." Your character's identity is re-synthesized from scratch on every run, and "close enough" is the best guarantee available.
+
+The only real protection is structural: keep the face's pixels out of the edit entirely.
+
+## The layer setup that works
+
+Upload your character image to the [editor](/qwenimagelayered) and decompose. On a typical character render you'll get layers in the neighborhood of subject, garment, hair, background. Names vary with the image; what matters is what's inside them.
+
+Before editing anything, click through the stack and find where the face landed. Usually it's inside the main subject layer. If decomposition split it oddly — occasionally the face region gets its own layer, which is a gift — just note what you have.
+
+Now the important part. The outfit lives on its own layer. Editing that layer is a scoped operation: new clothes come in through the model, and the face never enters the pipeline. It doesn't drift because it isn't sampled.
+
+Two habits that make this reliable:
+
+**Lock the layers you're not touching.** Locked layers are passed to the edit as preserve rules — an explicit instruction that those regions are fixed. It's belt and suspenders, but with a face on the line, wear both.
+
+**One outfit per edit.** Wardrobe sheets come from repetition, not from one ambitious prompt. Same face layer, same pose, swap the garment layer: spring jacket, summer tee, winter coat. Export each combination. The character stays coherent across the set because identity pixels are the same pixels every time.
+
+## For anime and illustration
+
+Cel-shaded art separates cleanly — flat regions decompose into flat layers, and edits land with crisp boundaries. It's the easiest category for this workflow.
+
+Loose brushwork and heavy motion blur are harder. When detail is smeared across region boundaries, decomposition sometimes fuses them. The workaround is a higher layer count: more, smaller layers means fragile details end up inside layers you weren't going to touch anyway.
+
+## Checking your result
+
+Trust toggles, not vibes. Hide the edited layer and confirm the character underneath is untouched. Then compare against your reference at full zoom — silhouette first, then landmarks. If anything outside the outfit moved, the edit scope was wrong somewhere, and the fix is a narrower instruction, not another roll of the dice.
+
+We keep a longer writeup on [editing characters without recasting them](/seo/en/modify-ai-character-without-changing-face), including the verification habit in more detail.
+
+The one-line version: your character's identity is pixels, and those pixels deserve to be treated as an asset you protect, not a description you re-roll.

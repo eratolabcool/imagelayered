@@ -1,0 +1,46 @@
+---
+title: Separate Text from an Image (and Why OCR Isn't Enough)
+description: OCR tells you what the words say. Localization and redesign need the text as an editable layer. Here's the difference and the workflow.
+created_at: 2026-08-12
+author_name: Admin
+author_image: /logo.png
+image: /imgs/features/001.jpeg
+tags: ['AI', 'Text Extraction', 'Tutorial', 'Localization']
+categories: ['Tutorials']
+---
+
+# Separate Text from an Image
+
+OCR and layer separation both involve "reading" text off an image, and they get confused for each other constantly. The distinction matters because they solve different problems:
+
+OCR hands you a string. "SUMMER SALE." Useful for search, useless for redesign.
+
+Layer separation hands you the text *as an object* — a layer above the artwork, with its position, scale, and surroundings intact. You can move it, restyle it, rewrite it, or delete it.
+
+If you've ever translated a poster, you wanted the second thing.
+
+## The localization grind, and the way out
+
+Here's how poster localization usually goes: you get the flat export, the source file is somewhere unfindable, and every text block has to be manually cloned away — patch the background behind the headline, re-typeset the translation, repeat for the body copy, the tagline, the legal line.
+
+Layer decomposition shortens that. Upload the poster to the [editor](/qwenimagelayered), decompose, and the text blocks come out as their own layers above the background. Headline, body copy, logo each separable.
+
+Then the work per language is: select the headline layer, describe the new wording. Same position, same scale, surrounding layout untouched. The background underneath was never damaged, because it was never merged with the text in your working copy.
+
+One poster, five markets, one session. Not because the tool is magic — because the structure that made the edit tedious was the text being fused to the background, and decomposition un-fuses it.
+
+## When it works well, when it doesn't
+
+Readable typography with decent contrast separates cleanly. Stylized type fused into texture — think grungy concert posters where the letters are half-dissolved into the background — separates partially. You'll get a text layer, but its edges carry the texture with them.
+
+Two practical notes:
+
+**Keep the original export.** Any extraction can be re-run against the untouched source. Don't decompose your only copy, edit it, save over it, and then need the original.
+
+**Edit the text layer; don't fight the mask.** When the separation is imperfect, the move is to rewrite the text layer wholesale rather than trying to patch its edges. A rewritten block sits cleanly above the artwork; a patched one shows its seams.
+
+## Beyond localization
+
+The same separated-text structure is what you want for A/B testing headlines without re-commissioning art, swapping the date on an evergreen event poster, or pulling a logo off a comp to see if the layout breathes better without it. Every one of those is "text as an object" — the thing OCR pointedly is not.
+
+If your case is poster-specific, we have a dedicated walkthrough on [editing flat posters without the PSD](/blog/edit-a-flat-poster-without-the-psd).

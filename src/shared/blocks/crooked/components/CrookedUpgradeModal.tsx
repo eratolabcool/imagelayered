@@ -1,10 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from '@/core/i18n/navigation';
 import { Icons } from './Icon';
 import { useCrookedCopy } from '../i18n';
-
+import { trackFunnel } from '../lib/funnel-events';
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,7 +21,10 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
   const router = useRouter();
   const t = useCrookedCopy().upgrade;
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) trackFunnel('paywall_view', { type });
+  }, [isOpen, type]);
+
 
   // 根据触发类型显示不同内容
   const getContent = () => {
@@ -37,12 +40,14 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
   const content = getContent();
 
   const handleUpgrade = () => {
+    trackFunnel('paywall_click', { type });
     // 跳转到定价页面
     router.push('/pricing');
     onClose();
   };
 
   const handleSignIn = () => {
+    trackFunnel('signup_click', { type });
     // 跳转到注册页面，带上回调
     // Use window.location.pathname is safer for full path including locale if not handled by router,
     // but since we are using i18n router now, we can just use the relative path if needed, 

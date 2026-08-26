@@ -122,6 +122,40 @@ export default async function LocalizedSeoPage({
         },
       },
       {
+        '@type': 'HowTo',
+        name: page.workflowTitle,
+        inLanguage: page.lang,
+        step: page.workflow.map((item, index) => ({
+          '@type': 'HowToStep',
+          position: index + 1,
+          name: item.split('.')[0]?.slice(0, 80) || `Step ${index + 1}`,
+          text: item,
+        })),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Image Layered',
+            item: envConfigs.app_url,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: seoMarketLabels[page.market as SeoMarket],
+            item: `${envConfigs.app_url}/seo/${page.market}`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: page.h1,
+            item: pageUrl(page.market, page.slug),
+          },
+        ],
+      },
+      {
         '@type': 'FAQPage',
         inLanguage: page.lang,
         mainEntity: page.faq.map((item) => ({
@@ -217,15 +251,17 @@ export default async function LocalizedSeoPage({
                   <Layers3 className="size-4 text-cyan-200" />
                   Layers
                 </div>
-                {['Subject', 'Product', 'Text', 'Background', 'Shadow'].map((layer, index) => (
-                  <div key={layer} className="flex items-center gap-3 rounded-lg bg-white/8 p-2 text-sm text-slate-100">
-                    <span className="flex size-8 items-center justify-center rounded-md bg-white/10 text-xs font-black">
-                      {index + 1}
-                    </span>
-                    <span className="flex-1 font-semibold">{layer}</span>
-                    <CheckCircle2 className="size-4 text-emerald-300" />
-                  </div>
-                ))}
+                {(page.heroLayers ?? ['Subject', 'Product', 'Text', 'Background', 'Shadow']).map(
+                  (layer, index) => (
+                    <div key={layer} className="flex items-center gap-3 rounded-lg bg-white/8 p-2 text-sm text-slate-100">
+                      <span className="flex size-8 items-center justify-center rounded-md bg-white/10 text-xs font-black">
+                        {index + 1}
+                      </span>
+                      <span className="flex-1 font-semibold">{layer}</span>
+                      <CheckCircle2 className="size-4 text-emerald-300" />
+                    </div>
+                  )
+                )}
               </div>
             </div>
           </div>
@@ -244,6 +280,24 @@ export default async function LocalizedSeoPage({
           </article>
         </div>
       </section>
+
+      {page.deepDive && (
+        <section className="border-b border-black/10 px-4 py-14 md:px-8 md:py-18">
+          <div className="mx-auto max-w-[1180px]">
+            <h2 className="text-3xl font-black [font-family:var(--font-display)] md:text-4xl">
+              {page.deepDive.heading}
+            </h2>
+            <div className="mt-8 grid gap-5 lg:grid-cols-3">
+              {page.deepDive.blocks.map((block) => (
+                <article key={block.title} className="rounded-xl border border-black/10 bg-white p-6">
+                  <h3 className="text-lg font-black leading-7">{block.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[#4f463d]">{block.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="border-b border-black/10 bg-[#111827] px-4 py-16 text-white md:px-8 md:py-20">
         <div className="mx-auto max-w-[1180px]">
@@ -305,6 +359,41 @@ export default async function LocalizedSeoPage({
                 <p className="mt-3 text-sm leading-7 text-[#4f463d]">{item.a}</p>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-black/10 bg-[#f7efe2] px-4 py-12 md:px-8 md:py-14">
+        <div className="mx-auto max-w-[1180px]">
+          <h2 className="text-2xl font-black [font-family:var(--font-display)]">Keep going</h2>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <a
+              href="/qwenimagelayered/guide"
+              className="rounded-lg border border-black/10 bg-white p-4 text-sm font-black leading-6 hover:bg-white/70"
+            >
+              Canvas guide
+              <span className="mt-1 block text-xs font-semibold leading-5 text-[#4f463d]">
+                Layers, locks, versions, and export paths explained.
+              </span>
+            </a>
+            <a
+              href="/comfyui-qwen-image-layered"
+              className="rounded-lg border border-black/10 bg-white p-4 text-sm font-black leading-6 hover:bg-white/70"
+            >
+              Run it in ComfyUI
+              <span className="mt-1 block text-xs font-semibold leading-5 text-[#4f463d]">
+                The same decomposition model, self-hosted workflow.
+              </span>
+            </a>
+            <a
+              href="/blog/qwen-image-layered-ai-introduction"
+              className="rounded-lg border border-black/10 bg-white p-4 text-sm font-black leading-6 hover:bg-white/70"
+            >
+              How layer decomposition works
+              <span className="mt-1 block text-xs font-semibold leading-5 text-[#4f463d]">
+                The model behind editable layers, explained.
+              </span>
+            </a>
           </div>
         </div>
       </section>

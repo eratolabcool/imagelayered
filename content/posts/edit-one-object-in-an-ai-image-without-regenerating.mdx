@@ -1,0 +1,60 @@
+---
+title: Edit One Object in an AI Image Without Regenerating Everything
+description: The revision problem every AI image user hits eventually — and the layer-based workflow that fixes it without re-rolling the 90% you already like.
+created_at: 2026-08-20
+author_name: Admin
+author_image: /logo.png
+image: /imgs/features/hero-case-1.jpg
+tags: ['AI', 'Image Editing', 'Tutorial', 'Post-Editing']
+categories: ['Tutorials']
+---
+
+# Edit One Object Without Regenerating the Image
+
+You got a good generation. Maybe a great one. Then someone — a client, a boss, your own eye — asks for one change. The jacket should be black. The label is misspelled. There's an extra fork on the table.
+
+So you re-prompt, and the model gives you a new image where the jacket is black, the face is different, the camera moved, and the fork is still there.
+
+Everyone who works with generated images hits this. The fix isn't a better prompt. It's not generating at all.
+
+## Why regeneration keeps betraying you
+
+An image generator redraws every pixel, every time. There's no mechanism inside it that says "keep these pixels, change those." Prompt all you want — the parts you liked were never guaranteed, only likely.
+
+The layer-based approach inverts this. Upload the finished image, [split it into layers](/blog/how-to-split-an-image-into-layers), and now the parts you like are literally different objects. Editing the jacket layer never sends the face through the model. It can't. It's not in the edit.
+
+## The workflow
+
+In the [editor](/qwenimagelayered), after decomposition, click the layer containing the thing you want changed. The inspector on the right shows you what's selected — position, size, opacity — so you can confirm you've got the right piece before touching anything.
+
+Then describe the change, plainly:
+
+> Change the jacket to black satin. Keep the fit and folds.
+
+> Remove the fork and reconstruct the table surface.
+
+> Replace the headline with SUMMER DROP, same font weight.
+
+The edit runs against that layer only. Everything else in the stack — face, pose, background, lighting — contributes context but doesn't get redrawn. The result comes back as a new layer on top of the old one, which stays underneath, hidden but recoverable. If the edit is wrong, you haven't lost anything. Delete the variation, try again.
+
+## Locks, for the parts that must not move
+
+There's a lock control on every layer. Locked layers get carried into the edit instruction as preserve rules — the model is told, explicitly, that these regions are off-limits.
+
+Use locks for brand elements. The product in a product shot. A logo. A face you've gotten right. Lock what's approved, edit what isn't. It's a small feature that changes how confidently you can experiment, because the worst case is "the edit failed," not "the edit ruined the image."
+
+## What still goes wrong
+
+Layer edits are targeted, but they're still AI. Two failure modes to expect:
+
+The edit can miss context. "Make it winter" applied to a background layer can produce snow that doesn't match the light on the subject. When that happens, be more literal about what should change and check whether the boundary between layers landed where you assumed.
+
+Decomposition quality caps edit quality. If two elements fused into one layer, you can't edit them separately — edit the fused layer, or re-run decomposition at a higher layer count and hope they split.
+
+Neither is fatal. Both are faster to fix than a re-roll that gambles the whole image.
+
+## The habit worth building
+
+Treat every generated image you like as an asset with structure, not a final artifact. Split it once, and every future revision — new colorway, new headline, seasonal background — costs one targeted edit instead of another round of generation roulette. We wrote more about [keeping your composition stable](/seo/en/keep-same-composition-ai) if that's your situation.
+
+The images you already like are the cheapest raw material you have. Stop regenerating them.

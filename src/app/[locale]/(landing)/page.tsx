@@ -4,6 +4,7 @@ import { getMetadata } from '@/shared/lib/seo';
 import ImageLayeredSeoGuide from '@/shared/blocks/crooked/components/ImageLayeredSeoGuide';
 
 import LandingHeroExperience from './LandingHeroExperience';
+import SeoTopicLinks from './SeoTopicLinks';
 
 export const revalidate = 3600;
 
@@ -24,6 +25,7 @@ export default async function LandingPage({
     <>
       <LandingHeroExperience />
       <ImageLayeredSeoGuide locale={locale} surface="home" />
+      {locale !== 'zh' && <SeoTopicLinks />}
     </>
   );
 }

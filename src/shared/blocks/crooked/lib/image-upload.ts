@@ -7,9 +7,23 @@ export interface PreparedImagePayload {
   name: string;
 }
 
+const MAX_IMAGE_EDGE = 4096;
+const MAX_IMAGE_PIXELS = 16_000_000;
+const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+
 export async function prepareImageFile(file: File): Promise<PreparedImagePayload> {
+  if (!SUPPORTED_IMAGE_TYPES.has(file.type)) throw new Error('Use a JPEG, PNG, WebP, or AVIF image');
+  if (file.size <= 0 || file.size > MAX_SOURCE_BYTES) throw new Error('Image must be smaller than 25 MB');
+
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImage(dataUrl);
+
+  const edgeScale = Math.min(1, MAX_IMAGE_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
+  const pixelScale = Math.min(1, Math.sqrt(MAX_IMAGE_PIXELS / (image.naturalWidth * image.naturalHeight)));
+  const scale = Math.min(edgeScale, pixelScale);
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
 
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -18,14 +32,16 @@ export async function prepareImageFile(file: File): Promise<PreparedImagePayload
     throw new Error('Failed to prepare image');
   }
 
-  canvas.width = image.naturalWidth;
-  canvas.height = image.naturalHeight;
-  ctx.drawImage(image, 0, 0, image.naturalWidth, image.naturalHeight);
+  canvas.width = width;
+  canvas.height = height;
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const outputType = file.type === 'image/png' ? 'image/png' : 'image/webp';
 
   return {
-    base64: canvas.toDataURL('image/png', 1),
-    width: image.naturalWidth,
-    height: image.naturalHeight,
+    base64: canvas.toDataURL(outputType, 0.9),
+    width,
+    height,
     name: file.name,
   };
 }

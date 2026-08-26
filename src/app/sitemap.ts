@@ -75,6 +75,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.95,
     },
     {
+      url: '/qwen-image-layered-online',
+      lastModified: currentDate,
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+    },
+    {
       url: '/ai-lookbook',
       lastModified: currentDate,
       changeFrequency: 'weekly' as const,

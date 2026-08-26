@@ -1,18 +1,19 @@
 import { md5 } from '@/shared/lib/hash';
 import { respData, respErr } from '@/shared/lib/resp';
 import { getStorageService } from '@/shared/services/storage';
+import { detectImageType, isAllowedImageType } from '../_lib/image-security';
+
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+const MAX_FILES = 8;
 
 const extFromMime = (mimeType: string) => {
   const map: Record<string, string> = {
     'image/jpeg': 'jpg',
-    'image/jpg': 'jpg',
     'image/png': 'png',
     'image/webp': 'webp',
     'image/gif': 'gif',
-    'image/svg+xml': 'svg',
     'image/avif': 'avif',
-    'image/heic': 'heic',
-    'image/heif': 'heif',
   };
   return map[mimeType] || '';
 };
@@ -22,31 +23,25 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const files = formData.getAll('files') as File[];
 
-    console.log('[API] Received files:', files.length);
-    files.forEach((file, i) => {
-      console.log(`[API] File ${i}:`, {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-      });
-    });
-
     if (!files || files.length === 0) {
       return respErr('No files provided');
     }
+    if (files.length > MAX_FILES) return respErr(`A maximum of ${MAX_FILES} images can be uploaded at once`);
+    if (files.some((file) => file.size <= 0 || file.size > MAX_FILE_BYTES)) return respErr('Each image must be between 1 byte and 25 MB');
+    if (files.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_BYTES) return respErr('The combined upload exceeds the 50 MB limit');
 
     const storageService = await getStorageService();
     const uploadResults = [];
 
     for (const file of files) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        return respErr(`File ${file.name} is not an image`);
-      }
+      if (!isAllowedImageType(file.type)) return respErr(`File ${file.name} uses an unsupported image type`);
 
       // Convert file to buffer
       const arrayBuffer = await file.arrayBuffer();
       const body = new Uint8Array(arrayBuffer);
+      const detectedType = detectImageType(body);
+      if (!detectedType || detectedType !== file.type.toLowerCase()) return respErr(`File ${file.name} does not match its declared image type`);
 
       const digest = md5(body);
       const ext = extFromMime(file.type) || file.name.split('.').pop() || 'bin';
@@ -81,8 +76,6 @@ export async function POST(req: Request) {
         return respErr(result.error || 'Upload failed');
       }
 
-      console.log('[API] Upload success:', result.url);
-
       uploadResults.push({
         url: result.url,
         key: result.key,
@@ -90,11 +83,6 @@ export async function POST(req: Request) {
         deduped: false,
       });
     }
-
-    console.log(
-      '[API] All uploads complete. Returning URLs:',
-      uploadResults.map((r) => r.url)
-    );
 
     return respData({
       urls: uploadResults.map((r) => r.url),

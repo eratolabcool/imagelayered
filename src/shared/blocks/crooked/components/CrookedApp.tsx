@@ -16,6 +16,7 @@ import {
 import { useCrookedCopy } from '../i18n';
 import { toast } from 'sonner';
 import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
+import { trackFunnel } from '../lib/funnel-events';
 import WorkspaceSidebar from './WorkspaceSidebar';
 import LayerInspector from './LayerInspector';
 import EditorCommandPalette, { EditorCommand } from './EditorCommandPalette';
@@ -29,6 +30,61 @@ interface CrookedAppProps {
 }
 
 const LOCAL_DRAFT_KEY = 'image-layered:editor-draft:v1';
+const PROJECT_FILE_VERSION = 1;
+const PROJECT_FILE_MAX_BYTES = 60 * 1024 * 1024;
+const VALID_BLEND_MODES = new Set(['normal', 'multiply', 'screen', 'overlay', 'soft-light', 'color', 'luminosity']);
+
+const parseProjectLayer = (value: unknown): Layer | null => {
+  if (!value || typeof value !== 'object') return null;
+  const item = value as Record<string, unknown>;
+  const finite = (key: string, fallback = 0) => {
+    const number = typeof item[key] === 'number' ? item[key] : fallback;
+    return Number.isFinite(number) && Math.abs(number) <= 1_000_000 ? number : null;
+  };
+  const url = typeof item.url === 'string' ? item.url : '';
+  const safeUrl = /^https?:\/\//i.test(url) || /^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/i.test(url);
+  const maskUrl = typeof item.maskUrl === 'string' ? item.maskUrl : undefined;
+  const safeMask = !maskUrl || /^https?:\/\//i.test(maskUrl) || /^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/i.test(maskUrl);
+  const id = typeof item.id === 'string' ? item.id.slice(0, 128) : '';
+  const name = typeof item.name === 'string' ? item.name.slice(0, 160) : '';
+  const type = item.type;
+  const x = finite('x');
+  const y = finite('y');
+  const width = finite('width');
+  const height = finite('height');
+  const opacity = finite('opacity', 1);
+  const zIndex = finite('zIndex');
+  if (!id || !name || !safeUrl || !safeMask || !['image', 'text', 'shape'].includes(String(type)) || x === null || y === null || width === null || height === null || opacity === null || zIndex === null || width <= 0 || height <= 0 || opacity < 0 || opacity > 1) return null;
+
+  return {
+    id,
+    name,
+    type: type as Layer['type'],
+    url,
+    x,
+    y,
+    width,
+    height,
+    rotation: finite('rotation') ?? 0,
+    blur: Math.max(0, Math.min(100, finite('blur') ?? 0)),
+    opacity,
+    visible: item.visible !== false,
+    locked: item.locked === true,
+    zIndex,
+    blendMode: VALID_BLEND_MODES.has(String(item.blendMode)) ? item.blendMode as Layer['blendMode'] : 'normal',
+    maskUrl,
+    parentId: typeof item.parentId === 'string' ? item.parentId.slice(0, 128) : undefined,
+    sourceLayerId: typeof item.sourceLayerId === 'string' ? item.sourceLayerId.slice(0, 128) : undefined,
+    groupId: typeof item.groupId === 'string' ? item.groupId.slice(0, 128) : undefined,
+    groupName: typeof item.groupName === 'string' ? item.groupName.slice(0, 160) : undefined,
+    preserve: item.preserve && typeof item.preserve === 'object' ? {
+      shape: (item.preserve as Record<string, unknown>).shape === true,
+      logo: (item.preserve as Record<string, unknown>).logo === true,
+      label: (item.preserve as Record<string, unknown>).label === true,
+      shadow: (item.preserve as Record<string, unknown>).shadow === true,
+    } : undefined,
+  };
+};
 
 const decompositionModelOptions: DecompositionModelOption[] = [
   {
@@ -124,7 +180,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const [zoom, setZoom] = useState(1);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
-  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
+  const lastPointerPosRef = useRef({ x: 0, y: 0 });
+  const pendingPointerPosRef = useRef<{ x: number; y: number } | null>(null);
+  const dragFrameRef = useRef<number | null>(null);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
   const [layerCount, setLayerCount] = useState<number>(6);
@@ -423,6 +481,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   const mainRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const projectFileInputRef = useRef<HTMLInputElement>(null);
   const editPlaceholder = React.useMemo(() => {
     if (activeTool === 'recolor') return editBar.recolorPlaceholder;
     if (activeTool === 'replace') return editBar.replacePlaceholder;
@@ -692,7 +751,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   }, [layers.length, placeImageLayer]);
 
   // Handle Panning Logic
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     // Start panning if:
     // 1. Clicking directly on the main canvas container (not on a layer)
     // 2. Using the 'move' tool
@@ -702,7 +761,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
     if (isClickingOnCanvas || activeTool === 'move' || isSpacePressed) {
       setIsDraggingCanvas(true);
-      setLastMousePos({ x: e.clientX, y: e.clientY });
+      lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
     }
   };
 
@@ -766,52 +825,54 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   }, [isSpacePressed, layers, redo, undo]);
 
   // Handle layer dragging
-  const handleLayerMouseDown = (e: React.MouseEvent, layer: Layer) => {
+  const handleLayerPointerDown = (e: React.PointerEvent, layer: Layer) => {
     if (layer.locked) return;
     e.stopPropagation();
     e.preventDefault();
 
     if (activeTool === 'move' || isSpacePressed) {
       setIsDraggingCanvas(true);
-      setLastMousePos({ x: e.clientX, y: e.clientY });
+      lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
       return;
     }
 
     if (!(e.metaKey || e.ctrlKey || e.shiftKey)) selectLayer(layer.id);
     setDraggingLayerId(layer.id);
-    setLastMousePos({ x: e.clientX, y: e.clientY });
+    lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    // Handle canvas dragging
-    if (isDraggingCanvas) {
-      const deltaX = e.clientX - lastMousePos.x;
-      const deltaY = e.clientY - lastMousePos.y;
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    pendingPointerPosRef.current = { x: e.clientX, y: e.clientY };
+    if (dragFrameRef.current !== null) return;
 
-      setDragOffset(prev => ({
-        x: prev.x + deltaX / zoom,
-        y: prev.y + deltaY / zoom
-      }));
-      setLastMousePos({ x: e.clientX, y: e.clientY });
-    }
+    dragFrameRef.current = window.requestAnimationFrame(() => {
+      dragFrameRef.current = null;
+      const point = pendingPointerPosRef.current;
+      if (!point) return;
+      const previous = lastPointerPosRef.current;
+      const deltaX = (point.x - previous.x) / zoom;
+      const deltaY = (point.y - previous.y) / zoom;
 
-    // Handle layer dragging
-    if (draggingLayerId) {
-      const deltaX = (e.clientX - lastMousePos.x) / zoom;
-      const deltaY = (e.clientY - lastMousePos.y) / zoom;
+      if (isDraggingCanvas) {
+        setDragOffset((current) => ({ x: current.x + deltaX, y: current.y + deltaY }));
+      }
+      if (draggingLayerId) {
+        setLayers((current) => current.map((layer) =>
+          layer.id === draggingLayerId
+            ? activeTool === 'scale'
+              ? { ...layer, width: Math.max(24, layer.width + deltaX), height: Math.max(24, layer.height + deltaY) }
+              : { ...layer, x: layer.x + deltaX, y: layer.y + deltaY }
+            : layer
+        ));
+      }
+      lastPointerPosRef.current = point;
+    });
+  }, [activeTool, draggingLayerId, isDraggingCanvas, setLayers, zoom]);
 
-      setLayers(prev => prev.map(l =>
-        l.id === draggingLayerId
-          ? activeTool === 'scale'
-            ? { ...l, width: Math.max(24, l.width + deltaX), height: Math.max(24, l.height + deltaY) }
-            : { ...l, x: l.x + deltaX, y: l.y + deltaY }
-          : l
-      ));
-      setLastMousePos({ x: e.clientX, y: e.clientY });
-    }
-  }, [activeTool, isDraggingCanvas, lastMousePos, zoom, draggingLayerId]);
-
-  const handleMouseUp = useCallback(() => {
+  const handlePointerUp = useCallback(() => {
+    if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
+    dragFrameRef.current = null;
+    pendingPointerPosRef.current = null;
     setIsDraggingCanvas(false);
     setDraggingLayerId(null);
   }, []);
@@ -839,21 +900,23 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   useEffect(() => {
     if (isDraggingCanvas || draggingLayerId) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('pointermove', handlePointerMove, { passive: false });
+      window.addEventListener('pointerup', handlePointerUp);
     } else {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
     }
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
     };
-  }, [isDraggingCanvas, draggingLayerId, handleMouseMove, handleMouseUp]);
+  }, [isDraggingCanvas, draggingLayerId, handlePointerMove, handlePointerUp]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    trackFunnel('upload_image', { logged_in: isLoggedIn });
 
     if (layers.length > 1) {
       handleCreateProjectSnapshot(isZh ? '更换图片前' : 'Before changing image');
@@ -940,6 +1003,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     console.log('[smartDecompose] Starting decomposition', { count, targetId, targetName: target.name, urlType: target.url?.substring(0, 50) });
 
     setIsProcessing(true);
+    trackFunnel('decompose_start', { count, logged_in: isLoggedIn });
     try {
       // Check if target.url is valid
       if (!target.url) {
@@ -1480,6 +1544,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       });
 
       console.log('[smartDecompose] Decomposition completed successfully');
+      trackFunnel('layers_generated', { count: newLayers.length, logged_in: isLoggedIn });
 
       // Increment usage count on success for guest users
       if (!isLoggedIn) {
@@ -1491,6 +1556,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       // Check if it's a credits issue and show a helpful message
       if (errMsg === 'insufficient credits' || errMsg.includes('credits')) {
+        trackFunnel('paywall_view', { trigger: 'credits', logged_in: isLoggedIn });
         const shouldGoToPricing = confirm(
           'Insufficient credits to perform image decomposition.\n\n' +
           'Image decomposition requires 5 credits.\n\n' +
@@ -1499,9 +1565,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         );
 
         if (shouldGoToPricing) {
+          trackFunnel('paywall_click', { trigger: 'credits' });
           window.location.href = '/pricing';
         }
       } else {
+        trackFunnel('decompose_fail');
         toast.error(copy.notifications.decomposeFail.replace('{reason}', errMsg));
       }
     } finally {
@@ -1694,6 +1762,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   const handleExport = async (settings: ExportSettings) => {
     setIsProcessing(true);
+    trackFunnel('export_start');
     try {
       console.log('[handleExport] Starting export with settings:', settings);
 
@@ -1930,6 +1999,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         setIsExportModalOpen(false);
         setIsProcessing(false);
         console.log('[handleExport] Export completed successfully');
+        trackFunnel('export_done');
       }, 'image/png');
 
     } catch (err: any) {
@@ -2067,6 +2137,92 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     });
     pushHistory(isZh ? '调整图层顺序' : 'Reorder layers', isZh ? '图层堆栈' : 'Layer stack');
   }, [isZh, pushHistory]);
+
+  const handleMoveSelectedLayer = useCallback((direction: 'back' | 'backward' | 'forward' | 'front') => {
+    if (!selectedLayerId) return;
+    setLayers((current) => {
+      const ordered = [...current].sort((a, b) => a.zIndex - b.zIndex);
+      const currentIndex = ordered.findIndex((layer) => layer.id === selectedLayerId);
+      if (currentIndex < 0 || ordered[currentIndex].locked) return current;
+      const targetIndex = direction === 'back'
+        ? 0
+        : direction === 'front'
+          ? ordered.length - 1
+          : direction === 'backward'
+            ? Math.max(0, currentIndex - 1)
+            : Math.min(ordered.length - 1, currentIndex + 1);
+      if (targetIndex === currentIndex) return current;
+      const [selected] = ordered.splice(currentIndex, 1);
+      ordered.splice(targetIndex, 0, selected);
+      const zById = new Map(ordered.map((layer, index) => [layer.id, index]));
+      return current.map((layer) => ({ ...layer, zIndex: zById.get(layer.id) ?? layer.zIndex }));
+    });
+    const label = direction === 'back'
+      ? (isZh ? '图层置底' : 'Send layer to back')
+      : direction === 'front'
+        ? (isZh ? '图层置顶' : 'Bring layer to front')
+        : direction === 'backward'
+          ? (isZh ? '图层下移' : 'Move layer backward')
+          : (isZh ? '图层上移' : 'Move layer forward');
+    pushHistory(label, layers.find((layer) => layer.id === selectedLayerId)?.name ?? '');
+  }, [isZh, layers, pushHistory, selectedLayerId, setLayers]);
+
+  const handleExportProjectFile = useCallback(() => {
+    if (layers.length === 0) return;
+    const projectFile = {
+      format: 'image-layered-project',
+      version: PROJECT_FILE_VERSION,
+      name: projectName,
+      selectedLayerId,
+      canvas: { zoom, dragOffset },
+      layers,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(projectFile)], { type: 'application/json' });
+    const safeName = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
+    downloadBlob(blob, `${safeName}.image-layered.json`);
+    toast.success(isZh ? '工程文件已导出' : 'Project file exported');
+  }, [downloadBlob, dragOffset, isZh, layers, projectName, selectedLayerId, zoom]);
+
+  const handleImportProjectFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (file.size <= 0 || file.size > PROJECT_FILE_MAX_BYTES) {
+      toast.error(isZh ? '工程文件必须小于 60 MB' : 'Project file must be smaller than 60 MB');
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(await file.text()) as Record<string, unknown>;
+      if (parsed.format !== 'image-layered-project' || parsed.version !== PROJECT_FILE_VERSION || !Array.isArray(parsed.layers) || parsed.layers.length === 0 || parsed.layers.length > 100) {
+        throw new Error('Unsupported project file');
+      }
+      const importedLayers = parsed.layers.map(parseProjectLayer);
+      if (importedLayers.some((layer) => !layer)) throw new Error('Invalid layer data');
+      const validatedLayers = importedLayers as Layer[];
+      const duplicateIds = new Set(validatedLayers.map((layer) => layer.id));
+      if (duplicateIds.size !== validatedLayers.length) throw new Error('Duplicate layer identifiers');
+
+      handleCreateProjectSnapshot(isZh ? '导入工程前' : 'Before project import');
+      resetLayers(validatedLayers);
+      const requestedSelection = typeof parsed.selectedLayerId === 'string' ? parsed.selectedLayerId : '';
+      const nextSelectedId = duplicateIds.has(requestedSelection) ? requestedSelection : validatedLayers.at(-1)?.id ?? null;
+      setSelectedLayerId(nextSelectedId);
+      setSelectedLayerIds(nextSelectedId ? new Set([nextSelectedId]) : new Set());
+      setProjectId(crypto.randomUUID());
+      setProjectName(typeof parsed.name === 'string' ? parsed.name.slice(0, 160) : 'Imported project');
+      const canvas = parsed.canvas && typeof parsed.canvas === 'object' ? parsed.canvas as Record<string, unknown> : null;
+      const importedZoom = canvas && typeof canvas.zoom === 'number' && Number.isFinite(canvas.zoom) ? canvas.zoom : 1;
+      setZoom(Math.max(0.05, Math.min(4, importedZoom)));
+      setDragOffset({ x: 0, y: 0 });
+      pushHistory(isZh ? '导入工程文件' : 'Import project file', file.name.slice(0, 160));
+      toast.success(isZh ? `已导入 ${validatedLayers.length} 个图层` : `Imported ${validatedLayers.length} layers`);
+    } catch (error) {
+      console.error('[Project import] Failed:', error);
+      toast.error(isZh ? '工程文件无效或已损坏' : 'The project file is invalid or corrupted');
+    }
+  }, [handleCreateProjectSnapshot, isZh, pushHistory, resetLayers]);
 
   const handleDeleteSelectedLayer = useCallback(() => {
     if (!selectedLayerId) return;
@@ -2249,7 +2405,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             outlineOffset: interactive && selectedLayerIds.has(layer.id) ? '2px' : '0',
             pointerEvents: interactive ? 'auto' : 'none',
           }}
-          onMouseDown={interactive ? (e) => handleLayerMouseDown(e, layer) : undefined}
+          onPointerDown={interactive ? (e) => handleLayerPointerDown(e, layer) : undefined}
           onClick={interactive ? (e) => {
             e.stopPropagation();
             selectLayer(layer.id, e.metaKey || e.ctrlKey || e.shiftKey);
@@ -2323,6 +2479,21 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         setSelectedLayerIds(new Set(layers.map((layer) => layer.id)));
         setSelectedLayerId(layers.at(-1)?.id ?? null);
       },
+    },
+    {
+      id: 'export-project',
+      label: isZh ? '导出工程文件' : 'Export project file',
+      description: isZh ? '保存图层、顺序、属性与锁定状态' : 'Save layers, order, properties, and locks',
+      icon: Download,
+      disabled: layers.length === 0,
+      run: handleExportProjectFile,
+    },
+    {
+      id: 'import-project',
+      label: isZh ? '导入工程文件' : 'Import project file',
+      description: isZh ? '载入 Image Layered JSON 工程' : 'Load an Image Layered JSON project',
+      icon: UploadCloud,
+      run: () => projectFileInputRef.current?.click(),
     },
     {
       id: 'export',
@@ -2697,7 +2868,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                       >
                         <GripVertical className={`size-3.5 shrink-0 ${isSelected ? 'text-[#ff7ca2]' : 'text-[#5f5966]'} ${layer.locked ? 'cursor-not-allowed' : 'cursor-grab'}`} />
                         <div className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl ${isSelected ? 'bg-black/8' : 'bg-black/28'}`}>
-                          <img src={layer.url} alt={label} className="h-full w-full object-contain" draggable={false} />
+                          <img src={layer.url} alt={label} className="h-full w-full object-contain" draggable={false} loading="lazy" decoding="async" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-bold tracking-tight">{label}</p>
@@ -2752,9 +2923,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
               <main
                 ref={mainRef}
-                onMouseDown={handleMouseDown}
+                onPointerDown={handlePointerDown}
                 className={`canvas-container relative flex h-[min(760px,calc(100vh-190px))] min-h-[620px] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a090c] p-16 pb-24 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
                 style={{
+                  touchAction: 'none',
                   backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.025) 25%,transparent 25%),linear-gradient(-45deg,rgba(255,255,255,.025) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,rgba(255,255,255,.025) 75%),linear-gradient(-45deg,transparent 75%,rgba(255,255,255,.025) 75%)',
                   backgroundSize: '24px 24px',
                   backgroundPosition: '0 0,0 12px,12px -12px,-12px 0',
@@ -2888,6 +3060,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                   onDownload={() => handleDownloadLayer(selectedLayer.id)}
                   onDelete={handleDeleteSelectedLayer}
                   onLockOthers={handleLockOtherLayers}
+                  onSendToBack={() => handleMoveSelectedLayer('back')}
+                  onMoveBackward={() => handleMoveSelectedLayer('backward')}
+                  onMoveForward={() => handleMoveSelectedLayer('forward')}
+                  onBringToFront={() => handleMoveSelectedLayer('front')}
                 />
                 </div>
               ) : null}
@@ -3043,7 +3219,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         ref={fileInputRef}
         onChange={handleFileUpload}
         className="hidden"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/avif"
+      />
+      <input
+        type="file"
+        ref={projectFileInputRef}
+        onChange={handleImportProjectFile}
+        className="hidden"
+        accept="application/json,.json"
       />
 
       <CrookedExportModal

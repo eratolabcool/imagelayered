@@ -20,6 +20,16 @@ export type ImageLayeredSeoPage = {
   prompts: string[];
   faq: { q: string; a: string }[];
   cta: string;
+  /**
+   * De-templating fields (EN first). heroLayers varies the hero layer stack
+   * by keyword cluster; deepDive adds one page-unique long-form section that
+   * no sibling page shares — the main lever against thin templated content.
+   */
+  heroLayers?: string[];
+  deepDive?: {
+    heading: string;
+    blocks: { title: string; body: string }[];
+  };
 };
 
 export const seoMarketLabels: Record<SeoMarket, string> = {
@@ -77,6 +87,24 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Upload an image',
+    heroLayers: ['Subject', 'Outfit', 'Background', 'Shadow', 'Effects'],
+    deepDive: {
+      heading: 'Why regenerating keeps costing you the images you already like',
+      blocks: [
+        {
+          title: 'Generation is cheap. Revision is where budgets die.',
+          body: 'A typical campaign image survives five to fifteen changes: a different headline, a swapped prop, a darker background, a legal-safe label. Each full regeneration re-rolls every detail you already approved, so teams burn credits re-chasing a composition they had hours ago. Layer-based revision inverts that: the approved image is the starting state, and only the named object is negotiable.',
+        },
+        {
+          title: 'The mechanism: decomposition instead of inpainting',
+          body: 'Most AI editors mask a region and repaint it, which is why edges drift and lighting breaks. Image Layered runs a decomposition model that rebuilds the image as a stack of transparent layers — subject, outfit, background, shadow — then edits the selected layer with the rest held fixed as context. The output recombines what you kept with what you changed.',
+        },
+        {
+          title: 'A honest note on limits',
+          body: 'Decomposition quality depends on the source. Tightly fused elements — hair against a busy background, baked-in shadows, heavily compressed JPEGs — separate less cleanly. The workflow compensates: keep fragile regions inside the layer you are not touching, and export at original resolution.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
@@ -124,6 +152,24 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Edit a product photo',
+    heroLayers: ['Product', 'Label', 'Props', 'Shadow', 'Background'],
+    deepDive: {
+      heading: 'What actually changes when a product photo edit goes wrong',
+      blocks: [
+        {
+          title: 'The three failure modes of product retouching',
+          body: 'Full-image regeneration silently redraws the label, warps proportions, or invents a new reflection. Background removers leave a floating product with no grounding shadow. Manual Photoshop work is precise but does not scale past a handful of SKUs. Layer isolation is the fourth path: the product is one layer, the environment is the others, and edits land only where they are aimed.',
+        },
+        {
+          title: 'Protecting the sellable object',
+          body: 'Ecommerce images live or die on product accuracy. Keep the product layer locked, then revise around it: swap the background plate for marketplace white, restyle the scene for seasonal campaigns, remove props that distract from the offer. Because the product pixels are never re-synthesized, what shoppers see matches what ships.',
+        },
+        {
+          title: 'One master photo, many channel variants',
+          body: 'Marketplace listings, paid social, and email headers each need a different crop and scene, but the same product. A layered project turns one master photo into a variant system: lock product and shadow, iterate background and copy per channel, and export each composite as production PNG.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
@@ -171,6 +217,24 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Change product background',
+    heroLayers: ['Product', 'Shadow', 'Surface', 'Backdrop', 'Lighting'],
+    deepDive: {
+      heading: 'Background swaps that keep the product believable',
+      blocks: [
+        {
+          title: 'Cut-outs are not enough',
+          body: 'A product pasted onto a new background reads as fake because the old lighting and shadow travel with the cut-out. The swap looks right only when shadow, surface reflection, and lighting are separated from the product itself, so the new scene can carry its own.',
+        },
+        {
+          title: 'The layer order that works',
+          body: 'Decompose into product, shadow, surface, and backdrop. Keep product and shadow visible while you replace the backdrop; regenerate the shadow only if the new scene changes the light direction. This ordering is why layered swaps survive zoom-in inspection on marketplaces.',
+        },
+        {
+          title: 'From lifestyle to marketplace white and back',
+          body: 'The same layered master serves both directions: strip the lifestyle scene down to a soft studio white for listing compliance, then restore the premium scene for the brand site. Two exports, zero re-shoots, one protected product layer throughout.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
@@ -218,6 +282,24 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Edit a Midjourney image',
+    heroLayers: ['Subject', 'Garment', 'Face Region', 'Background', 'Style'],
+    deepDive: {
+      heading: 'Fixing a Midjourney result without losing the 9 out of 10',
+      blocks: [
+        {
+          title: 'The 90-percent problem',
+          body: 'A strong Midjourney output is usually right everywhere except one thing: one hand, a logo, the color of a chair. Re-rolling trades your good render for a new gamble; vary-region fixes the area but can clash at the seams. Uploading the result into a layer editor lets you spend your fix only on the broken tenth.',
+        },
+        {
+          title: 'Prompts carry over, structure does not',
+          body: 'You do not need the original prompt here — the image itself is the input. Decomposition reads the finished render and rebuilds its structure: subject, garment, face region, background. Your edit instruction then targets a layer, not a seed, which is why the untouched 90 percent stays pixel-stable.',
+        },
+        {
+          title: 'Same workflow for Flux, Nano Banana, and GPT Image',
+          body: 'The pipeline is model-agnostic on the input side: any flattened PNG or JPG from any generator becomes the same layer stack. Teams standardize one revision workflow across every generator they use, instead of learning five different region-edit tools.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
@@ -265,6 +347,24 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Remix a poster',
+    heroLayers: ['Headline', 'Logo', 'Body Copy', 'Background Plate', 'Decor'],
+    deepDive: {
+      heading: 'Editing a finished poster when the PSD is long gone',
+      blocks: [
+        {
+          title: 'The flat-file reality of campaign work',
+          body: 'Posters arrive as flattened exports — from a designer who left, a template tool, or an AI generator. The request is always the same: change the date, translate the headline, swap the product. Without layers that means a rebuild; with decomposition it is a five-minute revision.',
+        },
+        {
+          title: 'A poster is a predictable layer structure',
+          body: 'Decomposition recovers the structure a designer would have used: headline, logo, body copy, background plate, decorative graphics. Once separated, each element moves, resizes, recolors, or rewrites independently — the text layer takes new wording without touching the illustration beneath it.',
+        },
+        {
+          title: 'Rewrite, not re-typeset',
+          body: 'Text revision is the most common poster edit and the most painful to redo manually. Selecting the text layer and describing the new wording keeps placement, scale, and surrounding layout intact, which is what makes fast localization of one poster into five languages realistic.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
@@ -312,6 +412,24 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Separate image text',
+    heroLayers: ['Text', 'Headline', 'Subject', 'Background', 'Effects'],
+    deepDive: {
+      heading: 'Separating text from an image, beyond OCR',
+      blocks: [
+        {
+          title: 'OCR reads text. It does not lift it.',
+          body: 'OCR tells you what the words say; it hands you a string, not an editable element. Localization and redesign need the text as its own layer — movable, rewritable, deletable — sitting above the artwork it used to be baked into. Decomposition gives you that element directly.',
+        },
+        {
+          title: 'The localization use case',
+          body: 'Translating an ad or poster normally means cloning the background around every text block. With text isolated on its own layer, each block is selected and rewritten in place: same position, same scale, surrounding layout untouched. One master poster becomes five market versions in one session.',
+        },
+        {
+          title: 'When it works best',
+          body: 'Readable typography with decent contrast separates cleanly; stylized type fused into textures separates partially, and the fix is to edit the text layer rather than fight the mask. Keep the original export so any extraction can be re-run against the untouched source.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
@@ -359,19 +477,37 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Change character clothes',
+    heroLayers: ['Face', 'Outfit', 'Hair', 'Pose Region', 'Background'],
+    deepDive: {
+      heading: 'Changing the outfit while the character stays castable',
+      blocks: [
+        {
+          title: 'Why outfit swaps drift the face',
+          body: 'Full-image edits redraw the whole character, so identity rides on the model guessing what to preserve. Isolating outfit, hair, and background into separate layers means the face region never enters the edit pass — the strongest consistency control available short of manual compositing.',
+        },
+        {
+          title: 'Wardrobe as a variant system',
+          body: 'Character-driven brands, VTuber merch, game concepts, and storyboards need one character in many outfits. Keep face and pose layers fixed, swap the outfit layer per look, and export each combination. The character sheet stays coherent because identity pixels are never re-synthesized.',
+        },
+        {
+          title: 'Anime and illustration notes',
+          body: 'Cel-shaded art separates well because its regions are already flat. For loose brushwork or heavy motion blur, decompose at a higher layer count so fragile details land inside layers you will not edit. Lock what must not move before prompting.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
     lang: 'en',
     slug: 'keep-same-composition-ai',
-    title: 'Keep the Same Composition While Editing AI Images | Image Layered',
+    title: 'Keep the Same Composition When Editing AI Images — Layer-Based Editor | Image Layered',
     description:
-      'Make local AI image edits while preserving the approved composition, camera angle, layout, subject position, and background structure.',
+      'Edit one object and keep the framing, camera angle, layout, and subject position identical. Upload, split into layers, and revise only what the note says.',
     keyword: 'keep same composition AI',
     eyebrow: 'Composition-safe editing',
     h1: 'Keep the same composition while editing an AI image',
     intro:
-      'Many AI images are approved because of their exact framing. When a client asks for a small change, you need to preserve the composition rather than generate a new direction.',
+      'Many AI images are approved because of their exact framing. When a client asks for a small change, you need to edit without changing the composition, not generate a new direction.',
     pain:
       'Variation tools can shift the subject, crop, perspective, lighting, or visual hierarchy. That creates another review cycle instead of solving the note.',
     solution:
@@ -404,8 +540,34 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
         q: 'Can I compare before and after?',
         a: 'The product workflow is built around preserving a base image, editing selected layers, and exporting the recomposed result.',
       },
+      {
+        q: 'How do I edit an AI image without changing the whole picture?',
+        a: 'Split it into layers first. The decomposition step rebuilds the image as separate objects — subject, background, text, effects — so your instruction reaches one layer while the others keep their exact pixels, position, and scale.',
+      },
+      {
+        q: 'Why does my image look different every time I ask AI to edit it?',
+        a: 'Full-image editing regenerates every pixel, so framing, proportions, and lighting get re-sampled each run. Layer-based editing keeps the unchanged layers fixed and only re-synthesizes the selected object, which is why the composition survives.',
+      },
     ],
     cta: 'Edit with same composition',
+    heroLayers: ['Composition', 'Subject', 'Environment', 'Lighting', 'Grade'],
+    deepDive: {
+      heading: 'Keeping composition stable while the content evolves',
+      blocks: [
+        {
+          title: 'Composition is the first casualty of regeneration',
+          body: 'Ask a generator for the same image with one change and you get a different camera, a different crop, different proportions. The layout you art-directed is gone. Layer editing holds composition structurally: position and scale of every unselected object persist because their pixels persist.',
+        },
+        {
+          title: 'Before-and-after as a review tool',
+          body: 'Controlled edits are only credible when you can verify them. The workspace keeps the original and the revised composite side by side, so approving a change means confirming nothing else moved — not squinting at two generations to find what broke.',
+        },
+        {
+          title: 'Where this matters most',
+          body: 'Storyboard frames, ad layouts with locked legal placement, product hero shots, and series covers: any work where the frame itself is approved and only the content inside it changes. That is exactly the contract layer-based editing enforces.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
@@ -454,6 +616,24 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Revise an image',
+    heroLayers: ['Source', 'Target Layer', 'Context', 'Variation', 'Export'],
+    deepDive: {
+      heading: 'What to look for in an AI image revision tool',
+      blocks: [
+        {
+          title: 'Selection before generation',
+          body: 'A revision tool earns its name by what it refuses to touch. The core test: can you name the target — this object, this layer, this region — and get everything else back pixel-identical? Tools that only re-prompt are generators wearing a revision badge.',
+        },
+        {
+          title: 'Non-destructive by default',
+          body: 'Real revision workflows keep the previous state recoverable. Variations should arrive as new layers that hide their source, not overwrite it; history should survive an undo binge. The moment an edit is destructive, iteration becomes gambling.',
+        },
+        {
+          title: 'Ending inside your stack',
+          body: 'Revision tools meet real pipelines, not replace them. Exporting individual layers as transparent PNG hands the result to Photoshop, Figma, or Canva; exporting the composite finishes the job in-tool. Both paths matter, and credits should price the revision, not the exploration.',
+        },
+      ],
+    },
   },
   {
     market: 'en',
@@ -502,6 +682,24 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
       },
     ],
     cta: 'Edit a character',
+    heroLayers: ['Face', 'Body', 'Wardrobe', 'Scene', 'Effects'],
+    deepDive: {
+      heading: 'Editing a character without recasting the actor',
+      blocks: [
+        {
+          title: 'Identity is a layer, treat it like one',
+          body: 'Character consistency breaks when the face re-enters the diffusion pass. Decomposition makes the face its own protected region: edit wardrobe, pose context, or scene, and the identity layer never receives a new sample. It is the closest thing to a contract with the model.',
+        },
+        {
+          title: 'Common character revisions',
+          body: 'Age a character slightly, adjust an expression, change hair length, swap seasonal clothing, place the same character into a new environment — each is a targeted edit against one layer while the rest of the character sheet stays locked. Series work depends on exactly this discipline.',
+        },
+        {
+          title: 'Verification workflow',
+          body: 'Toggle the edited layer against the original, check silhouette and landmarks at full zoom, then export. If anything outside the target moved, the edit scope was wrong — rerun it against a narrower layer rather than accepting the drift.',
+        },
+      ],
+    },
   },
   {
     market: 'pt',

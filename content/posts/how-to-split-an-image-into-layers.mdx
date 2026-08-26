@@ -1,0 +1,54 @@
+---
+title: How to Split an Image into Layers (Without Photoshop)
+description: A practical walkthrough of layer decomposition — what actually comes out the other end, where it works well, and where it doesn't.
+created_at: 2026-08-24
+author_name: Admin
+author_image: /logo.png
+image: /imgs/features/001.jpeg
+tags: ['AI', 'Image Editing', 'Layer Decomposition', 'Tutorial']
+categories: ['Tutorials']
+---
+
+# How to Split an Image into Layers
+
+Last month a client sent me a product shot and asked for "the same image, but winter." The file was a flattened JPG. No PSD, no layers, nothing. Five years ago that request meant an hour of careful masking, or an awkward conversation about why it wasn't possible.
+
+This is the problem layer decomposition actually solves, and it's worth understanding what it does before you rely on it.
+
+## What layer decomposition is
+
+You upload a finished image — a poster, a product photo, an AI generation, whatever. A model (we use Qwen Image Layered) looks at the picture and rebuilds it as a stack of transparent layers instead of one flat bitmap. The subject lands on one layer. The background on another. Text, shadows, and small objects each get their own.
+
+The output isn't a guess with a checkerboard behind it. Each layer is a real PNG with real transparency, positioned where it was in the original. Stack them back up and you get the source image again, pixel for pixel.
+
+## Doing it, step by step
+
+Open the [editor](/qwenimagelayered) and upload your image. JPG, PNG, WEBP, and AVIF all work, up to 25 MB.
+
+Pick a layer count. Four to eight layers is the sweet spot for most images. Fewer and everything gets glued together into mega-layers; more and you spend your time hunting through the stack for the thing you wanted.
+
+Hit decompose and wait. On a typical product shot it takes under a minute. You'll see the layer stack fill in on the left — usually named something like Main Subject, Text / Graphics, Background, Shadow.
+
+That's the whole process. What you do next is where it gets interesting: hide a layer to see what's behind it, drag one out of place, or [edit a single object](/blog/edit-one-object-in-an-ai-image-without-regenerating) while the rest of the image stays exactly as it was.
+
+## What comes out the other end
+
+The honest version:
+
+- **Clean separations**: product on plain background, text over flat areas, distinct objects. These come out as genuinely usable layers.
+- **Acceptable separations**: soft shadows, semi-transparent effects. You get a layer, but the edges are soft and sometimes you'll want to clean them up.
+- **Messy separations**: hair against busy backgrounds, elements baked together by heavy JPEG compression, reflections fused to glass. The model tries. Sometimes the result is good enough to edit around; sometimes you're better off leaving that region inside a layer you don't touch.
+
+The pattern is simple: the more visually separated things were when the image was made, the cleaner they separate coming back out.
+
+## Two things worth knowing before you start
+
+Decomposition costs 5 credits per run. Your first runs as a guest are free, which is enough to see whether your image separates well before paying anything.
+
+Export doesn't cost credits — the composite renders locally in your browser. Decompose is the paid step; getting your result out is not.
+
+## When this is the wrong tool
+
+If you're generating something new from nothing, use a generator. If you need to remove one scratch from an otherwise perfect photo, a spot-heal tool is faster. Decomposition earns its keep when the image already exists and you need its *structure* — when the question is "which parts can I change independently" rather than "what should this look like."
+
+The client's winter version took eleven minutes, most of it spent picking the right background. The product never moved a pixel. That's the trade this workflow makes: a little setup in exchange for never re-rolling the parts that already worked.

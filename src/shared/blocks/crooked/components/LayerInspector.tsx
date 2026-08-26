@@ -18,6 +18,10 @@ import {
   ShieldCheck,
   Type,
   ImageIcon,
+  ArrowDown,
+  ArrowDownToLine,
+  ArrowUp,
+  ArrowUpToLine,
 } from 'lucide-react';
 
 import { Layer, LayerBlendMode, ToolType } from '../types';
@@ -46,6 +50,10 @@ interface LayerInspectorProps {
   onDownload: () => void;
   onDelete: () => void;
   onLockOthers: () => void;
+  onMoveBackward: () => void;
+  onMoveForward: () => void;
+  onSendToBack: () => void;
+  onBringToFront: () => void;
 }
 
 type InspectorTab = 'properties' | 'ai' | 'history';
@@ -67,6 +75,10 @@ const LayerInspector = ({
   onDownload,
   onDelete,
   onLockOthers,
+  onMoveBackward,
+  onMoveForward,
+  onSendToBack,
+  onBringToFront,
 }: LayerInspectorProps) => {
   const [tab, setTab] = useState<InspectorTab>('properties');
   const normalizedName = layer.name.toLowerCase();
@@ -119,7 +131,7 @@ const LayerInspector = ({
     <aside className="flex h-full min-h-[760px] flex-col rounded-2xl border border-white/[0.06] bg-[#17141c] p-3 shadow-[0_22px_68px_rgba(0,0,0,0.3)]">
       <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] p-2.5 pr-9">
         <div className="size-11 shrink-0 overflow-hidden rounded-xl bg-[#0b090d]">
-          <img src={layer.url} alt="" className="size-full object-contain" />
+          <img src={layer.url} alt="" className="size-full object-contain" loading="lazy" decoding="async" />
         </div>
         <div className="min-w-0 flex-1">
           <input
@@ -305,6 +317,30 @@ const LayerInspector = ({
               )}
             </section>
 
+            <section>
+              <h3 className="text-xs font-extrabold text-[#dee5ff]">
+                {isZh ? '图层层级' : 'Layer order'}
+              </h3>
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {[
+                  { label: isZh ? '置底' : 'Back', icon: ArrowDownToLine, action: onSendToBack },
+                  { label: isZh ? '下移' : 'Down', icon: ArrowDown, action: onMoveBackward },
+                  { label: isZh ? '上移' : 'Up', icon: ArrowUp, action: onMoveForward },
+                  { label: isZh ? '置顶' : 'Front', icon: ArrowUpToLine, action: onBringToFront },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={item.action}
+                    className="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl bg-white/[0.055] px-1 text-[9px] font-bold text-[#d8d2dc] outline-none transition-colors hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                  >
+                    <item.icon className="size-3.5" />
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
             {(layer.maskUrl || layer.editMetadata || layer.groupName) && (
               <section>
                 <h3 className="text-xs font-extrabold text-[#dee5ff]">
@@ -313,7 +349,7 @@ const LayerInspector = ({
                 {layer.maskUrl && (
                   <div className="mt-3 flex items-center gap-3 rounded-xl bg-white/[0.045] p-2.5">
                     <div className="size-12 shrink-0 overflow-hidden rounded-lg bg-black/30">
-                      <img src={layer.maskUrl} alt={isZh ? '蒙版预览' : 'Mask preview'} className="size-full object-contain" />
+                      <img src={layer.maskUrl} alt={isZh ? '蒙版预览' : 'Mask preview'} className="size-full object-contain" loading="lazy" decoding="async" />
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-100">{isZh ? '蒙版预览' : 'Mask preview'}</p>
