@@ -38,7 +38,7 @@ export function StudioStart() {
         getImageSize(file),
         uploadStudioImage(file),
       ]);
-      const project = await createStudioProject({
+      const bootstrap = await createStudioProject({
         title: file.name.replace(/\.[^.]+$/, '') || 'Untitled project',
         width,
         height,
@@ -46,14 +46,14 @@ export function StudioStart() {
         originalUrl: uploaded.url,
       });
 
-      if (!project.userId) {
+      if (!bootstrap.project.userId) {
         localStorage.setItem(
-          `image-layered:studio-project:${project.id}`,
-          JSON.stringify({ project, layers: [] })
+          `image-layered:studio-project:${bootstrap.project.id}`,
+          JSON.stringify(bootstrap)
         );
       }
 
-      router.push(`/studio/${project.id}`);
+      router.push(`/studio/${bootstrap.project.id}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to start Studio');
       setBusy(false);
@@ -90,7 +90,9 @@ export function StudioStart() {
             ) : (
               <Upload className="mb-4 size-8" />
             )}
-            <span className="font-medium">{busy ? 'Preparing your project…' : 'Drop an image here or click to upload'}</span>
+            <span className="font-medium">
+              {busy ? 'Preparing your project…' : 'Drop an image here or click to upload'}
+            </span>
             <span className="mt-2 text-xs text-zinc-500">PNG, JPG or WEBP · up to 10 MB</span>
           </button>
 
