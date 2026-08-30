@@ -13,8 +13,8 @@ export default async function StudioProjectPage({
 }: {
   params: Promise<{ locale: string; projectId: string }>;
 }) {
-  const { locale } = await params;
+  const { locale, projectId } = await params;
   setRequestLocale(locale);
 
-  return <StudioShell />;
+  return <StudioShell projectId={projectId} />;
 }
