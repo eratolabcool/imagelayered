@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { getUuid } from '@/shared/lib/hash';
 import { getSignUser } from '@/shared/models/user';
 
-const GUEST_COOKIE = 'image_layered_studio_guest';
+export const STUDIO_GUEST_COOKIE = 'image_layered_studio_guest';
 const GUEST_ID_PATTERN = /^[a-zA-Z0-9-]{8,191}$/;
 
 export type StudioActor = {
@@ -23,10 +23,10 @@ export async function getStudioActor(): Promise<StudioActor> {
   }
 
   const cookieStore = await cookies();
-  let guestId = cookieStore.get(GUEST_COOKIE)?.value || '';
+  let guestId = cookieStore.get(STUDIO_GUEST_COOKIE)?.value || '';
   if (!GUEST_ID_PATTERN.test(guestId)) {
     guestId = getUuid();
-    cookieStore.set(GUEST_COOKIE, guestId, {
+    cookieStore.set(STUDIO_GUEST_COOKIE, guestId, {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
