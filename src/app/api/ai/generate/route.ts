@@ -1,5 +1,6 @@
 import { envConfigs } from '@/config';
 import { AIMediaType, AITaskStatus } from '@/extensions/ai';
+import { getStudioActor } from '@/features/studio/server/identity';
 import { getUuid } from '@/shared/lib/hash';
 import {
   IMAGE_LAYERED_CAPABILITIES,
@@ -9,6 +10,7 @@ import { respData, respErr } from '@/shared/lib/resp';
 import { createAITask, NewAITask } from '@/shared/models/ai_task';
 import { getAllConfigs } from '@/shared/models/config';
 import { getRemainingCredits } from '@/shared/models/credit';
+import { consumeStudioGuestAIQuota } from '@/shared/models/studio';
 import { getUserInfo } from '@/shared/models/user';
 import { getAIService } from '@/shared/services/ai';
 
@@ -156,6 +158,11 @@ export async function POST(request: Request) {
       ) {
         throw new Error('no auth, please sign in');
       }
+
+      // Cost protection lives at the generation boundary so direct calls to
+      // the legacy AI endpoint cannot bypass Studio's anonymous quota.
+      const actor = await getStudioActor();
+      await consumeStudioGuestAIQuota(actor.actorKey);
 
       const callbackUrl = `${envConfigs.app_url}/api/ai/notify/${provider}`;
       const params: any = {
