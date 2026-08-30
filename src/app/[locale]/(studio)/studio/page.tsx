@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 
-import { StudioShell } from '@/features/studio/components/StudioShell';
+import { StudioStart } from '@/features/studio/components/StudioStart';
 
 export const metadata: Metadata = {
   title: 'Image Layered Studio',
@@ -17,5 +17,5 @@ export default async function StudioPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  return <StudioShell />;
+  return <StudioStart />;
 }
