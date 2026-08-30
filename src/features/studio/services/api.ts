@@ -86,6 +86,14 @@ export function createStudioOperation(
   });
 }
 
-export function getStudioOperation(operationId: string) {
-  return request<StudioOperation>(`/api/studio/operations/${operationId}`);
+export function getStudioOperation(operation: StudioOperation) {
+  const search = new URLSearchParams({
+    projectId: operation.projectId,
+    type: operation.type,
+  });
+  if (operation.model) search.set('model', operation.model);
+
+  return request<StudioOperation>(
+    `/api/studio/operations/${operation.id}?${search.toString()}`
+  );
 }
