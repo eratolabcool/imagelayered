@@ -3,6 +3,8 @@ import type {
   StudioOperation,
   StudioOperationType,
   StudioProject,
+  StudioRevision,
+  StudioSnapshot,
 } from '../types';
 
 type ApiEnvelope<T> = {
@@ -87,13 +89,24 @@ export function createStudioOperation(
 }
 
 export function getStudioOperation(operation: StudioOperation) {
-  const search = new URLSearchParams({
-    projectId: operation.projectId,
-    type: operation.type,
-  });
-  if (operation.model) search.set('model', operation.model);
+  return request<StudioOperation>(`/api/studio/operations/${operation.id}`);
+}
 
-  return request<StudioOperation>(
-    `/api/studio/operations/${operation.id}?${search.toString()}`
-  );
+export function listStudioRevisions(projectId: string) {
+  return request<StudioRevision[]>(`/api/studio/projects/${projectId}/revisions`);
+}
+
+export function createStudioRevision(
+  projectId: string,
+  input: {
+    parentRevisionId?: string | null;
+    operationId?: string | null;
+    snapshot: StudioSnapshot;
+  }
+) {
+  return request<StudioRevision>(`/api/studio/projects/${projectId}/revisions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
 }
