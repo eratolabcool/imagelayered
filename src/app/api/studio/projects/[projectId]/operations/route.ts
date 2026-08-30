@@ -1,4 +1,5 @@
 import { AIMediaType } from '@/extensions/ai';
+import { IMAGE_LAYERED_CAPABILITIES } from '@/shared/lib/image-layered-capabilities';
 import { respData, respErr } from '@/shared/lib/resp';
 
 export const dynamic = 'force-dynamic';
@@ -62,6 +63,11 @@ export async function POST(
     const aiTaskId = task?.id || task?.taskId;
     if (!aiTaskId) throw new Error('AI operation did not return a task id');
 
+    const defaultCapability =
+      type === 'decompose'
+        ? IMAGE_LAYERED_CAPABILITIES.decompose
+        : IMAGE_LAYERED_CAPABILITIES.editLayer;
+
     return respData({
       id: aiTaskId,
       projectId,
@@ -69,8 +75,8 @@ export async function POST(
       inputRevisionId: baseRevisionId || '',
       targetLayerIds,
       prompt,
-      provider: task?.provider,
-      model: task?.model,
+      provider: task?.provider || defaultCapability.provider,
+      model: task?.model || defaultCapability.model,
       status: task?.status === 'success' ? 'succeeded' : 'running',
       aiTaskId,
       costCredits: task?.costCredits,
