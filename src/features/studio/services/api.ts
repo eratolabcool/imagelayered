@@ -39,11 +39,14 @@ export function createStudioProject(input: {
   originalAssetId: string;
   originalUrl?: string;
 }) {
-  return request<StudioProject>('/api/studio/projects', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
+  return request<{ project: StudioProject; layers: StudioLayer[] }>(
+    '/api/studio/projects',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    }
+  );
 }
 
 export function getStudioProject(projectId: string) {
