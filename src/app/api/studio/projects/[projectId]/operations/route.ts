@@ -12,6 +12,28 @@ const sceneByOperation = {
   remove: 'image-remove',
 } as const;
 
+function parseJson(value: unknown) {
+  if (!value || typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function extractImages(taskInfo: any, taskResult: any): string[] {
+  const candidates = [
+    ...(Array.isArray(taskInfo?.images)
+      ? taskInfo.images.map((image: any) => image?.imageUrl || image?.url || image)
+      : []),
+    ...(Array.isArray(taskResult?.images) ? taskResult.images : []),
+    ...(Array.isArray(taskResult?.output) ? taskResult.output : []),
+    ...(Array.isArray(taskResult?.resultUrls) ? taskResult.resultUrls : []),
+  ];
+
+  return [...new Set(candidates.filter((value): value is string => typeof value === 'string'))];
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ projectId: string }> }
@@ -67,6 +89,8 @@ export async function POST(
       type === 'decompose'
         ? IMAGE_LAYERED_CAPABILITIES.decompose
         : IMAGE_LAYERED_CAPABILITIES.editLayer;
+    const taskInfo = parseJson(task?.taskInfo);
+    const taskResult = parseJson(task?.taskResult);
 
     return respData({
       id: aiTaskId,
@@ -81,6 +105,11 @@ export async function POST(
       aiTaskId,
       costCredits: task?.costCredits,
       createdAt: new Date().toISOString(),
+      result: {
+        images: extractImages(taskInfo, taskResult),
+        taskInfo,
+        taskResult,
+      },
     });
   } catch (error: any) {
     return respErr(error.message);
