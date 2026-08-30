@@ -53,7 +53,7 @@
             "tip": "Best for occasional projects. Included usage never expires.",
             "button": {
               "title": "Start a Project",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "icon": "RiFlashlightFill"
             },
             "product_id": "credits-100",
@@ -88,7 +88,7 @@
             "tip": "Built for regular creative work. Cancel anytime.",
             "button": {
               "title": "Choose Creator",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "icon": "RiFlashlightFill"
             },
             "product_id": "pro-monthly",
@@ -126,7 +126,7 @@
             "tip": "Billed annually. Best value for production teams.",
             "button": {
               "title": "Choose Studio",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "icon": "RiFlashlightFill"
             },
             "product_id": "pro-yearly",

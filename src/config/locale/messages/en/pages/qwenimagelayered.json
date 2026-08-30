@@ -2,8 +2,8 @@
   "page": {
     "slug": "qwenimagelayered",
     "title": "Image Layered - AI Photoshop for Posters",
-    "description": "Upload any poster, split it into editable AI layers, edit selected objects with GPT Image 2, and export a redesigned poster.",
-    "keywords": "AI Photoshop for posters, poster editor, editable AI layers, layer decomposition, GPT Image editing, product image editor, image masking"
+    "description": "Upload any poster, automatically create editable AI layers, revise selected objects, and export a redesigned poster.",
+    "keywords": "AI Photoshop for posters, poster editor, editable AI layers, layer decomposition, product image editor, image masking"
   },
   "tool": {
     "brand": {
@@ -15,7 +15,7 @@
       "upload": "Upload poster",
       "decompose": "Auto layers",
       "edit": "Prompt edit",
-      "editingEngine": "Qwen layers + GPT Image editing",
+      "editingEngine": "Automatic layering and focused editing",
       "maskReady": "Mask ready",
       "noMask": "No mask"
     },

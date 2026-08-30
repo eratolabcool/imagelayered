@@ -1,28 +1,77 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useSearchParams, useParams } from 'next/navigation';
-import { useSession } from '@/core/auth/client';
-import { Share2, Sparkles, X, Mail, CheckCircle, MousePointer, Layers as LayersIcon, Palette, RefreshCw, Eye, EyeOff, Wand2, UploadCloud, History, Eraser, Hand, Scaling, ChevronDown, HelpCircle, Undo2, Redo2, Search, GripVertical, FolderPlus, Ungroup, Lock, Unlock, Trash2, Command as CommandIcon, Camera, Maximize2, Download, Images, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
-import { Layer, ToolType, ExportSettings, AdvancedDecompositionConfig } from '../types';
-import CrookedExportModal from './CrookedExportModal';
-import CrookedUpgradeModal from './CrookedUpgradeModal';
-import { Icons } from './Icon';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import {
+  Camera,
+  CheckCircle,
+  ChevronDown,
+  Command as CommandIcon,
+  Download,
+  Eraser,
+  Eye,
+  EyeOff,
+  FolderPlus,
+  GripVertical,
+  Hand,
+  HelpCircle,
+  History,
+  Images,
+  Layers as LayersIcon,
+  Lock,
+  Mail,
+  Maximize2,
+  MousePointer,
+  Palette,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  Redo2,
+  RefreshCw,
+  Scaling,
+  Search,
+  Share2,
+  Sparkles,
+  Trash2,
+  Undo2,
+  Ungroup,
+  Unlock,
+  UploadCloud,
+  Wand2,
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+import { useSession } from '@/core/auth/client';
+import {
+  getRemainingUploads,
   incrementUploadCount,
   isUploadLimitReached,
-  getRemainingUploads
 } from '@/shared/lib/guest-usage';
-import { useCrookedCopy } from '../i18n';
-import { toast } from 'sonner';
-import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
-import { trackFunnel } from '../lib/funnel-events';
-import WorkspaceSidebar from './WorkspaceSidebar';
-import LayerInspector from './LayerInspector';
-import EditorCommandPalette, { EditorCommand } from './EditorCommandPalette';
-import ProjectVersionPanel, { ProjectSnapshot } from './ProjectVersionPanel';
+import {
+  DEFAULT_DECOMPOSITION_LAYER_COUNT,
+  IMAGE_LAYERED_CAPABILITIES,
+} from '@/shared/lib/image-layered-capabilities';
+
 import { useLayerHistory } from '../hooks/use-layer-history';
-import LayerSettingsPanel, { DecompositionModelOption } from './LayerSettingsPanel';
+import { useCrookedCopy } from '../i18n';
+import { trackFunnel } from '../lib/funnel-events';
+import { PreparedImagePayload, prepareImageFile } from '../lib/image-upload';
+import {
+  AdvancedDecompositionConfig,
+  ExportSettings,
+  Layer,
+  ToolType,
+} from '../types';
+import CrookedExportModal from './CrookedExportModal';
+import CrookedUpgradeModal from './CrookedUpgradeModal';
+import EditorCommandPalette, { EditorCommand } from './EditorCommandPalette';
+import { Icons } from './Icon';
+import LayerInspector from './LayerInspector';
+import LayerSettingsPanel from './LayerSettingsPanel';
+import ProjectVersionPanel, { ProjectSnapshot } from './ProjectVersionPanel';
+import WorkspaceSidebar from './WorkspaceSidebar';
 
 interface CrookedAppProps {
   embedded?: boolean;
@@ -32,19 +81,76 @@ interface CrookedAppProps {
 const LOCAL_DRAFT_KEY = 'image-layered:editor-draft:v1';
 const PROJECT_FILE_VERSION = 1;
 const PROJECT_FILE_MAX_BYTES = 60 * 1024 * 1024;
-const VALID_BLEND_MODES = new Set(['normal', 'multiply', 'screen', 'overlay', 'soft-light', 'color', 'luminosity']);
+const VALID_BLEND_MODES = new Set([
+  'normal',
+  'multiply',
+  'screen',
+  'overlay',
+  'soft-light',
+  'color',
+  'luminosity',
+]);
+
+const parseTaskPayload = (value: unknown): any => {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const extractGeneratedImageUrl = (payload: any): string | null => {
+  if (!payload) return null;
+  const parsed = parseTaskPayload(payload);
+  if (typeof parsed === 'string') {
+    return /^https?:\/\//i.test(parsed) ? parsed : null;
+  }
+  if (Array.isArray(parsed)) {
+    for (const item of parsed) {
+      const found = extractGeneratedImageUrl(item);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (typeof parsed !== 'object') return null;
+
+  const direct = parsed.imageUrl || parsed.image_url || parsed.url;
+  if (typeof direct === 'string' && /^https?:\/\//i.test(direct)) return direct;
+
+  for (const key of [
+    'images',
+    'output',
+    'resultUrls',
+    'image',
+    'taskInfo',
+    'taskResult',
+    'data',
+  ]) {
+    const found = extractGeneratedImageUrl(parsed[key]);
+    if (found) return found;
+  }
+  return null;
+};
 
 const parseProjectLayer = (value: unknown): Layer | null => {
   if (!value || typeof value !== 'object') return null;
   const item = value as Record<string, unknown>;
   const finite = (key: string, fallback = 0) => {
     const number = typeof item[key] === 'number' ? item[key] : fallback;
-    return Number.isFinite(number) && Math.abs(number) <= 1_000_000 ? number : null;
+    return Number.isFinite(number) && Math.abs(number) <= 1_000_000
+      ? number
+      : null;
   };
   const url = typeof item.url === 'string' ? item.url : '';
-  const safeUrl = /^https?:\/\//i.test(url) || /^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/i.test(url);
+  const safeUrl =
+    /^https?:\/\//i.test(url) ||
+    /^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/i.test(url);
   const maskUrl = typeof item.maskUrl === 'string' ? item.maskUrl : undefined;
-  const safeMask = !maskUrl || /^https?:\/\//i.test(maskUrl) || /^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/i.test(maskUrl);
+  const safeMask =
+    !maskUrl ||
+    /^https?:\/\//i.test(maskUrl) ||
+    /^data:image\/(?:png|jpe?g|webp|gif|avif);base64,/i.test(maskUrl);
   const id = typeof item.id === 'string' ? item.id.slice(0, 128) : '';
   const name = typeof item.name === 'string' ? item.name.slice(0, 160) : '';
   const type = item.type;
@@ -54,7 +160,24 @@ const parseProjectLayer = (value: unknown): Layer | null => {
   const height = finite('height');
   const opacity = finite('opacity', 1);
   const zIndex = finite('zIndex');
-  if (!id || !name || !safeUrl || !safeMask || !['image', 'text', 'shape'].includes(String(type)) || x === null || y === null || width === null || height === null || opacity === null || zIndex === null || width <= 0 || height <= 0 || opacity < 0 || opacity > 1) return null;
+  if (
+    !id ||
+    !name ||
+    !safeUrl ||
+    !safeMask ||
+    !['image', 'text', 'shape'].includes(String(type)) ||
+    x === null ||
+    y === null ||
+    width === null ||
+    height === null ||
+    opacity === null ||
+    zIndex === null ||
+    width <= 0 ||
+    height <= 0 ||
+    opacity < 0 ||
+    opacity > 1
+  )
+    return null;
 
   return {
     id,
@@ -71,84 +194,70 @@ const parseProjectLayer = (value: unknown): Layer | null => {
     visible: item.visible !== false,
     locked: item.locked === true,
     zIndex,
-    blendMode: VALID_BLEND_MODES.has(String(item.blendMode)) ? item.blendMode as Layer['blendMode'] : 'normal',
+    blendMode: VALID_BLEND_MODES.has(String(item.blendMode))
+      ? (item.blendMode as Layer['blendMode'])
+      : 'normal',
     maskUrl,
-    parentId: typeof item.parentId === 'string' ? item.parentId.slice(0, 128) : undefined,
-    sourceLayerId: typeof item.sourceLayerId === 'string' ? item.sourceLayerId.slice(0, 128) : undefined,
-    groupId: typeof item.groupId === 'string' ? item.groupId.slice(0, 128) : undefined,
-    groupName: typeof item.groupName === 'string' ? item.groupName.slice(0, 160) : undefined,
-    preserve: item.preserve && typeof item.preserve === 'object' ? {
-      shape: (item.preserve as Record<string, unknown>).shape === true,
-      logo: (item.preserve as Record<string, unknown>).logo === true,
-      label: (item.preserve as Record<string, unknown>).label === true,
-      shadow: (item.preserve as Record<string, unknown>).shadow === true,
-    } : undefined,
+    parentId:
+      typeof item.parentId === 'string'
+        ? item.parentId.slice(0, 128)
+        : undefined,
+    sourceLayerId:
+      typeof item.sourceLayerId === 'string'
+        ? item.sourceLayerId.slice(0, 128)
+        : undefined,
+    groupId:
+      typeof item.groupId === 'string' ? item.groupId.slice(0, 128) : undefined,
+    groupName:
+      typeof item.groupName === 'string'
+        ? item.groupName.slice(0, 160)
+        : undefined,
+    preserve:
+      item.preserve && typeof item.preserve === 'object'
+        ? {
+            shape: (item.preserve as Record<string, unknown>).shape === true,
+            logo: (item.preserve as Record<string, unknown>).logo === true,
+            label: (item.preserve as Record<string, unknown>).label === true,
+            shadow: (item.preserve as Record<string, unknown>).shadow === true,
+          }
+        : undefined,
   };
 };
 
-const decompositionModelOptions: DecompositionModelOption[] = [
-  {
-    model: 'fal-ai/qwen-image-layered',
-    provider: 'fal',
-    label: 'Qwen Image Layered',
-    shortLabel: 'Qwen Layers',
-    description: 'Native transparent layer separation',
-    badge: 'Best layers',
-    mode: 'native',
-    layeringMode: 'native-layering',
-    idealFor: 'General layer extraction',
-    outputHint: 'Transparent assets',
-  },
-  {
-    model: 'bytedance/seedream/v5/pro/edit',
-    provider: 'fal',
-    label: 'Seedream Design Layering',
-    shortLabel: 'Seedream Design',
-    description: 'Special mode for posters, e-commerce creatives, infographics, and text-heavy layouts',
-    badge: 'Special mode',
-    mode: 'design-layering',
-    layeringMode: 'seedream-design-layering',
-    idealFor: 'Posters, e-commerce, infographics',
-    outputHint: 'Design semantics',
-  },
-  {
-    model: 'openai/gpt-image-2/edit',
-    provider: 'fal',
-    label: 'GPT Image 2',
-    shortLabel: 'GPT Image 2',
-    description: 'Prompt-accurate image understanding',
-    badge: 'Precise',
-    mode: 'semantic-edit',
-    layeringMode: 'semantic-layering',
-    idealFor: 'Semantic local edits',
-    outputHint: 'Editable concepts',
-  },
-];
-
-const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage = null }) => {
+const CrookedApp: React.FC<CrookedAppProps> = ({
+  embedded = false,
+  initialImage = null,
+}) => {
   const copy = useCrookedCopy();
-  const { brand, editBar, workflow } = copy;
-  const {
-    layers,
-    setLayers,
-    resetLayers,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-  } = useLayerHistory();
+  const { brand, editBar } = copy;
+  const { layers, setLayers, resetLayers, undo, redo, canUndo, canRedo } =
+    useLayerHistory();
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
-  const [selectedLayerIds, setSelectedLayerIds] = useState<Set<string>>(new Set());
+  const [selectedLayerIds, setSelectedLayerIds] = useState<Set<string>>(
+    new Set()
+  );
   const [layerSearch, setLayerSearch] = useState('');
-  const [draggedStackLayerId, setDraggedStackLayerId] = useState<string | null>(null);
+  const [draggedStackLayerId, setDraggedStackLayerId] = useState<string | null>(
+    null
+  );
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const [showOriginal, setShowOriginal] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [editHistory, setEditHistory] = useState<Array<{ id: string; time: number; action: string; layer: string }>>([]);
+  const [editHistory, setEditHistory] = useState<
+    Array<{ id: string; time: number; action: string; layer: string }>
+  >([]);
 
   const pushHistory = useCallback((action: string, layer: string) => {
     setEditHistory((prev) =>
-      [{ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, time: Date.now(), action, layer }, ...prev].slice(0, 30)
+      [
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          time: Date.now(),
+          action,
+          layer,
+        },
+        ...prev,
+      ].slice(0, 30)
     );
   }, []);
 
@@ -166,11 +275,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   // Growth & Cloud Save States
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectName, setProjectName] = useState<string>('My Poster');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<
+    'idle' | 'saving' | 'saved' | 'error'
+  >('idle');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isVersionPanelOpen, setIsVersionPanelOpen] = useState(false);
-  const [projectSnapshots, setProjectSnapshots] = useState<ProjectSnapshot[]>([]);
+  const [projectSnapshots, setProjectSnapshots] = useState<ProjectSnapshot[]>(
+    []
+  );
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [exitIntentEmail, setExitIntentEmail] = useState('');
   const [exitIntentSubmitting, setExitIntentSubmitting] = useState(false);
@@ -185,8 +298,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const dragFrameRef = useRef<number | null>(null);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
-  const [layerCount, setLayerCount] = useState<number>(6);
-  const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(new Set());
+  const [collapsedLayerIds, setCollapsedLayerIds] = useState<Set<string>>(
+    new Set()
+  );
   const [editInstruction, setEditInstruction] = useState('');
   const [isLayerSidebarCollapsed, setIsLayerSidebarCollapsed] = useState(false);
   const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
@@ -195,9 +309,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const params = useParams();
   const isZh = params?.locale === 'zh';
   const projectIdQuery = searchParams ? searchParams.get('project') : null;
+  const requestedTool = searchParams ? searchParams.get('tool') : null;
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
   const hasRestoredLocalDraft = useRef(false);
+
+  useEffect(() => {
+    if (
+      requestedTool === 'replace' ||
+      requestedTool === 'recolor' ||
+      requestedTool === 'remove'
+    ) {
+      setActiveTool(requestedTool);
+    }
+  }, [requestedTool]);
 
   // 1. On Mount: Load Project if projectIdQuery is present
   useEffect(() => {
@@ -229,7 +354,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       } catch (err: any) {
         console.error('[loadProject] Error:', err);
         setSaveStatus('error');
-        toast.error(isZh ? '无法加载该项目' : 'Failed to load project: ' + err.message);
+        toast.error(
+          isZh ? '无法加载该项目' : 'Failed to load project: ' + err.message
+        );
       }
     };
 
@@ -238,7 +365,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   // Restore an anonymous local draft after a browser or tab restart.
   useEffect(() => {
-    if (hasRestoredLocalDraft.current || projectIdQuery || initialImage || layers.length > 0) return;
+    if (
+      hasRestoredLocalDraft.current ||
+      projectIdQuery ||
+      initialImage ||
+      layers.length > 0
+    )
+      return;
     hasRestoredLocalDraft.current = true;
 
     try {
@@ -253,7 +386,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       resetLayers(draft.layers);
       setSelectedLayerId(draft.selectedLayerId || draft.layers[0].id);
       setSaveStatus('saved');
-      toast.success(isZh ? '已恢复上次未完成的项目' : 'Your unfinished project was restored');
+      toast.success(
+        isZh ? '已恢复上次未完成的项目' : 'Your unfinished project was restored'
+      );
     } catch (error) {
       console.error('[Draft restore] Failed:', error);
       localStorage.removeItem(LOCAL_DRAFT_KEY);
@@ -294,21 +429,21 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const bgLayer = layers.find(l => l.zIndex === 0) || layers[0];
+        const bgLayer = layers.find((l) => l.zIndex === 0) || layers[0];
         const previewUrl = bgLayer?.url || null;
 
         const res = await fetch('/api/projects', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
           signal: controller.signal,
           body: JSON.stringify({
             id: projectId,
             name: projectName,
             layers,
-            previewUrl
-          })
+            previewUrl,
+          }),
         });
 
         if (!res.ok) throw new Error('Save failed');
@@ -361,7 +496,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       return;
     }
     try {
-      const stored = localStorage.getItem(`image-layered:versions:${projectId}`);
+      const stored = localStorage.getItem(
+        `image-layered:versions:${projectId}`
+      );
       if (!stored) {
         setProjectSnapshots([]);
         return;
@@ -389,35 +526,42 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               setSelectedLayerId(draft.layers[0].id);
             }
 
-            const bgLayer = draft.layers.find((l: any) => l.zIndex === 0) || draft.layers[0];
+            const bgLayer =
+              draft.layers.find((l: any) => l.zIndex === 0) || draft.layers[0];
             const previewUrl = bgLayer?.url || null;
 
             fetch('/api/projects', {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
               },
               body: JSON.stringify({
                 id: draft.id,
                 name: draft.name || 'My Poster',
                 layers: draft.layers,
-                previewUrl
-              })
-            }).then(async (res) => {
-              if (res.ok) {
-                const data = await res.json();
-                if (data.code === 0) {
-                  toast.success(isZh 
-                    ? '🎉 欢迎回来！我们已自动将您刚才编辑的海报保存到云端项目。' 
-                    : '🎉 Welcome back! We have automatically saved your poster draft to your cloud account.'
-                  );
-                  sessionStorage.removeItem('guest_project_draft');
-                  setSaveStatus('saved');
+                previewUrl,
+              }),
+            })
+              .then(async (res) => {
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data.code === 0) {
+                    toast.success(
+                      isZh
+                        ? '🎉 欢迎回来！我们已自动将您刚才编辑的海报保存到云端项目。'
+                        : '🎉 Welcome back! We have automatically saved your poster draft to your cloud account.'
+                    );
+                    sessionStorage.removeItem('guest_project_draft');
+                    setSaveStatus('saved');
+                  }
                 }
-              }
-            }).catch(err => {
-              console.error('[Auto-resume] Failed to save guest draft to database:', err);
-            });
+              })
+              .catch((err) => {
+                console.error(
+                  '[Auto-resume] Failed to save guest draft to database:',
+                  err
+                );
+              });
           }
         } catch (e) {
           console.error('[Auto-resume] Error parsing guest draft:', e);
@@ -428,8 +572,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   // 4. Exit Intent Detector
   useEffect(() => {
-    const subscribed = localStorage.getItem('layered_newsletter_subscribed') === 'true';
-    const dismissed = sessionStorage.getItem('layered_exit_intent_dismissed') === 'true';
+    const subscribed =
+      localStorage.getItem('layered_newsletter_subscribed') === 'true';
+    const dismissed =
+      sessionStorage.getItem('layered_exit_intent_dismissed') === 'true';
     if (subscribed || dismissed || isLoggedIn) return;
 
     const handleMouseLeave = (e: MouseEvent) => {
@@ -450,7 +596,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     // Only introduce the workflow for a fresh upload. Restored, already-layered
     // projects should return users directly to their previous editing context.
     if (layers.length === 1) {
-      const completed = localStorage.getItem('layered_tour_completed') === 'true';
+      const completed =
+        localStorage.getItem('layered_tour_completed') === 'true';
       if (!completed && onboardingStep === null) {
         setOnboardingStep(0);
       }
@@ -459,25 +606,24 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   // Guest conversion modal state
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
-  const [upgradeModalType, setUpgradeModalType] = useState<'save' | 'export' | 'limit' | 'login'>('login');
+  const [upgradeModalType, setUpgradeModalType] = useState<
+    'save' | 'export' | 'limit' | 'login'
+  >('login');
 
   // Advanced Settings State
-  const [advancedConfig, setAdvancedConfig] = useState<AdvancedDecompositionConfig>({
-    prompt: 'Separate the image into clean, editable RGBA layers. Preserve the original composition and isolate major subjects, text, foreground objects, background, shadows, and effects where possible.',
-    negativePrompt: '',
-    seed: 42,
-    randomizeSeed: true,
-    enableCfgNormalization: true,
-    autoCaptionLanguageEn: true,
-    guidanceScale: 7.5,
-    inferenceSteps: 30,
-    model: 'fal-ai/qwen-image-layered'
-  });
-
-  const selectedDecompositionModel = React.useMemo(
-    () => decompositionModelOptions.find((option) => option.model === advancedConfig.model) ?? decompositionModelOptions[0],
-    [advancedConfig.model]
-  );
+  const [advancedConfig, setAdvancedConfig] =
+    useState<AdvancedDecompositionConfig>({
+      prompt:
+        'Separate the image into clean, editable RGBA layers. Preserve the original composition and isolate major subjects, text, foreground objects, background, shadows, and effects where possible.',
+      negativePrompt: '',
+      seed: 42,
+      randomizeSeed: true,
+      enableCfgNormalization: true,
+      autoCaptionLanguageEn: true,
+      guidanceScale: 7.5,
+      inferenceSteps: 30,
+      model: IMAGE_LAYERED_CAPABILITIES.decompose.model,
+    });
 
   const mainRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -498,7 +644,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   const uploadImageBlob = useCallback(async (blob: Blob, filename: string) => {
     const formData = new FormData();
-    formData.append('files', new File([blob], filename, { type: blob.type || 'image/png' }));
+    formData.append(
+      'files',
+      new File([blob], filename, { type: blob.type || 'image/png' })
+    );
 
     const uploadRes = await fetch('/api/storage/upload-image', {
       method: 'POST',
@@ -513,115 +662,141 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     return uploadData.data.urls[0] as string;
   }, []);
 
-  const loadCanvasImage = useCallback((url: string): Promise<HTMLImageElement> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error(`Failed to load image: ${url.substring(0, 80)}`));
-      img.src = getImageFetchUrl(url);
-    });
-  }, [getImageFetchUrl]);
+  const loadCanvasImage = useCallback(
+    (url: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () =>
+          reject(new Error(`Failed to load image: ${url.substring(0, 80)}`));
+        img.src = getImageFetchUrl(url);
+      });
+    },
+    [getImageFetchUrl]
+  );
 
-  const canvasToBlob = useCallback((canvas: HTMLCanvasElement): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error('Failed to create image blob'));
-          return;
-        }
-        resolve(blob);
-      }, 'image/png');
-    });
-  }, []);
+  const canvasToBlob = useCallback(
+    (canvas: HTMLCanvasElement): Promise<Blob> => {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Failed to create image blob'));
+            return;
+          }
+          resolve(blob);
+        }, 'image/png');
+      });
+    },
+    []
+  );
 
-  const createMaskFromLayer = useCallback(async (imageUrl: string) => {
-    const img = await loadCanvasImage(imageUrl);
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+  const createMaskFromLayer = useCallback(
+    async (imageUrl: string) => {
+      const img = await loadCanvasImage(imageUrl);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) throw new Error('Failed to create mask canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) throw new Error('Failed to create mask canvas');
 
-    ctx.drawImage(img, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    let hasVisiblePixels = false;
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      let hasVisiblePixels = false;
 
-    for (let i = 0; i < data.length; i += 4) {
-      const alpha = data[i + 3];
-      if (alpha > 8) hasVisiblePixels = true;
-      const maskValue = alpha > 8 ? 255 : 0;
-      data[i] = maskValue;
-      data[i + 1] = maskValue;
-      data[i + 2] = maskValue;
-      data[i + 3] = 255;
-    }
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        if (alpha > 8) hasVisiblePixels = true;
+        const maskValue = alpha > 8 ? 255 : 0;
+        data[i] = maskValue;
+        data[i + 1] = maskValue;
+        data[i + 2] = maskValue;
+        data[i + 3] = 255;
+      }
 
-    if (!hasVisiblePixels) {
-      return null;
-    }
+      if (!hasVisiblePixels) {
+        return null;
+      }
 
-    ctx.putImageData(imageData, 0, 0);
-    const blob = await canvasToBlob(canvas);
-    return uploadImageBlob(blob, `layer-mask-${Date.now()}.png`);
-  }, [canvasToBlob, loadCanvasImage, uploadImageBlob]);
+      ctx.putImageData(imageData, 0, 0);
+      const blob = await canvasToBlob(canvas);
+      return uploadImageBlob(blob, `layer-mask-${Date.now()}.png`);
+    },
+    [canvasToBlob, loadCanvasImage, uploadImageBlob]
+  );
 
-  const applyMaskToEditedLayer = useCallback(async (imageUrl: string, maskUrl: string) => {
-    const [image, mask] = await Promise.all([
-      loadCanvasImage(imageUrl),
-      loadCanvasImage(maskUrl),
-    ]);
+  const applyMaskToEditedLayer = useCallback(
+    async (imageUrl: string, maskUrl: string) => {
+      const [image, mask] = await Promise.all([
+        loadCanvasImage(imageUrl),
+        loadCanvasImage(maskUrl),
+      ]);
 
-    const canvas = document.createElement('canvas');
-    canvas.width = mask.naturalWidth;
-    canvas.height = mask.naturalHeight;
+      const canvas = document.createElement('canvas');
+      canvas.width = mask.naturalWidth;
+      canvas.height = mask.naturalHeight;
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) throw new Error('Failed to create masked layer canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) throw new Error('Failed to create masked layer canvas');
 
-    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-    const edited = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const edited = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(mask, 0, 0, canvas.width, canvas.height);
-    const maskData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(mask, 0, 0, canvas.width, canvas.height);
+      const maskData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-    for (let i = 0; i < edited.data.length; i += 4) {
-      edited.data[i + 3] = maskData[i];
-    }
+      for (let i = 0; i < edited.data.length; i += 4) {
+        edited.data[i + 3] = maskData[i];
+      }
 
-    ctx.putImageData(edited, 0, 0);
-    const blob = await canvasToBlob(canvas);
-    return uploadImageBlob(blob, `edited-layer-${Date.now()}.png`);
-  }, [canvasToBlob, loadCanvasImage, uploadImageBlob]);
+      ctx.putImageData(edited, 0, 0);
+      const blob = await canvasToBlob(canvas);
+      return uploadImageBlob(blob, `edited-layer-${Date.now()}.png`);
+    },
+    [canvasToBlob, loadCanvasImage, uploadImageBlob]
+  );
 
-  const placeImageLayer = useCallback((imageUrl: string, width: number, height: number, name: string = 'Main Canvas') => {
-    const newLayer: Layer = {
-      id: crypto.randomUUID(),
-      name,
-      type: 'image',
-      url: imageUrl,
-      x: 0,
-      y: 0,
-      width,
-      height,
-      opacity: 1,
-      visible: true,
-      locked: false,
-      zIndex: 0
-    };
+  const placeImageLayer = useCallback(
+    (
+      imageUrl: string,
+      width: number,
+      height: number,
+      name: string = 'Main Canvas'
+    ) => {
+      const newLayer: Layer = {
+        id: crypto.randomUUID(),
+        name,
+        type: 'image',
+        url: imageUrl,
+        x: 0,
+        y: 0,
+        width,
+        height,
+        opacity: 1,
+        visible: true,
+        locked: false,
+        zIndex: 0,
+      };
 
-    resetLayers([newLayer]);
-    setSelectedLayerId(newLayer.id);
-    setZoom(1);
-    setDragOffset({ x: 0, y: 0 });
-  }, [resetLayers]);
+      resetLayers([newLayer]);
+      setSelectedLayerId(newLayer.id);
+      setZoom(1);
+      setDragOffset({ x: 0, y: 0 });
+    },
+    [resetLayers]
+  );
 
   useEffect(() => {
     if (initialImage && layers.length === 0) {
-      placeImageLayer(initialImage.base64, initialImage.width, initialImage.height, initialImage.name || 'Main Canvas');
+      placeImageLayer(
+        initialImage.base64,
+        initialImage.width,
+        initialImage.height,
+        initialImage.name || 'Main Canvas'
+      );
     }
   }, [initialImage, layers.length, placeImageLayer]);
 
@@ -657,55 +832,97 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     return () => window.removeEventListener('keydown', handleFitShortcut);
   }, [fitCanvasToImage, layers.length]);
 
-  const storeProjectSnapshots = useCallback((snapshots: ProjectSnapshot[]) => {
-    if (!projectId) return false;
-    try {
-      const serialized = JSON.stringify(snapshots);
-      if (new Blob([serialized]).size > 4_500_000) {
-        toast.error(isZh ? '版本快照超过浏览器容量，请先删除较早版本。' : 'Snapshots exceed browser storage. Delete an older version first.');
+  const storeProjectSnapshots = useCallback(
+    (snapshots: ProjectSnapshot[]) => {
+      if (!projectId) return false;
+      try {
+        const serialized = JSON.stringify(snapshots);
+        if (new Blob([serialized]).size > 4_500_000) {
+          toast.error(
+            isZh
+              ? '版本快照超过浏览器容量，请先删除较早版本。'
+              : 'Snapshots exceed browser storage. Delete an older version first.'
+          );
+          return false;
+        }
+        localStorage.setItem(`image-layered:versions:${projectId}`, serialized);
+        setProjectSnapshots(snapshots);
+        return true;
+      } catch (error) {
+        console.warn('[Project versions] Failed to save snapshots:', error);
+        toast.error(
+          isZh
+            ? '版本保存空间不足，请删除较早的快照后重试。'
+            : 'Snapshot storage is full. Delete an older version and try again.'
+        );
         return false;
       }
-      localStorage.setItem(`image-layered:versions:${projectId}`, serialized);
-      setProjectSnapshots(snapshots);
-      return true;
-    } catch (error) {
-      console.warn('[Project versions] Failed to save snapshots:', error);
-      toast.error(isZh ? '版本保存空间不足，请删除较早的快照后重试。' : 'Snapshot storage is full. Delete an older version and try again.');
-      return false;
-    }
-  }, [isZh, projectId]);
+    },
+    [isZh, projectId]
+  );
 
-  const handleCreateProjectSnapshot = useCallback((requestedName: string) => {
-    if (!projectId || layers.length === 0) return;
-    const snapshot: ProjectSnapshot = {
-      id: crypto.randomUUID(),
-      name: requestedName.slice(0, 80) || `${isZh ? '版本' : 'Version'} ${projectSnapshots.length + 1}`,
-      createdAt: Date.now(),
-      layers: layers.map((layer) => ({ ...layer })),
+  const handleCreateProjectSnapshot = useCallback(
+    (requestedName: string) => {
+      if (!projectId || layers.length === 0) return;
+      const snapshot: ProjectSnapshot = {
+        id: crypto.randomUUID(),
+        name:
+          requestedName.slice(0, 80) ||
+          `${isZh ? '版本' : 'Version'} ${projectSnapshots.length + 1}`,
+        createdAt: Date.now(),
+        layers: layers.map((layer) => ({ ...layer })),
+        selectedLayerId,
+      };
+      const next = [snapshot, ...projectSnapshots].slice(0, 12);
+      if (storeProjectSnapshots(next)) {
+        pushHistory(
+          isZh ? '保存版本快照' : 'Save version snapshot',
+          snapshot.name
+        );
+        toast.success(isZh ? '版本快照已保存' : 'Version snapshot saved');
+      }
+    },
+    [
+      isZh,
+      layers,
+      projectId,
+      projectSnapshots,
+      pushHistory,
       selectedLayerId,
-    };
-    const next = [snapshot, ...projectSnapshots].slice(0, 12);
-    if (storeProjectSnapshots(next)) {
-      pushHistory(isZh ? '保存版本快照' : 'Save version snapshot', snapshot.name);
-      toast.success(isZh ? '版本快照已保存' : 'Version snapshot saved');
-    }
-  }, [isZh, layers, projectId, projectSnapshots, pushHistory, selectedLayerId, storeProjectSnapshots]);
+      storeProjectSnapshots,
+    ]
+  );
 
-  const handleRestoreProjectSnapshot = useCallback((snapshot: ProjectSnapshot) => {
-    resetLayers(snapshot.layers.map((layer) => ({ ...layer })));
-    const nextSelectedId = snapshot.selectedLayerId && snapshot.layers.some((layer) => layer.id === snapshot.selectedLayerId)
-      ? snapshot.selectedLayerId
-      : snapshot.layers[0]?.id ?? null;
-    setSelectedLayerId(nextSelectedId);
-    setSelectedLayerIds(nextSelectedId ? new Set([nextSelectedId]) : new Set());
-    setIsVersionPanelOpen(false);
-    pushHistory(isZh ? '恢复项目版本' : 'Restore project version', snapshot.name);
-    toast.success(isZh ? '已恢复所选版本' : 'Project version restored');
-  }, [isZh, pushHistory, resetLayers]);
+  const handleRestoreProjectSnapshot = useCallback(
+    (snapshot: ProjectSnapshot) => {
+      resetLayers(snapshot.layers.map((layer) => ({ ...layer })));
+      const nextSelectedId =
+        snapshot.selectedLayerId &&
+        snapshot.layers.some((layer) => layer.id === snapshot.selectedLayerId)
+          ? snapshot.selectedLayerId
+          : (snapshot.layers[0]?.id ?? null);
+      setSelectedLayerId(nextSelectedId);
+      setSelectedLayerIds(
+        nextSelectedId ? new Set([nextSelectedId]) : new Set()
+      );
+      setIsVersionPanelOpen(false);
+      pushHistory(
+        isZh ? '恢复项目版本' : 'Restore project version',
+        snapshot.name
+      );
+      toast.success(isZh ? '已恢复所选版本' : 'Project version restored');
+    },
+    [isZh, pushHistory, resetLayers]
+  );
 
-  const handleDeleteProjectSnapshot = useCallback((id: string) => {
-    storeProjectSnapshots(projectSnapshots.filter((snapshot) => snapshot.id !== id));
-  }, [projectSnapshots, storeProjectSnapshots]);
+  const handleDeleteProjectSnapshot = useCallback(
+    (id: string) => {
+      storeProjectSnapshots(
+        projectSnapshots.filter((snapshot) => snapshot.id !== id)
+      );
+    },
+    [projectSnapshots, storeProjectSnapshots]
+  );
 
   // Fit the visual canvas to the uploaded image and keep it pinned to the top.
   useEffect(() => {
@@ -726,12 +943,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       observer?.disconnect();
       window.removeEventListener('resize', fitCanvasToImage);
     };
-  }, [
-    fitCanvasToImage,
-    layers.length,
-    layers[0]?.width,
-    layers[0]?.height,
-  ]);
+  }, [fitCanvasToImage, layers.length, layers[0]?.width, layers[0]?.height]);
 
   // 从 sessionStorage 读取上传的图片（用于从首页跳转）
   useEffect(() => {
@@ -740,12 +952,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         const savedImage = sessionStorage.getItem('uploadedImage');
         if (savedImage) {
           const parsed = JSON.parse(savedImage);
-          placeImageLayer(parsed.base64, parsed.width, parsed.height, parsed.name || 'Uploaded Image');
+          placeImageLayer(
+            parsed.base64,
+            parsed.width,
+            parsed.height,
+            parsed.name || 'Uploaded Image'
+          );
           // 清除 sessionStorage，避免重复加载
           sessionStorage.removeItem('uploadedImage');
         }
       } catch (error) {
-        console.error('[CrookedApp] Failed to load image from sessionStorage:', error);
+        console.error(
+          '[CrookedApp] Failed to load image from sessionStorage:',
+          error
+        );
       }
     }
   }, [layers.length, placeImageLayer]);
@@ -757,7 +977,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     // 2. Using the 'move' tool
     // 3. Holding space key (like Photoshop/Figma)
     const target = e.target as HTMLElement;
-    const isClickingOnCanvas = target === mainRef.current || target.classList.contains('canvas-container');
+    const isClickingOnCanvas =
+      target === mainRef.current ||
+      target.classList.contains('canvas-container');
 
     if (isClickingOnCanvas || activeTool === 'move' || isSpacePressed) {
       setIsDraggingCanvas(true);
@@ -769,7 +991,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      const isEditingText = target?.matches('input, textarea, [contenteditable="true"]');
+      const isEditingText = target?.matches(
+        'input, textarea, [contenteditable="true"]'
+      );
       const modifier = e.metaKey || e.ctrlKey;
 
       if (!isEditingText && modifier && e.key.toLowerCase() === 'k') {
@@ -778,7 +1002,12 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         return;
       }
 
-      if (!isEditingText && modifier && e.key.toLowerCase() === 'a' && layers.length > 0) {
+      if (
+        !isEditingText &&
+        modifier &&
+        e.key.toLowerCase() === 'a' &&
+        layers.length > 0
+      ) {
         e.preventDefault();
         setSelectedLayerIds(new Set(layers.map((layer) => layer.id)));
         setSelectedLayerId(layers.at(-1)?.id ?? null);
@@ -841,36 +1070,49 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handlePointerMove = useCallback((e: PointerEvent) => {
-    pendingPointerPosRef.current = { x: e.clientX, y: e.clientY };
-    if (dragFrameRef.current !== null) return;
+  const handlePointerMove = useCallback(
+    (e: PointerEvent) => {
+      pendingPointerPosRef.current = { x: e.clientX, y: e.clientY };
+      if (dragFrameRef.current !== null) return;
 
-    dragFrameRef.current = window.requestAnimationFrame(() => {
-      dragFrameRef.current = null;
-      const point = pendingPointerPosRef.current;
-      if (!point) return;
-      const previous = lastPointerPosRef.current;
-      const deltaX = (point.x - previous.x) / zoom;
-      const deltaY = (point.y - previous.y) / zoom;
+      dragFrameRef.current = window.requestAnimationFrame(() => {
+        dragFrameRef.current = null;
+        const point = pendingPointerPosRef.current;
+        if (!point) return;
+        const previous = lastPointerPosRef.current;
+        const deltaX = (point.x - previous.x) / zoom;
+        const deltaY = (point.y - previous.y) / zoom;
 
-      if (isDraggingCanvas) {
-        setDragOffset((current) => ({ x: current.x + deltaX, y: current.y + deltaY }));
-      }
-      if (draggingLayerId) {
-        setLayers((current) => current.map((layer) =>
-          layer.id === draggingLayerId
-            ? activeTool === 'scale'
-              ? { ...layer, width: Math.max(24, layer.width + deltaX), height: Math.max(24, layer.height + deltaY) }
-              : { ...layer, x: layer.x + deltaX, y: layer.y + deltaY }
-            : layer
-        ));
-      }
-      lastPointerPosRef.current = point;
-    });
-  }, [activeTool, draggingLayerId, isDraggingCanvas, setLayers, zoom]);
+        if (isDraggingCanvas) {
+          setDragOffset((current) => ({
+            x: current.x + deltaX,
+            y: current.y + deltaY,
+          }));
+        }
+        if (draggingLayerId) {
+          setLayers((current) =>
+            current.map((layer) =>
+              layer.id === draggingLayerId
+                ? activeTool === 'scale'
+                  ? {
+                      ...layer,
+                      width: Math.max(24, layer.width + deltaX),
+                      height: Math.max(24, layer.height + deltaY),
+                    }
+                  : { ...layer, x: layer.x + deltaX, y: layer.y + deltaY }
+                : layer
+            )
+          );
+        }
+        lastPointerPosRef.current = point;
+      });
+    },
+    [activeTool, draggingLayerId, isDraggingCanvas, setLayers, zoom]
+  );
 
   const handlePointerUp = useCallback(() => {
-    if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
+    if (dragFrameRef.current !== null)
+      window.cancelAnimationFrame(dragFrameRef.current);
     dragFrameRef.current = null;
     pendingPointerPosRef.current = null;
     setIsDraggingCanvas(false);
@@ -878,13 +1120,21 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   }, []);
 
   useEffect(() => {
-    if (activeTool !== 'select' && activeTool !== 'move' && !selectedLayerId && layers.length > 0) {
+    if (
+      activeTool !== 'select' &&
+      activeTool !== 'move' &&
+      !selectedLayerId &&
+      layers.length > 0
+    ) {
       setSelectedLayerId(layers[0].id);
     }
   }, [activeTool, selectedLayerId, layers]);
 
   useEffect(() => {
-    if (selectedLayerId && !layers.some((layer) => layer.id === selectedLayerId)) {
+    if (
+      selectedLayerId &&
+      !layers.some((layer) => layer.id === selectedLayerId)
+    ) {
       setSelectedLayerId(layers.at(-1)?.id ?? null);
     }
   }, [layers, selectedLayerId]);
@@ -893,14 +1143,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     setSelectedLayerIds((current) => {
       const available = new Set(layers.map((layer) => layer.id));
       const next = new Set([...current].filter((id) => available.has(id)));
-      if (selectedLayerId && available.has(selectedLayerId)) next.add(selectedLayerId);
+      if (selectedLayerId && available.has(selectedLayerId))
+        next.add(selectedLayerId);
       return next;
     });
   }, [layers, selectedLayerId]);
 
   useEffect(() => {
     if (isDraggingCanvas || draggingLayerId) {
-      window.addEventListener('pointermove', handlePointerMove, { passive: false });
+      window.addEventListener('pointermove', handlePointerMove, {
+        passive: false,
+      });
       window.addEventListener('pointerup', handlePointerUp);
     } else {
       window.removeEventListener('pointermove', handlePointerMove);
@@ -909,7 +1162,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
-      if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
+      if (dragFrameRef.current !== null)
+        window.cancelAnimationFrame(dragFrameRef.current);
     };
   }, [isDraggingCanvas, draggingLayerId, handlePointerMove, handlePointerUp]);
 
@@ -919,7 +1173,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     trackFunnel('upload_image', { logged_in: isLoggedIn });
 
     if (layers.length > 1) {
-      handleCreateProjectSnapshot(isZh ? '更换图片前' : 'Before changing image');
+      handleCreateProjectSnapshot(
+        isZh ? '更换图片前' : 'Before changing image'
+      );
     }
 
     const previewUrl = URL.createObjectURL(file);
@@ -929,20 +1185,28 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     previewImage.onload = () => {
       setLayers((currentLayers) => {
         const currentLayer = currentLayers[0];
-        if (!currentLayer || currentLayer.url !== previewUrl) return currentLayers;
+        if (!currentLayer || currentLayer.url !== previewUrl)
+          return currentLayers;
 
-        return [{
-          ...currentLayer,
-          width: previewImage.naturalWidth || currentLayer.width,
-          height: previewImage.naturalHeight || currentLayer.height,
-        }];
+        return [
+          {
+            ...currentLayer,
+            width: previewImage.naturalWidth || currentLayer.width,
+            height: previewImage.naturalHeight || currentLayer.height,
+          },
+        ];
       });
     };
     previewImage.src = previewUrl;
 
     try {
       const prepared = await prepareImageFile(file);
-      placeImageLayer(prepared.base64, prepared.width, prepared.height, prepared.name);
+      placeImageLayer(
+        prepared.base64,
+        prepared.width,
+        prepared.height,
+        prepared.name
+      );
       URL.revokeObjectURL(previewUrl);
 
       console.log('[handleFileUpload] Image loaded successfully', {
@@ -951,7 +1215,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       });
     } catch (error) {
       console.error('[handleFileUpload] Error processing image:', error);
-      toast.warning(isZh ? '已显示预览，图片将在生成时重新处理。' : 'Preview loaded. The image will be prepared again when generating.');
+      toast.warning(
+        isZh
+          ? '已显示预览，图片将在生成时重新处理。'
+          : 'Preview loaded. The image will be prepared again when generating.'
+      );
     }
 
     // Reset input to allow uploading the same file again
@@ -962,9 +1230,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     if (!payload) return [];
 
     const normalize = (item: any) => {
-      const url = typeof item === 'string'
-        ? item
-        : item?.imageUrl || item?.image_url || item?.url || item?.image?.url;
+      const url =
+        typeof item === 'string'
+          ? item
+          : item?.imageUrl || item?.image_url || item?.url || item?.image?.url;
 
       return url ? { imageUrl: url } : null;
     };
@@ -988,19 +1257,27 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       return;
     }
 
-    const targetId = targetLayerId || selectedLayerId || (layers.length > 0 ? layers[0].id : null);
+    const targetId =
+      targetLayerId ||
+      selectedLayerId ||
+      (layers.length > 0 ? layers[0].id : null);
     if (!targetId) {
       console.error('[smartDecompose] No target layer found');
       return;
     }
 
-    const target = layers.find(l => l.id === targetId);
+    const target = layers.find((l) => l.id === targetId);
     if (!target) {
       console.error('[smartDecompose] Target layer not found in layers array');
       return;
     }
 
-    console.log('[smartDecompose] Starting decomposition', { count, targetId, targetName: target.name, urlType: target.url?.substring(0, 50) });
+    console.log('[smartDecompose] Starting decomposition', {
+      count,
+      targetId,
+      targetName: target.name,
+      urlType: target.url?.substring(0, 50),
+    });
 
     setIsProcessing(true);
     trackFunnel('decompose_start', { count, logged_in: isLoggedIn });
@@ -1021,12 +1298,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         // Need to fetch the image and convert to base64
         // Use backend proxy for external URLs to avoid CORS
         let fetchUrl = target.url;
-        console.log('[smartDecompose] Fetching image from URL:', target.url.substring(0, 100));
+        console.log(
+          '[smartDecompose] Fetching image from URL:',
+          target.url.substring(0, 100)
+        );
 
-        if (target.url.startsWith('http://') || target.url.startsWith('https://')) {
+        if (
+          target.url.startsWith('http://') ||
+          target.url.startsWith('https://')
+        ) {
           // Use backend proxy for external URLs
           fetchUrl = `/api/storage/proxy-image?url=${encodeURIComponent(target.url)}`;
-          console.log('[smartDecompose] Using backend proxy for external image');
+          console.log(
+            '[smartDecompose] Using backend proxy for external image'
+          );
         }
 
         const response = await fetch(fetchUrl);
@@ -1042,7 +1327,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           reader.readAsDataURL(blob);
         });
 
-        console.log('[smartDecompose] Converted to base64, length:', imageToUpload.length);
+        console.log(
+          '[smartDecompose] Converted to base64, length:',
+          imageToUpload.length
+        );
       }
 
       // Upload the image to storage using FormData
@@ -1053,7 +1341,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         throw new Error('Invalid image format. Please try uploading again.');
       }
 
-      console.log('[smartDecompose] Converting base64 to file...', { base64Length: base64Data.length });
+      console.log('[smartDecompose] Converting base64 to file...', {
+        base64Length: base64Data.length,
+      });
 
       const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
@@ -1064,13 +1354,18 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       const blob = new Blob([byteArray], { type: 'image/png' });
       const file = new File([blob], 'image.png', { type: 'image/png' });
 
-      console.log('[smartDecompose] File created', { fileSize: file.size, fileType: file.type });
+      console.log('[smartDecompose] File created', {
+        fileSize: file.size,
+        fileType: file.type,
+      });
 
       // Create FormData
       const formData = new FormData();
       formData.append('files', file);
 
-      console.log('[smartDecompose] Uploading image to storage...', { fileSize: file.size });
+      console.log('[smartDecompose] Uploading image to storage...', {
+        fileSize: file.size,
+      });
 
       const uploadRes = await fetch('/api/storage/upload-image', {
         method: 'POST',
@@ -1092,8 +1387,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       const isNativeLayerModel =
         advancedConfig.model === 'fal-ai/qwen-image-layered' ||
-        advancedConfig.model === 'fal-ai/qwen-image-layered/lora';
-      const isSeedreamDesignLayering = advancedConfig.model === 'bytedance/seedream/v5/pro/edit';
+        advancedConfig.model === 'fal-ai/qwen-image-layered/lora' ||
+        advancedConfig.model === 'seedream/5-pro-layer-decomposition';
+      const isSeedreamDesignLayering =
+        advancedConfig.model === 'bytedance/seedream/v5/pro/edit';
       const targetLayerCount = count > 0 ? count : 4;
       const designLayerCount = Math.min(Math.max(targetLayerCount, 6), 8);
       const decompositionPrompt = isNativeLayerModel
@@ -1121,22 +1418,30 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         ? {
             image_input: [imageUrl],
             num_layers: count > 0 ? count : 4,
+            image_size:
+              advancedConfig.model ===
+              IMAGE_LAYERED_CAPABILITIES.decompose.model
+                ? 'auto_2K'
+                : undefined,
             num_inference_steps: advancedConfig.inferenceSteps,
             guidance_scale: advancedConfig.guidanceScale,
             enable_safety_checker: true,
             sync_mode: true,
           }
-          : {
+        : {
             image_input: [imageUrl],
             image_urls: [imageUrl],
             num_images: isSeedreamDesignLayering
               ? designLayerCount
               : Math.min(Math.max(targetLayerCount, 1), 4),
-            image_size: advancedConfig.model === 'bytedance/seedream/v5/pro/edit' ? 'auto_2K' : 'auto',
+            image_size:
+              advancedConfig.model === 'bytedance/seedream/v5/pro/edit'
+                ? 'auto_2K'
+                : 'auto',
             quality: 'high',
             output_format: 'png',
             sync_mode: true,
-            layering_mode: selectedDecompositionModel.layeringMode,
+            layering_mode: 'native-layering',
             design_layer_taxonomy: isSeedreamDesignLayering
               ? [
                   'background_plate',
@@ -1172,15 +1477,18 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         body: JSON.stringify({
           mediaType: 'image',
           scene: 'image-decomposition',
-          layeringMode: selectedDecompositionModel.layeringMode,
-          provider: selectedDecompositionModel.provider,
+          layeringMode: 'native-layering',
+          provider: IMAGE_LAYERED_CAPABILITIES.decompose.provider,
           model: advancedConfig.model,
           prompt: requestOptions.prompt || decompositionPrompt,
           options: requestOptions,
         }),
       });
 
-      console.log('[smartDecompose] AI generate response status:', genRes.status);
+      console.log(
+        '[smartDecompose] AI generate response status:',
+        genRes.status
+      );
 
       const genData = await genRes.json();
       console.log('[smartDecompose] AI generate response:', genData);
@@ -1194,17 +1502,35 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       let layerImages: any[] = [];
 
       // Log full response structure for debugging
-      console.log('[smartDecompose] Full genData.data structure:', JSON.stringify(genData.data, null, 2));
+      console.log(
+        '[smartDecompose] Full genData.data structure:',
+        JSON.stringify(genData.data, null, 2)
+      );
 
       // With sync_mode=true, results should be available immediately in the response
-      if (genData.data?.status === 'SUCCESS' || genData.data?.status === 'success') {
+      if (
+        genData.data?.status === 'SUCCESS' ||
+        genData.data?.status === 'success'
+      ) {
         console.log('[smartDecompose] Task completed successfully (sync mode)');
 
         // Debug: log raw taskInfo before parsing
-        console.log('[smartDecompose] Raw taskInfo type:', typeof genData.data.taskInfo);
-        console.log('[smartDecompose] Raw taskInfo value:', genData.data.taskInfo);
-        console.log('[smartDecompose] Raw taskResult type:', typeof genData.data.taskResult);
-        console.log('[smartDecompose] Raw taskResult value:', genData.data.taskResult?.substring(0, 200));
+        console.log(
+          '[smartDecompose] Raw taskInfo type:',
+          typeof genData.data.taskInfo
+        );
+        console.log(
+          '[smartDecompose] Raw taskInfo value:',
+          genData.data.taskInfo
+        );
+        console.log(
+          '[smartDecompose] Raw taskResult type:',
+          typeof genData.data.taskResult
+        );
+        console.log(
+          '[smartDecompose] Raw taskResult value:',
+          genData.data.taskResult?.substring(0, 200)
+        );
 
         // Try to parse taskInfo
         if (genData.data.taskInfo) {
@@ -1218,28 +1544,54 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
               console.log('[smartDecompose] taskInfo is already an object');
               taskInfo = genData.data.taskInfo;
             }
-            console.log('[smartDecompose] Parsed taskInfo keys:', Object.keys(taskInfo));
-            console.log('[smartDecompose] taskInfo.images:', JSON.stringify(taskInfo.images, null, 2));
+            console.log(
+              '[smartDecompose] Parsed taskInfo keys:',
+              Object.keys(taskInfo)
+            );
+            console.log(
+              '[smartDecompose] taskInfo.images:',
+              JSON.stringify(taskInfo.images, null, 2)
+            );
 
             if (taskInfo?.images && Array.isArray(taskInfo.images)) {
-              layerImages = taskInfo.images.map((img: any) => {
-                const url = typeof img === 'string' ? img : (img.imageUrl || img.url || img.image_url);
-                console.log('[smartDecompose] TaskInfo image URL:', url ? url.substring(0, 100) : 'undefined');
-                return { imageUrl: url };
-              }).filter((img: any) => img.imageUrl);
-              console.log('[smartDecompose] Found images in taskInfo:', layerImages.length);
+              layerImages = taskInfo.images
+                .map((img: any) => {
+                  const url =
+                    typeof img === 'string'
+                      ? img
+                      : img.imageUrl || img.url || img.image_url;
+                  console.log(
+                    '[smartDecompose] TaskInfo image URL:',
+                    url ? url.substring(0, 100) : 'undefined'
+                  );
+                  return { imageUrl: url };
+                })
+                .filter((img: any) => img.imageUrl);
+              console.log(
+                '[smartDecompose] Found images in taskInfo:',
+                layerImages.length
+              );
             }
             if ((!layerImages || layerImages.length === 0) && taskInfo) {
               layerImages = extractLayerImagesFromPayload(taskInfo);
-              console.log('[smartDecompose] Found generic images in taskInfo:', layerImages.length);
+              console.log(
+                '[smartDecompose] Found generic images in taskInfo:',
+                layerImages.length
+              );
             }
           } catch (e) {
-            console.error('[smartDecompose] Failed to parse immediate taskInfo:', e);
+            console.error(
+              '[smartDecompose] Failed to parse immediate taskInfo:',
+              e
+            );
           }
         }
 
         // Try to parse taskResult
-        if ((!layerImages || layerImages.length === 0) && genData.data.taskResult) {
+        if (
+          (!layerImages || layerImages.length === 0) &&
+          genData.data.taskResult
+        ) {
           try {
             let parsedResult;
             if (typeof genData.data.taskResult === 'string') {
@@ -1247,35 +1599,78 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             } else {
               parsedResult = genData.data.taskResult;
             }
-            console.log('[smartDecompose] Parsed taskResult keys:', Object.keys(parsedResult));
-            console.log('[smartDecompose] parsedResult.output:', parsedResult.output);
-            console.log('[smartDecompose] parsedResult.images:', parsedResult.images);
+            console.log(
+              '[smartDecompose] Parsed taskResult keys:',
+              Object.keys(parsedResult)
+            );
+            console.log(
+              '[smartDecompose] parsedResult.output:',
+              parsedResult.output
+            );
+            console.log(
+              '[smartDecompose] parsedResult.images:',
+              parsedResult.images
+            );
 
             // Check for images in taskResult
             if (parsedResult?.images && Array.isArray(parsedResult.images)) {
-              layerImages = parsedResult.images.map((img: any) => {
-                const url = typeof img === 'string' ? img : (img.url || img.image_url || img);
-                console.log('[smartDecompose] Image URL:', url ? url.substring(0, 100) : 'undefined');
-                return { imageUrl: url };
-              }).filter((img: any) => img.imageUrl);
-              console.log('[smartDecompose] Found images in taskResult:', layerImages.length);
+              layerImages = parsedResult.images
+                .map((img: any) => {
+                  const url =
+                    typeof img === 'string'
+                      ? img
+                      : img.url || img.image_url || img;
+                  console.log(
+                    '[smartDecompose] Image URL:',
+                    url ? url.substring(0, 100) : 'undefined'
+                  );
+                  return { imageUrl: url };
+                })
+                .filter((img: any) => img.imageUrl);
+              console.log(
+                '[smartDecompose] Found images in taskResult:',
+                layerImages.length
+              );
             }
             // Check for output array (fal.ai qwen-image-layered returns layers in output)
-            else if (parsedResult?.output && Array.isArray(parsedResult.output)) {
-              console.log('[smartDecompose] Output array length:', parsedResult.output.length);
-              console.log('[smartDecompose] First output item:', parsedResult.output[0]);
+            else if (
+              parsedResult?.output &&
+              Array.isArray(parsedResult.output)
+            ) {
+              console.log(
+                '[smartDecompose] Output array length:',
+                parsedResult.output.length
+              );
+              console.log(
+                '[smartDecompose] First output item:',
+                parsedResult.output[0]
+              );
 
               // qwen-image-layered returns an array of layer objects with url property
-              layerImages = parsedResult.output.map((img: any, idx: number) => {
-                const url = typeof img === 'string' ? img : (img.url || img.image_url || img);
-                console.log(`[smartDecompose] Layer ${idx} URL:`, url ? url.substring(0, 100) : 'undefined');
-                return { imageUrl: url };
-              }).filter((img: any) => img.imageUrl);
-              console.log('[smartDecompose] Found images in output:', layerImages.length);
+              layerImages = parsedResult.output
+                .map((img: any, idx: number) => {
+                  const url =
+                    typeof img === 'string'
+                      ? img
+                      : img.url || img.image_url || img;
+                  console.log(
+                    `[smartDecompose] Layer ${idx} URL:`,
+                    url ? url.substring(0, 100) : 'undefined'
+                  );
+                  return { imageUrl: url };
+                })
+                .filter((img: any) => img.imageUrl);
+              console.log(
+                '[smartDecompose] Found images in output:',
+                layerImages.length
+              );
             }
             if ((!layerImages || layerImages.length === 0) && parsedResult) {
               layerImages = extractLayerImagesFromPayload(parsedResult);
-              console.log('[smartDecompose] Found generic images in taskResult:', layerImages.length);
+              console.log(
+                '[smartDecompose] Found generic images in taskResult:',
+                layerImages.length
+              );
             }
           } catch (e) {
             console.error('[smartDecompose] Failed to parse taskResult:', e);
@@ -1284,7 +1679,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       }
 
       // If still no images and task is pending, we need to poll
-      if ((!layerImages || layerImages.length === 0) && (genData.data?.status === 'PENDING' || genData.data?.status === 'pending')) {
+      if (
+        (!layerImages || layerImages.length === 0) &&
+        (genData.data?.status === 'PENDING' ||
+          genData.data?.status === 'pending')
+      ) {
         const dbTaskId = genData.data?.id; // Use database task ID, not fal.ai taskId
         if (!dbTaskId) {
           throw new Error('Task ID missing in response');
@@ -1308,18 +1707,26 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           const elapsed = Date.now() - startTime;
 
           // Wait before polling (使用动态间隔)
-          await new Promise(resolve => setTimeout(resolve, currentInterval));
+          await new Promise((resolve) => setTimeout(resolve, currentInterval));
 
-          console.log(`[smartDecompose] Poll #${pollCount} (${Math.floor(elapsed / 1000)}s elapsed, interval: ${currentInterval}ms)`);
+          console.log(
+            `[smartDecompose] Poll #${pollCount} (${Math.floor(elapsed / 1000)}s elapsed, interval: ${currentInterval}ms)`
+          );
 
           const queryRes = await fetch('/api/ai/query', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId: dbTaskId }),
+            body: JSON.stringify({
+              taskId: dbTaskId,
+              model: advancedConfig.model,
+            }),
           });
 
           if (!queryRes.ok) {
-            console.error('[smartDecompose] Query request failed:', queryRes.status);
+            console.error(
+              '[smartDecompose] Query request failed:',
+              queryRes.status
+            );
             continue;
           }
 
@@ -1336,15 +1743,28 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           // Log taskResult to see what fal.ai returns during polling
           if (task.taskResult) {
             try {
-              const resultObj = typeof task.taskResult === 'string' ? JSON.parse(task.taskResult) : task.taskResult;
-              console.log('[smartDecompose] Task result status:', resultObj.status);
+              const resultObj =
+                typeof task.taskResult === 'string'
+                  ? JSON.parse(task.taskResult)
+                  : task.taskResult;
+              console.log(
+                '[smartDecompose] Task result status:',
+                resultObj.status
+              );
             } catch (e) {
-              console.log('[smartDecompose] Task result (raw):', task.taskResult?.substring(0, 100));
+              console.log(
+                '[smartDecompose] Task result (raw):',
+                task.taskResult?.substring(0, 100)
+              );
             }
           }
 
           if (task.status === 'SUCCESS' || task.status === 'success') {
-            console.log('[smartDecompose] Task completed after', Math.floor(elapsed / 1000), 'seconds');
+            console.log(
+              '[smartDecompose] Task completed after',
+              Math.floor(elapsed / 1000),
+              'seconds'
+            );
 
             if (task.taskInfo) {
               try {
@@ -1354,18 +1774,35 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 } else {
                   parsedTaskInfo = task.taskInfo;
                 }
-                if (parsedTaskInfo?.images && Array.isArray(parsedTaskInfo.images)) {
-                  layerImages = parsedTaskInfo.images.map((img: any) => {
-                    const url = typeof img === 'string' ? img : (img.imageUrl || img.url || img.image_url);
-                    console.log('[smartDecompose] Poll TaskInfo image URL:', url ? url.substring(0, 100) : 'undefined');
-                    return { imageUrl: url };
-                  }).filter((img: any) => img.imageUrl);
-                  console.log('[smartDecompose] Found images in taskInfo:', layerImages.length);
+                if (
+                  parsedTaskInfo?.images &&
+                  Array.isArray(parsedTaskInfo.images)
+                ) {
+                  layerImages = parsedTaskInfo.images
+                    .map((img: any) => {
+                      const url =
+                        typeof img === 'string'
+                          ? img
+                          : img.imageUrl || img.url || img.image_url;
+                      console.log(
+                        '[smartDecompose] Poll TaskInfo image URL:',
+                        url ? url.substring(0, 100) : 'undefined'
+                      );
+                      return { imageUrl: url };
+                    })
+                    .filter((img: any) => img.imageUrl);
+                  console.log(
+                    '[smartDecompose] Found images in taskInfo:',
+                    layerImages.length
+                  );
                   break;
                 }
                 layerImages = extractLayerImagesFromPayload(parsedTaskInfo);
                 if (layerImages.length > 0) {
-                  console.log('[smartDecompose] Found generic images in taskInfo:', layerImages.length);
+                  console.log(
+                    '[smartDecompose] Found generic images in taskInfo:',
+                    layerImages.length
+                  );
                   break;
                 }
               } catch (e) {
@@ -1381,31 +1818,65 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
                 } else {
                   parsedResult = task.taskResult;
                 }
-                if (parsedResult?.images && Array.isArray(parsedResult.images)) {
-                  layerImages = parsedResult.images.map((img: any) => {
-                    const url = typeof img === 'string' ? img : (img.url || img.image_url || img);
-                    console.log('[smartDecompose] Poll: Image URL:', url ? url.substring(0, 100) : 'undefined');
-                    return { imageUrl: url };
-                  }).filter((img: any) => img.imageUrl);
-                  console.log('[smartDecompose] Found images in taskResult:', layerImages.length);
+                if (
+                  parsedResult?.images &&
+                  Array.isArray(parsedResult.images)
+                ) {
+                  layerImages = parsedResult.images
+                    .map((img: any) => {
+                      const url =
+                        typeof img === 'string'
+                          ? img
+                          : img.url || img.image_url || img;
+                      console.log(
+                        '[smartDecompose] Poll: Image URL:',
+                        url ? url.substring(0, 100) : 'undefined'
+                      );
+                      return { imageUrl: url };
+                    })
+                    .filter((img: any) => img.imageUrl);
+                  console.log(
+                    '[smartDecompose] Found images in taskResult:',
+                    layerImages.length
+                  );
                   break;
                 }
-                if (parsedResult?.output && Array.isArray(parsedResult.output)) {
-                  layerImages = parsedResult.output.map((img: any, idx: number) => {
-                    const url = typeof img === 'string' ? img : (img.url || img.image_url || img);
-                    console.log(`[smartDecompose] Poll: Layer ${idx} URL:`, url ? url.substring(0, 100) : 'undefined');
-                    return { imageUrl: url };
-                  }).filter((img: any) => img.imageUrl);
-                  console.log('[smartDecompose] Found images in output:', layerImages.length);
+                if (
+                  parsedResult?.output &&
+                  Array.isArray(parsedResult.output)
+                ) {
+                  layerImages = parsedResult.output
+                    .map((img: any, idx: number) => {
+                      const url =
+                        typeof img === 'string'
+                          ? img
+                          : img.url || img.image_url || img;
+                      console.log(
+                        `[smartDecompose] Poll: Layer ${idx} URL:`,
+                        url ? url.substring(0, 100) : 'undefined'
+                      );
+                      return { imageUrl: url };
+                    })
+                    .filter((img: any) => img.imageUrl);
+                  console.log(
+                    '[smartDecompose] Found images in output:',
+                    layerImages.length
+                  );
                   break;
                 }
                 layerImages = extractLayerImagesFromPayload(parsedResult);
                 if (layerImages.length > 0) {
-                  console.log('[smartDecompose] Found generic images in taskResult:', layerImages.length);
+                  console.log(
+                    '[smartDecompose] Found generic images in taskResult:',
+                    layerImages.length
+                  );
                   break;
                 }
               } catch (e) {
-                console.error('[smartDecompose] Failed to parse taskResult:', e);
+                console.error(
+                  '[smartDecompose] Failed to parse taskResult:',
+                  e
+                );
               }
             }
             break;
@@ -1413,7 +1884,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
           if (task.status === 'FAILED' || task.status === 'failed') {
             const errorMsg = task.taskInfo
-              ? JSON.parse(task.taskInfo)?.errorMessage || 'Decomposition failed'
+              ? JSON.parse(task.taskInfo)?.errorMessage ||
+                'Decomposition failed'
               : 'Decomposition failed';
             console.error('[smartDecompose] Task failed:', errorMsg);
             throw new Error(errorMsg);
@@ -1421,11 +1893,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
           // Log status every 5 polls to avoid too much output
           if (pollCount % 5 === 0) {
-            console.log(`[smartDecompose] Still polling... (${Math.floor(elapsed / 1000)}s elapsed, status: ${task.status})`);
+            console.log(
+              `[smartDecompose] Still polling... (${Math.floor(elapsed / 1000)}s elapsed, status: ${task.status})`
+            );
           }
 
           // 🎯 智能退避：如果任务仍在处理中，增加间隔
-          if (task.status === 'PENDING' || task.status === 'PROCESSING' || task.status === 'pending') {
+          if (
+            task.status === 'PENDING' ||
+            task.status === 'PROCESSING' ||
+            task.status === 'pending'
+          ) {
             const nextInterval = Math.min(
               currentInterval * BACKOFF_MULTIPLIER,
               MAX_INTERVAL
@@ -1436,18 +1914,35 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
         if (Date.now() - startTime >= MAX_POLL_TIME) {
           const finalElapsed = Math.floor((Date.now() - startTime) / 1000);
-          throw new Error(`Decomposition timed out after ${finalElapsed}s. Please try again.`);
+          throw new Error(
+            `Decomposition timed out after ${finalElapsed}s. Please try again.`
+          );
         }
       }
 
       console.log('[smartDecompose] Final layer images:', layerImages);
 
+      // kie.ai seedream layer decomposition returns the base composite as the
+      // first result URL followed by the separated layers; drop the base so
+      // only real layers enter the stack.
+      if (
+        advancedConfig.model === 'seedream/5-pro-layer-decomposition' &&
+        layerImages &&
+        layerImages.length > 1
+      ) {
+        layerImages = layerImages.slice(1);
+      }
+
       if (!layerImages || layerImages.length === 0) {
-        throw new Error('No layers generated. The task completed but returned no images.');
+        throw new Error(
+          'No layers generated. The task completed but returned no images.'
+        );
       }
 
       // Helper function to load image and get its natural dimensions
-      const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
+      const getImageDimensions = (
+        url: string
+      ): Promise<{ width: number; height: number }> => {
         return new Promise((resolve) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
@@ -1456,7 +1951,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           };
           img.onerror = () => {
             // Fallback to parent dimensions if load fails
-            console.warn('[smartDecompose] Failed to load image for dimensions, using parent dimensions');
+            console.warn(
+              '[smartDecompose] Failed to load image for dimensions, using parent dimensions'
+            );
             resolve({ width: target.width, height: target.height });
           };
           img.src = url;
@@ -1464,12 +1961,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       };
 
       // Load all images to get their natural dimensions
-      console.log('[smartDecompose] Loading images to get natural dimensions...');
+      console.log(
+        '[smartDecompose] Loading images to get natural dimensions...'
+      );
       const layerDimensions = await Promise.all(
         layerImages.map(async (img: any) => {
           // Use proxy for external URLs to avoid CORS
           let imageUrl = img.imageUrl;
-          if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+          if (
+            imageUrl.startsWith('http://') ||
+            imageUrl.startsWith('https://')
+          ) {
             imageUrl = `/api/storage/proxy-image?url=${encodeURIComponent(imageUrl)}`;
           }
           return getImageDimensions(imageUrl);
@@ -1478,21 +1980,38 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       console.log('[smartDecompose] Layer dimensions:', layerDimensions);
 
-      console.log('[smartDecompose] Generating alpha masks for decomposed layers...');
+      console.log(
+        '[smartDecompose] Generating alpha masks for decomposed layers...'
+      );
       const layerMaskUrls = await Promise.all(
         layerImages.map(async (img: any, idx: number) => {
           try {
             const maskUrl = await createMaskFromLayer(img.imageUrl);
-            console.log(`[smartDecompose] Layer ${idx + 1} mask:`, maskUrl ? maskUrl.substring(0, 100) : 'none');
+            console.log(
+              `[smartDecompose] Layer ${idx + 1} mask:`,
+              maskUrl ? maskUrl.substring(0, 100) : 'none'
+            );
             return maskUrl;
           } catch (error) {
-            console.warn(`[smartDecompose] Failed to create mask for layer ${idx + 1}:`, error);
+            console.warn(
+              `[smartDecompose] Failed to create mask for layer ${idx + 1}:`,
+              error
+            );
             return null;
           }
         })
       );
 
-      const standardLayerNames = ['Main Subject', 'Foreground', 'Text / Graphics', 'Secondary Object', 'Background', 'Shadow', 'Lighting', 'Effects'];
+      const standardLayerNames = [
+        'Main Subject',
+        'Foreground',
+        'Text / Graphics',
+        'Secondary Object',
+        'Background',
+        'Shadow',
+        'Lighting',
+        'Effects',
+      ];
       const designLayerNames = [
         'Background Plate',
         'Main Subject / Product',
@@ -1503,16 +2022,22 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         'Shadows / Reflections',
         'Lighting / Foreground Effects',
       ];
-      const names = isSeedreamDesignLayering ? designLayerNames : standardLayerNames;
+      const names = isSeedreamDesignLayering
+        ? designLayerNames
+        : standardLayerNames;
 
       // Create a layer for each generated image with correct dimensions
       const newLayers: Layer[] = layerImages.map((img: any, idx: number) => {
         const dims = layerDimensions[idx];
-        const layerName = names[idx] || `${isSeedreamDesignLayering ? 'Design' : 'Image'} Layer ${idx + 1}`;
+        const layerName =
+          names[idx] ||
+          `${isSeedreamDesignLayering ? 'Design' : 'Image'} Layer ${idx + 1}`;
         return {
           id: crypto.randomUUID(),
           name: layerName,
-          type: /text|headline|copy|typography/i.test(layerName) ? 'text' : 'image',
+          type: /text|headline|copy|typography/i.test(layerName)
+            ? 'text'
+            : 'image',
           url: img.imageUrl,
           x: target.x,
           y: target.y,
@@ -1523,13 +2048,13 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           locked: false,
           zIndex: layers.length + idx + 1,
           maskUrl: layerMaskUrls[idx] || undefined,
-          parentId: target.id
+          parentId: target.id,
         };
       });
 
       console.log('[smartDecompose] Created new layers:', newLayers.length);
 
-      setLayers(prev => [...prev, ...newLayers]);
+      setLayers((prev) => [...prev, ...newLayers]);
       if (newLayers.length > 0) setSelectedLayerId(newLayers[0].id);
       pushHistory(
         isZh ? 'AI 自动分层' : 'AI decompose',
@@ -1537,14 +2062,17 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       );
 
       // Auto-expand the parent if it was collapsed
-      setCollapsedLayerIds(prev => {
+      setCollapsedLayerIds((prev) => {
         const next = new Set(prev);
         next.delete(target.id);
         return next;
       });
 
       console.log('[smartDecompose] Decomposition completed successfully');
-      trackFunnel('layers_generated', { count: newLayers.length, logged_in: isLoggedIn });
+      trackFunnel('layers_generated', {
+        count: newLayers.length,
+        logged_in: isLoggedIn,
+      });
 
       // Increment usage count on success for guest users
       if (!isLoggedIn) {
@@ -1556,12 +2084,15 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       // Check if it's a credits issue and show a helpful message
       if (errMsg === 'insufficient credits' || errMsg.includes('credits')) {
-        trackFunnel('paywall_view', { trigger: 'credits', logged_in: isLoggedIn });
+        trackFunnel('paywall_view', {
+          trigger: 'credits',
+          logged_in: isLoggedIn,
+        });
         const shouldGoToPricing = confirm(
           'Insufficient credits to perform image decomposition.\n\n' +
-          'Image decomposition requires 5 credits.\n\n' +
-          'Click OK to go to Pricing page to purchase credits,\n' +
-          'or Cancel to stay on this page.'
+            'Image decomposition requires 5 credits.\n\n' +
+            'Click OK to go to Pricing page to purchase credits,\n' +
+            'or Cancel to stay on this page.'
         );
 
         if (shouldGoToPricing) {
@@ -1570,7 +2101,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         }
       } else {
         trackFunnel('decompose_fail');
-        toast.error(copy.notifications.decomposeFail.replace('{reason}', errMsg));
+        toast.error(
+          copy.notifications.decomposeFail.replace('{reason}', errMsg)
+        );
       }
     } finally {
       setIsProcessing(false);
@@ -1580,7 +2113,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   const canGenerateLayers = !!layers[0] && layers.length === 1 && !isProcessing;
   const handleGenerateLayers = () => {
     if (!layers[0] || isProcessing) return;
-    smartDecompose(layerCount, layers[0].id);
+    smartDecompose(DEFAULT_DECOMPOSITION_LAYER_COUNT, layers[0].id);
   };
 
   const handleEditAction = async (instruction: string) => {
@@ -1591,19 +2124,24 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       return;
     }
 
-    const target = layers.find(l => l.id === selectedLayerId);
+    const target = layers.find((l) => l.id === selectedLayerId);
     if (!target || target.locked) return;
 
     setIsProcessing(true);
     try {
       // Every AI edit is written to a new layer so the source remains recoverable.
       const editTool: Extract<ToolType, 'recolor' | 'replace' | 'remove'> =
-        activeTool === 'recolor' || activeTool === 'replace' || activeTool === 'remove'
+        activeTool === 'recolor' ||
+        activeTool === 'replace' ||
+        activeTool === 'remove'
           ? activeTool
           : 'replace';
-      const scene = editTool === 'recolor' ? 'image-recolor' :
-                    editTool === 'replace' ? 'image-replace' :
-                    'image-remove';
+      const scene =
+        editTool === 'recolor'
+          ? 'image-recolor'
+          : editTool === 'replace'
+            ? 'image-replace'
+            : 'image-remove';
       const preserveParts = Object.entries(target.preserve ?? {})
         .filter(([, enabled]) => enabled)
         .map(([part]) => part);
@@ -1613,12 +2151,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         .slice(0, 12);
       const effectiveInstruction = [
         instruction.trim(),
-        preserveParts.length > 0 ? `Preserve the object's ${preserveParts.join(', ')}.` : '',
+        preserveParts.length > 0
+          ? `Preserve the object's ${preserveParts.join(', ')}.`
+          : '',
         lockedLayerNames.length > 0
           ? `Keep these locked elements unchanged: ${lockedLayerNames.join(', ')}.`
           : '',
         'Keep the original composition and every unselected element unchanged.',
-      ].filter(Boolean).join('\n');
+      ]
+        .filter(Boolean)
+        .join('\n');
 
       if (!target.url) {
         throw new Error('Invalid image data. Please upload a valid image.');
@@ -1627,7 +2169,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       let imageToUpload = target.url;
       if (!target.url.startsWith('data:')) {
         let fetchUrl = target.url;
-        if (target.url.startsWith('http://') || target.url.startsWith('https://')) {
+        if (
+          target.url.startsWith('http://') ||
+          target.url.startsWith('https://')
+        ) {
           fetchUrl = `/api/storage/proxy-image?url=${encodeURIComponent(target.url)}`;
         }
 
@@ -1674,19 +2219,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       const imageUrl = uploadData.data.urls[0];
 
-      // Call AI generate for high-quality poster editing. The API route can
-      // override these defaults from admin settings; fal GPT Image 2 is the
-      // first-stage default editing engine after Qwen layer decomposition.
+      // Route the user's requested outcome through the product capability,
+      // keeping model selection out of the interface and replaceable internally.
       const genRes = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mediaType: 'image',
           scene,
+          provider: IMAGE_LAYERED_CAPABILITIES.editLayer.provider,
+          model: IMAGE_LAYERED_CAPABILITIES.editLayer.model,
           prompt: effectiveInstruction,
           options: {
             image_urls: [imageUrl],
-            image_size: 'auto',
+            image_size: 'auto_2K',
             quality: 'high',
             num_images: 1,
             output_format: 'png',
@@ -1701,22 +2247,58 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         throw new Error(genData.message || 'Edit failed');
       }
 
-      // Extract result image
-      const taskInfo = genData.data.taskInfo ? JSON.parse(genData.data.taskInfo) : null;
-      let newUrl = taskInfo?.images?.[0]?.imageUrl;
+      // Some editing providers return an image immediately while others return
+      // a queued task even when sync mode was requested. Support both so the
+      // user never sees a successful click silently produce no variation.
+      let newUrl = extractGeneratedImageUrl(genData.data);
+      const editTaskId = genData.data?.id;
+      const editDeadline = Date.now() + 3 * 60 * 1000;
+
+      while (!newUrl && editTaskId && Date.now() < editDeadline) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        const queryRes = await fetch('/api/ai/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskId: editTaskId,
+            model: IMAGE_LAYERED_CAPABILITIES.editLayer.model,
+          }),
+        });
+        if (!queryRes.ok) continue;
+
+        const queryData = await queryRes.json();
+        if (queryData.code !== 0) continue;
+        const status = String(queryData.data?.status || '').toUpperCase();
+        if (status === 'FAILED') {
+          throw new Error(
+            'The selected layer could not be edited. Please adjust the instruction and try again.'
+          );
+        }
+        newUrl = extractGeneratedImageUrl(queryData.data);
+        if (status === 'SUCCESS' && !newUrl) {
+          throw new Error(
+            'The edit completed without an image result. Please try again.'
+          );
+        }
+      }
 
       if (newUrl) {
         if (target.maskUrl) {
           try {
             newUrl = await applyMaskToEditedLayer(newUrl, target.maskUrl);
           } catch (maskError) {
-            console.warn('[handleEditAction] Failed to reapply layer mask, using raw edit result:', maskError);
+            console.warn(
+              '[handleEditAction] Failed to reapply layer mask, using raw edit result:',
+              maskError
+            );
           }
         }
 
         const variationId = crypto.randomUUID();
         const maxZ = Math.max(...layers.map((layer) => layer.zIndex), 0);
-        const variationNumber = layers.filter((layer) => layer.sourceLayerId === target.id).length + 1;
+        const variationNumber =
+          layers.filter((layer) => layer.sourceLayerId === target.id).length +
+          1;
         const variation: Layer = {
           ...target,
           id: variationId,
@@ -1734,8 +2316,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
           },
         };
 
-        setLayers(prev => [
-          ...prev.map((layer) => layer.id === target.id ? { ...layer, visible: false } : layer),
+        setLayers((prev) => [
+          ...prev.map((layer) =>
+            layer.id === target.id ? { ...layer, visible: false } : layer
+          ),
           variation,
         ]);
         selectLayer(variationId);
@@ -1754,7 +2338,24 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       }
     } catch (err) {
       console.error(err);
-      toast.error(copy.notifications.editFail);
+      const message = err instanceof Error ? err.message : '';
+      if (/credits/i.test(message)) {
+        toast.error(
+          isZh
+            ? '积分不足，充值后即可继续编辑图层。'
+            : 'You need more credits to edit this layer.',
+          {
+            action: {
+              label: isZh ? '查看价格' : 'View pricing',
+              onClick: () => {
+                window.location.href = isZh ? '/zh/pricing' : '/pricing';
+              },
+            },
+          }
+        );
+      } else {
+        toast.error(copy.notifications.editFail);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -1768,14 +2369,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
       // Get only visible layers, filtered by visibility and sorted by zIndex
       const visibleLayers = layers
-        .filter(l => {
+        .filter((l) => {
           // Check if layer itself is visible
           if (!l.visible) return false;
           // Check if any ancestor is collapsed
           let current = l;
           while (current.parentId) {
             if (collapsedLayerIds.has(current.parentId)) return false;
-            const parent = layers.find(pl => pl.id === current.parentId);
+            const parent = layers.find((pl) => pl.id === current.parentId);
             if (!parent) break;
             current = parent;
           }
@@ -1783,7 +2384,12 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         })
         .sort((a, b) => a.zIndex - b.zIndex);
 
-      console.log('[handleExport] Visible layers:', visibleLayers.length, 'Total layers:', layers.length);
+      console.log(
+        '[handleExport] Visible layers:',
+        visibleLayers.length,
+        'Total layers:',
+        layers.length
+      );
 
       if (visibleLayers.length === 0) {
         toast.error(copy.notifications.noVisibleLayers);
@@ -1810,13 +2416,20 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         if (url.startsWith('http://') || url.startsWith('https://')) {
           // Use GET method with URL parameter - proxy returns raw image data
           finalUrl = `/api/storage/proxy-image?url=${encodeURIComponent(url)}`;
-          console.log('[handleExport] Using backend GET proxy for external image');
+          console.log(
+            '[handleExport] Using backend GET proxy for external image'
+          );
         }
 
         return new Promise((resolve, reject) => {
           const img = new Image();
           img.onload = () => {
-            console.log('[handleExport] Image loaded successfully, natural size:', img.naturalWidth, 'x', img.naturalHeight);
+            console.log(
+              '[handleExport] Image loaded successfully, natural size:',
+              img.naturalWidth,
+              'x',
+              img.naturalHeight
+            );
             resolve(img);
           };
           img.onerror = (e) => {
@@ -1845,13 +2458,21 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         baseNaturalHeight = baseImg.naturalHeight;
         targetWidth = baseNaturalWidth;
         targetHeight = baseNaturalHeight;
-        console.log('[handleExport] Using base layer natural dimensions:', { targetWidth, targetHeight });
+        console.log('[handleExport] Using base layer natural dimensions:', {
+          targetWidth,
+          targetHeight,
+        });
       }
 
       canvas.width = targetWidth;
       canvas.height = targetHeight;
 
-      console.log('[handleExport] Canvas size:', { width: targetWidth, height: targetHeight, original: { width: baseLayer.width, height: baseLayer.height }, useOriginalSize: settings.useOriginalSize });
+      console.log('[handleExport] Canvas size:', {
+        width: targetWidth,
+        height: targetHeight,
+        original: { width: baseLayer.width, height: baseLayer.height },
+        useOriginalSize: settings.useOriginalSize,
+      });
 
       // Fill with transparent background first
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1866,7 +2487,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             width: layer.width,
             height: layer.height,
             opacity: layer.opacity,
-            zIndex: layer.zIndex
+            zIndex: layer.zIndex,
           });
 
           const img = await loadImage(layer.url);
@@ -1880,7 +2501,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             naturalHeight,
             layerSize: { width: layer.width, height: layer.height },
             canvasSize: { width: targetWidth, height: targetHeight },
-            useOriginalSize: settings.useOriginalSize
+            useOriginalSize: settings.useOriginalSize,
           });
 
           // Save context state
@@ -1888,9 +2509,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
           // Apply layer opacity
           ctx.globalAlpha = layer.opacity;
-          ctx.globalCompositeOperation = layer.blendMode === 'normal'
-            ? 'source-over'
-            : (layer.blendMode ?? 'source-over');
+          ctx.globalCompositeOperation =
+            layer.blendMode === 'normal'
+              ? 'source-over'
+              : (layer.blendMode ?? 'source-over');
 
           // Apply the stored object geometry in export coordinates.
           if (settings.useOriginalSize) {
@@ -1902,8 +2524,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             const drawHeight = layer.height * baseScaleY;
             ctx.translate(drawX + drawWidth / 2, drawY + drawHeight / 2);
             ctx.rotate(((layer.rotation ?? 0) * Math.PI) / 180);
-            ctx.filter = layer.blur ? `blur(${layer.blur * Math.max(baseScaleX, baseScaleY)}px)` : 'none';
-            ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+            ctx.filter = layer.blur
+              ? `blur(${layer.blur * Math.max(baseScaleX, baseScaleY)}px)`
+              : 'none';
+            ctx.drawImage(
+              img,
+              -drawWidth / 2,
+              -drawHeight / 2,
+              drawWidth,
+              drawHeight
+            );
           } else {
             const scaleX = targetWidth / baseLayer.width;
             const scaleY = targetHeight / baseLayer.height;
@@ -1913,14 +2543,26 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             const drawHeight = layer.height * scaleY;
             ctx.translate(drawX + drawWidth / 2, drawY + drawHeight / 2);
             ctx.rotate(((layer.rotation ?? 0) * Math.PI) / 180);
-            ctx.filter = layer.blur ? `blur(${layer.blur * Math.max(scaleX, scaleY)}px)` : 'none';
-            ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+            ctx.filter = layer.blur
+              ? `blur(${layer.blur * Math.max(scaleX, scaleY)}px)`
+              : 'none';
+            ctx.drawImage(
+              img,
+              -drawWidth / 2,
+              -drawHeight / 2,
+              drawWidth,
+              drawHeight
+            );
           }
 
           // Restore context state
           ctx.restore();
         } catch (err) {
-          console.error('[handleExport] Failed to draw layer:', layer.name, err);
+          console.error(
+            '[handleExport] Failed to draw layer:',
+            layer.name,
+            err
+          );
         }
       }
 
@@ -1940,7 +2582,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
         // If upscale is enabled, call AI upscaling
         if (settings.upscale) {
-          console.log('[handleExport] Upscaling enabled, resolution:', settings.resolution);
+          console.log(
+            '[handleExport] Upscaling enabled, resolution:',
+            settings.resolution
+          );
 
           try {
             // Convert blob to base64 for upload
@@ -1951,7 +2596,10 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             });
 
             const base64Url = await base64Promise;
-            console.log('[handleExport] Converted to base64, length:', base64Url.length);
+            console.log(
+              '[handleExport] Converted to base64, length:',
+              base64Url.length
+            );
 
             // Upload to storage
             const uploadRes = await fetch('/api/storage/upload-image', {
@@ -1973,9 +2621,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
             // For now, skip AI upscaling as it may cause issues
             // Just use the composited image
-            console.log('[handleExport] Skipping AI upscaling, using composited image');
+            console.log(
+              '[handleExport] Skipping AI upscaling, using composited image'
+            );
           } catch (err) {
-            console.error('[handleExport] Upscaling failed, using original:', err);
+            console.error(
+              '[handleExport] Upscaling failed, using original:',
+              err
+            );
             // Continue with original image if upscaling fails
           }
         }
@@ -2001,7 +2654,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
         console.log('[handleExport] Export completed successfully');
         trackFunnel('export_done');
       }, 'image/png');
-
     } catch (err: any) {
       console.error('[handleExport] Export failed:', err);
       toast.error(err.message || copy.notifications.exportFail);
@@ -2020,152 +2672,231 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     setTimeout(() => URL.revokeObjectURL(url), 100);
   }, []);
 
-  const handleDownloadLayer = useCallback(async (id: string) => {
-    const layer = layers.find((item) => item.id === id);
-    if (!layer) return;
+  const handleDownloadLayer = useCallback(
+    async (id: string) => {
+      const layer = layers.find((item) => item.id === id);
+      if (!layer) return;
 
-    try {
-      const image = await loadCanvasImage(layer.url);
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth || layer.width;
-      canvas.height = image.naturalHeight || layer.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Failed to create layer export canvas');
+      try {
+        const image = await loadCanvasImage(layer.url);
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth || layer.width;
+        canvas.height = image.naturalHeight || layer.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to create layer export canvas');
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-      const blob = await canvasToBlob(canvas);
-      const safeName = layer.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'layer';
-      downloadBlob(blob, `image-layered-${safeName}-${Date.now()}.png`);
-      toast.success(isZh ? '图层已下载' : 'Layer downloaded');
-    } catch (error) {
-      console.error('[handleDownloadLayer] Failed:', error);
-      toast.error(isZh ? '图层下载失败' : 'Failed to download layer');
-    }
-  }, [canvasToBlob, downloadBlob, isZh, layers, loadCanvasImage]);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const blob = await canvasToBlob(canvas);
+        const safeName =
+          layer.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '') || 'layer';
+        downloadBlob(blob, `image-layered-${safeName}-${Date.now()}.png`);
+        toast.success(isZh ? '图层已下载' : 'Layer downloaded');
+      } catch (error) {
+        console.error('[handleDownloadLayer] Failed:', error);
+        toast.error(isZh ? '图层下载失败' : 'Failed to download layer');
+      }
+    },
+    [canvasToBlob, downloadBlob, isZh, layers, loadCanvasImage]
+  );
 
-  const handleDuplicateLayer = useCallback((id: string) => {
-    const layer = layers.find((item) => item.id === id);
-    if (!layer) return;
+  const handleDuplicateLayer = useCallback(
+    (id: string) => {
+      const layer = layers.find((item) => item.id === id);
+      if (!layer) return;
 
-    const maxZ = Math.max(...layers.map((item) => item.zIndex), 0);
-    const copyLayer: Layer = {
-      ...layer,
-      id: crypto.randomUUID(),
-      name: `${layer.name} Copy`,
-      x: layer.x + 16,
-      y: layer.y + 16,
-      zIndex: maxZ + 1,
-      locked: false,
-      visible: true,
-    };
+      const maxZ = Math.max(...layers.map((item) => item.zIndex), 0);
+      const copyLayer: Layer = {
+        ...layer,
+        id: crypto.randomUUID(),
+        name: `${layer.name} Copy`,
+        x: layer.x + 16,
+        y: layer.y + 16,
+        zIndex: maxZ + 1,
+        locked: false,
+        visible: true,
+      };
 
-    setLayers((prev) => [...prev, copyLayer]);
-    setSelectedLayerId(copyLayer.id);
-    pushHistory(isZh ? '复制图层' : 'Duplicate layer', layer.name || '');
-    toast.success(isZh ? '已复制图层' : 'Layer duplicated');
-  }, [isZh, layers]);
+      setLayers((prev) => [...prev, copyLayer]);
+      setSelectedLayerId(copyLayer.id);
+      pushHistory(isZh ? '复制图层' : 'Duplicate layer', layer.name || '');
+      toast.success(isZh ? '已复制图层' : 'Layer duplicated');
+    },
+    [isZh, layers]
+  );
 
-  const handleSoloLayer = useCallback((id: string) => {
-    setLayers((prev) => prev.map((layer) => ({ ...layer, visible: layer.id === id })));
-    setSelectedLayerId(id);
-    toast.success(isZh ? '已提取预览该图层' : 'Showing selected layer only');
-  }, [isZh]);
+  const handleSoloLayer = useCallback(
+    (id: string) => {
+      setLayers((prev) =>
+        prev.map((layer) => ({ ...layer, visible: layer.id === id }))
+      );
+      setSelectedLayerId(id);
+      toast.success(isZh ? '已提取预览该图层' : 'Showing selected layer only');
+    },
+    [isZh]
+  );
 
   const handleShowAllLayers = useCallback(() => {
     setLayers((prev) => prev.map((layer) => ({ ...layer, visible: true })));
     toast.success(isZh ? '已显示全部图层' : 'All layers visible');
   }, [isZh]);
 
-  const handleUpdateSelectedLayer = useCallback((changes: Partial<Layer>) => {
-    if (!selectedLayerId) return;
-    setLayers((prev) => prev.map((layer) => (
-      layer.id === selectedLayerId ? { ...layer, ...changes } : layer
-    )));
-  }, [selectedLayerId]);
+  const handleUpdateSelectedLayer = useCallback(
+    (changes: Partial<Layer>) => {
+      if (!selectedLayerId) return;
+      setLayers((prev) =>
+        prev.map((layer) =>
+          layer.id === selectedLayerId ? { ...layer, ...changes } : layer
+        )
+      );
+    },
+    [selectedLayerId]
+  );
 
-  const handleBulkUpdate = useCallback((changes: Partial<Layer>) => {
-    if (selectedLayerIds.size === 0) return;
-    setLayers((prev) => prev.map((layer) => (
-      selectedLayerIds.has(layer.id) ? { ...layer, ...changes } : layer
-    )));
-  }, [selectedLayerIds]);
+  const handleBulkUpdate = useCallback(
+    (changes: Partial<Layer>) => {
+      if (selectedLayerIds.size === 0) return;
+      setLayers((prev) =>
+        prev.map((layer) =>
+          selectedLayerIds.has(layer.id) ? { ...layer, ...changes } : layer
+        )
+      );
+    },
+    [selectedLayerIds]
+  );
 
   const handleLockOtherLayers = useCallback(() => {
     if (!selectedLayerId) return;
-    setLayers((prev) => prev.map((layer) => ({
-      ...layer,
-      locked: layer.id !== selectedLayerId,
-    })));
-    const targetName = layers.find((layer) => layer.id === selectedLayerId)?.name ?? '';
+    setLayers((prev) =>
+      prev.map((layer) => ({
+        ...layer,
+        locked: layer.id !== selectedLayerId,
+      }))
+    );
+    const targetName =
+      layers.find((layer) => layer.id === selectedLayerId)?.name ?? '';
     pushHistory(isZh ? '锁定其他图层' : 'Lock other layers', targetName);
-    toast.success(isZh ? '其他图层已锁定，AI 只会修改当前对象。' : 'Other layers are locked. AI will edit only the selected object.');
+    toast.success(
+      isZh
+        ? '其他图层已锁定，AI 只会修改当前对象。'
+        : 'Other layers are locked. AI will edit only the selected object.'
+    );
   }, [isZh, layers, pushHistory, selectedLayerId]);
 
   const handleGroupSelectedLayers = useCallback(() => {
     if (selectedLayerIds.size < 2) return;
     const groupId = crypto.randomUUID();
-    const groupNumber = new Set(layers.map((layer) => layer.groupId).filter(Boolean)).size + 1;
+    const groupNumber =
+      new Set(layers.map((layer) => layer.groupId).filter(Boolean)).size + 1;
     const groupName = `${isZh ? '分组' : 'Group'} ${groupNumber}`;
-    setLayers((prev) => prev.map((layer) => (
-      selectedLayerIds.has(layer.id) ? { ...layer, groupId, groupName } : layer
-    )));
+    setLayers((prev) =>
+      prev.map((layer) =>
+        selectedLayerIds.has(layer.id)
+          ? { ...layer, groupId, groupName }
+          : layer
+      )
+    );
     pushHistory(isZh ? '创建图层分组' : 'Group layers', groupName);
     toast.success(isZh ? '图层已分组' : 'Layers grouped');
   }, [isZh, layers, pushHistory, selectedLayerIds]);
 
   const handleUngroupSelectedLayers = useCallback(() => {
     if (selectedLayerIds.size === 0) return;
-    setLayers((prev) => prev.map((layer) => {
-      if (!selectedLayerIds.has(layer.id)) return layer;
-      return { ...layer, groupId: undefined, groupName: undefined };
-    }));
-    pushHistory(isZh ? '取消图层分组' : 'Ungroup layers', isZh ? '多个图层' : 'Multiple layers');
+    setLayers((prev) =>
+      prev.map((layer) => {
+        if (!selectedLayerIds.has(layer.id)) return layer;
+        return { ...layer, groupId: undefined, groupName: undefined };
+      })
+    );
+    pushHistory(
+      isZh ? '取消图层分组' : 'Ungroup layers',
+      isZh ? '多个图层' : 'Multiple layers'
+    );
   }, [isZh, pushHistory, selectedLayerIds]);
 
-  const handleReorderLayers = useCallback((draggedId: string, targetId: string) => {
-    if (draggedId === targetId) return;
-    setLayers((prev) => {
-      const ordered = [...prev].sort((a, b) => b.zIndex - a.zIndex);
-      const dragged = ordered.find((layer) => layer.id === draggedId);
-      const targetIndex = ordered.findIndex((layer) => layer.id === targetId);
-      if (!dragged || targetIndex < 0 || dragged.locked) return prev;
-      const withoutDragged = ordered.filter((layer) => layer.id !== draggedId);
-      withoutDragged.splice(targetIndex, 0, dragged);
-      const zById = new Map(withoutDragged.map((layer, index) => [layer.id, withoutDragged.length - index - 1]));
-      return prev.map((layer) => ({ ...layer, zIndex: zById.get(layer.id) ?? layer.zIndex }));
-    });
-    pushHistory(isZh ? '调整图层顺序' : 'Reorder layers', isZh ? '图层堆栈' : 'Layer stack');
-  }, [isZh, pushHistory]);
+  const handleReorderLayers = useCallback(
+    (draggedId: string, targetId: string) => {
+      if (draggedId === targetId) return;
+      setLayers((prev) => {
+        const ordered = [...prev].sort((a, b) => b.zIndex - a.zIndex);
+        const dragged = ordered.find((layer) => layer.id === draggedId);
+        const targetIndex = ordered.findIndex((layer) => layer.id === targetId);
+        if (!dragged || targetIndex < 0 || dragged.locked) return prev;
+        const withoutDragged = ordered.filter(
+          (layer) => layer.id !== draggedId
+        );
+        withoutDragged.splice(targetIndex, 0, dragged);
+        const zById = new Map(
+          withoutDragged.map((layer, index) => [
+            layer.id,
+            withoutDragged.length - index - 1,
+          ])
+        );
+        return prev.map((layer) => ({
+          ...layer,
+          zIndex: zById.get(layer.id) ?? layer.zIndex,
+        }));
+      });
+      pushHistory(
+        isZh ? '调整图层顺序' : 'Reorder layers',
+        isZh ? '图层堆栈' : 'Layer stack'
+      );
+    },
+    [isZh, pushHistory]
+  );
 
-  const handleMoveSelectedLayer = useCallback((direction: 'back' | 'backward' | 'forward' | 'front') => {
-    if (!selectedLayerId) return;
-    setLayers((current) => {
-      const ordered = [...current].sort((a, b) => a.zIndex - b.zIndex);
-      const currentIndex = ordered.findIndex((layer) => layer.id === selectedLayerId);
-      if (currentIndex < 0 || ordered[currentIndex].locked) return current;
-      const targetIndex = direction === 'back'
-        ? 0
-        : direction === 'front'
-          ? ordered.length - 1
-          : direction === 'backward'
-            ? Math.max(0, currentIndex - 1)
-            : Math.min(ordered.length - 1, currentIndex + 1);
-      if (targetIndex === currentIndex) return current;
-      const [selected] = ordered.splice(currentIndex, 1);
-      ordered.splice(targetIndex, 0, selected);
-      const zById = new Map(ordered.map((layer, index) => [layer.id, index]));
-      return current.map((layer) => ({ ...layer, zIndex: zById.get(layer.id) ?? layer.zIndex }));
-    });
-    const label = direction === 'back'
-      ? (isZh ? '图层置底' : 'Send layer to back')
-      : direction === 'front'
-        ? (isZh ? '图层置顶' : 'Bring layer to front')
-        : direction === 'backward'
-          ? (isZh ? '图层下移' : 'Move layer backward')
-          : (isZh ? '图层上移' : 'Move layer forward');
-    pushHistory(label, layers.find((layer) => layer.id === selectedLayerId)?.name ?? '');
-  }, [isZh, layers, pushHistory, selectedLayerId, setLayers]);
+  const handleMoveSelectedLayer = useCallback(
+    (direction: 'back' | 'backward' | 'forward' | 'front') => {
+      if (!selectedLayerId) return;
+      setLayers((current) => {
+        const ordered = [...current].sort((a, b) => a.zIndex - b.zIndex);
+        const currentIndex = ordered.findIndex(
+          (layer) => layer.id === selectedLayerId
+        );
+        if (currentIndex < 0 || ordered[currentIndex].locked) return current;
+        const targetIndex =
+          direction === 'back'
+            ? 0
+            : direction === 'front'
+              ? ordered.length - 1
+              : direction === 'backward'
+                ? Math.max(0, currentIndex - 1)
+                : Math.min(ordered.length - 1, currentIndex + 1);
+        if (targetIndex === currentIndex) return current;
+        const [selected] = ordered.splice(currentIndex, 1);
+        ordered.splice(targetIndex, 0, selected);
+        const zById = new Map(ordered.map((layer, index) => [layer.id, index]));
+        return current.map((layer) => ({
+          ...layer,
+          zIndex: zById.get(layer.id) ?? layer.zIndex,
+        }));
+      });
+      const label =
+        direction === 'back'
+          ? isZh
+            ? '图层置底'
+            : 'Send layer to back'
+          : direction === 'front'
+            ? isZh
+              ? '图层置顶'
+              : 'Bring layer to front'
+            : direction === 'backward'
+              ? isZh
+                ? '图层下移'
+                : 'Move layer backward'
+              : isZh
+                ? '图层上移'
+                : 'Move layer forward';
+      pushHistory(
+        label,
+        layers.find((layer) => layer.id === selectedLayerId)?.name ?? ''
+      );
+    },
+    [isZh, layers, pushHistory, selectedLayerId, setLayers]
+  );
 
   const handleExportProjectFile = useCallback(() => {
     if (layers.length === 0) return;
@@ -2178,81 +2909,174 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       layers,
       exportedAt: new Date().toISOString(),
     };
-    const blob = new Blob([JSON.stringify(projectFile)], { type: 'application/json' });
-    const safeName = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project';
+    const blob = new Blob([JSON.stringify(projectFile)], {
+      type: 'application/json',
+    });
+    const safeName =
+      projectName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'project';
     downloadBlob(blob, `${safeName}.image-layered.json`);
     toast.success(isZh ? '工程文件已导出' : 'Project file exported');
-  }, [downloadBlob, dragOffset, isZh, layers, projectName, selectedLayerId, zoom]);
+  }, [
+    downloadBlob,
+    dragOffset,
+    isZh,
+    layers,
+    projectName,
+    selectedLayerId,
+    zoom,
+  ]);
 
-  const handleImportProjectFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    if (file.size <= 0 || file.size > PROJECT_FILE_MAX_BYTES) {
-      toast.error(isZh ? '工程文件必须小于 60 MB' : 'Project file must be smaller than 60 MB');
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(await file.text()) as Record<string, unknown>;
-      if (parsed.format !== 'image-layered-project' || parsed.version !== PROJECT_FILE_VERSION || !Array.isArray(parsed.layers) || parsed.layers.length === 0 || parsed.layers.length > 100) {
-        throw new Error('Unsupported project file');
+  const handleImportProjectFile = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      if (file.size <= 0 || file.size > PROJECT_FILE_MAX_BYTES) {
+        toast.error(
+          isZh
+            ? '工程文件必须小于 60 MB'
+            : 'Project file must be smaller than 60 MB'
+        );
+        return;
       }
-      const importedLayers = parsed.layers.map(parseProjectLayer);
-      if (importedLayers.some((layer) => !layer)) throw new Error('Invalid layer data');
-      const validatedLayers = importedLayers as Layer[];
-      const duplicateIds = new Set(validatedLayers.map((layer) => layer.id));
-      if (duplicateIds.size !== validatedLayers.length) throw new Error('Duplicate layer identifiers');
 
-      handleCreateProjectSnapshot(isZh ? '导入工程前' : 'Before project import');
-      resetLayers(validatedLayers);
-      const requestedSelection = typeof parsed.selectedLayerId === 'string' ? parsed.selectedLayerId : '';
-      const nextSelectedId = duplicateIds.has(requestedSelection) ? requestedSelection : validatedLayers.at(-1)?.id ?? null;
-      setSelectedLayerId(nextSelectedId);
-      setSelectedLayerIds(nextSelectedId ? new Set([nextSelectedId]) : new Set());
-      setProjectId(crypto.randomUUID());
-      setProjectName(typeof parsed.name === 'string' ? parsed.name.slice(0, 160) : 'Imported project');
-      const canvas = parsed.canvas && typeof parsed.canvas === 'object' ? parsed.canvas as Record<string, unknown> : null;
-      const importedZoom = canvas && typeof canvas.zoom === 'number' && Number.isFinite(canvas.zoom) ? canvas.zoom : 1;
-      setZoom(Math.max(0.05, Math.min(4, importedZoom)));
-      setDragOffset({ x: 0, y: 0 });
-      pushHistory(isZh ? '导入工程文件' : 'Import project file', file.name.slice(0, 160));
-      toast.success(isZh ? `已导入 ${validatedLayers.length} 个图层` : `Imported ${validatedLayers.length} layers`);
-    } catch (error) {
-      console.error('[Project import] Failed:', error);
-      toast.error(isZh ? '工程文件无效或已损坏' : 'The project file is invalid or corrupted');
-    }
-  }, [handleCreateProjectSnapshot, isZh, pushHistory, resetLayers]);
+      try {
+        const parsed = JSON.parse(await file.text()) as Record<string, unknown>;
+        if (
+          parsed.format !== 'image-layered-project' ||
+          parsed.version !== PROJECT_FILE_VERSION ||
+          !Array.isArray(parsed.layers) ||
+          parsed.layers.length === 0 ||
+          parsed.layers.length > 100
+        ) {
+          throw new Error('Unsupported project file');
+        }
+        const importedLayers = parsed.layers.map(parseProjectLayer);
+        if (importedLayers.some((layer) => !layer))
+          throw new Error('Invalid layer data');
+        const validatedLayers = importedLayers as Layer[];
+        const duplicateIds = new Set(validatedLayers.map((layer) => layer.id));
+        if (duplicateIds.size !== validatedLayers.length)
+          throw new Error('Duplicate layer identifiers');
+
+        handleCreateProjectSnapshot(
+          isZh ? '导入工程前' : 'Before project import'
+        );
+        resetLayers(validatedLayers);
+        const requestedSelection =
+          typeof parsed.selectedLayerId === 'string'
+            ? parsed.selectedLayerId
+            : '';
+        const nextSelectedId = duplicateIds.has(requestedSelection)
+          ? requestedSelection
+          : (validatedLayers.at(-1)?.id ?? null);
+        setSelectedLayerId(nextSelectedId);
+        setSelectedLayerIds(
+          nextSelectedId ? new Set([nextSelectedId]) : new Set()
+        );
+        setProjectId(crypto.randomUUID());
+        setProjectName(
+          typeof parsed.name === 'string'
+            ? parsed.name.slice(0, 160)
+            : 'Imported project'
+        );
+        const canvas =
+          parsed.canvas && typeof parsed.canvas === 'object'
+            ? (parsed.canvas as Record<string, unknown>)
+            : null;
+        const importedZoom =
+          canvas &&
+          typeof canvas.zoom === 'number' &&
+          Number.isFinite(canvas.zoom)
+            ? canvas.zoom
+            : 1;
+        setZoom(Math.max(0.05, Math.min(4, importedZoom)));
+        setDragOffset({ x: 0, y: 0 });
+        pushHistory(
+          isZh ? '导入工程文件' : 'Import project file',
+          file.name.slice(0, 160)
+        );
+        toast.success(
+          isZh
+            ? `已导入 ${validatedLayers.length} 个图层`
+            : `Imported ${validatedLayers.length} layers`
+        );
+      } catch (error) {
+        console.error('[Project import] Failed:', error);
+        toast.error(
+          isZh
+            ? '工程文件无效或已损坏'
+            : 'The project file is invalid or corrupted'
+        );
+      }
+    },
+    [handleCreateProjectSnapshot, isZh, pushHistory, resetLayers]
+  );
 
   const handleDeleteSelectedLayer = useCallback(() => {
     if (!selectedLayerId) return;
     const target = layers.find((layer) => layer.id === selectedLayerId);
     if (!target) return;
     if (layers[0]?.id === selectedLayerId) {
-      toast.error(isZh ? '主画布图层不能删除，请更换图片。' : 'The main canvas layer cannot be deleted. Change the source image instead.');
+      toast.error(
+        isZh
+          ? '主画布图层不能删除，请更换图片。'
+          : 'The main canvas layer cannot be deleted. Change the source image instead.'
+      );
       return;
     }
 
-    setLayers((prev) => prev.filter((layer) => layer.id !== selectedLayerId && layer.parentId !== selectedLayerId));
-    setSelectedLayerId(layers.find((layer) => layer.id !== selectedLayerId)?.id ?? null);
+    setLayers((prev) =>
+      prev.filter(
+        (layer) =>
+          layer.id !== selectedLayerId && layer.parentId !== selectedLayerId
+      )
+    );
+    setSelectedLayerId(
+      layers.find((layer) => layer.id !== selectedLayerId)?.id ?? null
+    );
     pushHistory(isZh ? '删除图层' : 'Delete layer', target.name);
-    toast.success(isZh ? '图层已删除，可使用撤销恢复。' : 'Layer deleted. Use Undo to restore it.');
+    toast.success(
+      isZh
+        ? '图层已删除，可使用撤销恢复。'
+        : 'Layer deleted. Use Undo to restore it.'
+    );
   }, [isZh, layers, pushHistory, selectedLayerId]);
 
   const handleDeleteSelectedLayers = useCallback(() => {
     const baseId = layers[0]?.id;
-    const deletableIds = new Set([...selectedLayerIds].filter((id) => id !== baseId));
+    const deletableIds = new Set(
+      [...selectedLayerIds].filter((id) => id !== baseId)
+    );
     if (deletableIds.size === 0) {
-      toast.error(isZh ? '主画布图层不能删除。' : 'The main canvas layer cannot be deleted.');
+      toast.error(
+        isZh
+          ? '主画布图层不能删除。'
+          : 'The main canvas layer cannot be deleted.'
+      );
       return;
     }
-    const remaining = layers.filter((layer) => !deletableIds.has(layer.id) && !(layer.parentId && deletableIds.has(layer.parentId)));
+    const remaining = layers.filter(
+      (layer) =>
+        !deletableIds.has(layer.id) &&
+        !(layer.parentId && deletableIds.has(layer.parentId))
+    );
     setLayers(remaining);
     const nextId = remaining[0]?.id ?? null;
     setSelectedLayerId(nextId);
     setSelectedLayerIds(nextId ? new Set([nextId]) : new Set());
-    pushHistory(isZh ? '批量删除图层' : 'Delete selected layers', `${deletableIds.size}`);
-    toast.success(isZh ? '已删除所选图层，可使用撤销恢复。' : 'Selected layers deleted. Use Undo to restore them.');
+    pushHistory(
+      isZh ? '批量删除图层' : 'Delete selected layers',
+      `${deletableIds.size}`
+    );
+    toast.success(
+      isZh
+        ? '已删除所选图层，可使用撤销恢复。'
+        : 'Selected layers deleted. Use Undo to restore them.'
+    );
   }, [isZh, layers, pushHistory, selectedLayerIds]);
 
   // Copying link helper
@@ -2260,7 +3084,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     try {
       const shareUrl = `${window.location.origin}/${params?.locale || 'en'}/share/${projectId}`;
       navigator.clipboard.writeText(shareUrl);
-      toast.success(isZh ? '项目分享链接已复制到剪贴板！' : 'Project share link copied to clipboard!');
+      toast.success(
+        isZh
+          ? '项目分享链接已复制到剪贴板！'
+          : 'Project share link copied to clipboard!'
+      );
     } catch (err) {
       toast.error(isZh ? '复制链接失败' : 'Failed to copy link');
     }
@@ -2287,14 +3115,23 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       const data = await res.json();
       if (data.code === 0) {
         localStorage.setItem('layered_newsletter_subscribed', 'true');
-        toast.success(isZh ? '🎉 订阅成功！欢迎手册与额度已发送至您的邮箱！' : '🎉 Subscribed! Your manual & credits are on the way!');
+        toast.success(
+          isZh
+            ? '🎉 订阅成功！欢迎手册与额度已发送至您的邮箱！'
+            : '🎉 Subscribed! Your manual & credits are on the way!'
+        );
         setShowExitIntent(false);
       } else {
         throw new Error(data.message || 'Error subscribing');
       }
     } catch (err: any) {
       console.error('[ExitIntent] Failed to subscribe:', err);
-      toast.error(err.message || (isZh ? '订阅失败，请稍后重试' : 'Failed to subscribe. Please try again.'));
+      toast.error(
+        err.message ||
+          (isZh
+            ? '订阅失败，请稍后重试'
+            : 'Failed to subscribe. Please try again.')
+      );
     } finally {
       setExitIntentSubmitting(false);
     }
@@ -2302,12 +3139,16 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
 
   const handleNextOnboardingStep = () => {
     if (onboardingStep === null) return;
-    
+
     const nextStep = onboardingStep + 1;
     if (nextStep >= 4) {
       setOnboardingStep(null);
       localStorage.setItem('layered_tour_completed', 'true');
-      toast.success(isZh ? '🎓 恭喜完成新手教程，开始您的创作吧！' : '🎓 Congratulations! You completed the tour. Happy designing!');
+      toast.success(
+        isZh
+          ? '🎓 恭喜完成新手教程，开始您的创作吧！'
+          : '🎓 Congratulations! You completed the tour. Happy designing!'
+      );
     } else {
       setOnboardingStep(nextStep);
     }
@@ -2342,10 +3183,11 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
       content: isZh
         ? '点击顶部的“Share Poster”可以生成公开克隆链接与同事分享；点击左侧/右上角“Export”即可导出高质量 PNG。'
         : 'Click "Share Poster" in the header to generate a public view-remix link, or click "Export" to download your high-resolution PNG.',
-    }
+    },
   ];
 
-  const selectedLayer = layers.find(layer => layer.id === selectedLayerId) ?? layers[0] ?? null;
+  const selectedLayer =
+    layers.find((layer) => layer.id === selectedLayerId) ?? layers[0] ?? null;
   const filteredStackLayers = layers
     .filter((layer) => {
       const query = layerSearch.trim().toLocaleLowerCase();
@@ -2356,12 +3198,14 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     })
     .sort((a, b) => b.zIndex - a.zIndex);
   const displayedLayers = layers
-    .filter(layer => {
+    .filter((layer) => {
       if (!layer.visible) return false;
       let current = layer;
       while (current.parentId) {
         if (collapsedLayerIds.has(current.parentId)) return false;
-        const parent = layers.find(parentLayer => parentLayer.id === current.parentId);
+        const parent = layers.find(
+          (parentLayer) => parentLayer.id === current.parentId
+        );
         if (!parent) break;
         current = parent;
       }
@@ -2398,27 +3242,43 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
             transformOrigin: 'center center',
             filter: layer.blur ? `blur(${layer.blur}px)` : undefined,
             backgroundImage: `url(${layer.url})`,
-            backgroundPosition: isRootLayer ? `-${layer.x}px -${layer.y}px` : '0 0',
-            backgroundSize: isRootLayer ? `${baseLayer.width}px ${baseLayer.height}px` : 'cover',
+            backgroundPosition: isRootLayer
+              ? `-${layer.x}px -${layer.y}px`
+              : '0 0',
+            backgroundSize: isRootLayer
+              ? `${baseLayer.width}px ${baseLayer.height}px`
+              : 'cover',
             backgroundRepeat: 'no-repeat',
-            outline: interactive && selectedLayerIds.has(layer.id) ? '2px solid rgba(113,190,255,0.92)' : 'none',
-            outlineOffset: interactive && selectedLayerIds.has(layer.id) ? '2px' : '0',
+            outline:
+              interactive && selectedLayerIds.has(layer.id)
+                ? '2px solid rgba(113,190,255,0.92)'
+                : 'none',
+            outlineOffset:
+              interactive && selectedLayerIds.has(layer.id) ? '2px' : '0',
             pointerEvents: interactive ? 'auto' : 'none',
           }}
-          onPointerDown={interactive ? (e) => handleLayerPointerDown(e, layer) : undefined}
-          onClick={interactive ? (e) => {
-            e.stopPropagation();
-            selectLayer(layer.id, e.metaKey || e.ctrlKey || e.shiftKey);
-          } : undefined}
+          onPointerDown={
+            interactive ? (e) => handleLayerPointerDown(e, layer) : undefined
+          }
+          onClick={
+            interactive
+              ? (e) => {
+                  e.stopPropagation();
+                  selectLayer(layer.id, e.metaKey || e.ctrlKey || e.shiftKey);
+                }
+              : undefined
+          }
         >
-          {interactive && selectedLayerIds.has(layer.id) && activeTool === 'scale' && (
-            <>
-              <span className="pointer-events-none absolute -left-1.5 -top-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
-              <span className="pointer-events-none absolute -right-1.5 -top-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
-              <span className="pointer-events-none absolute -bottom-1.5 -left-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
-              <span className="pointer-events-none absolute -bottom-1.5 -right-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
-            </>
-          )}
+          {interactive &&
+            selectedLayerIds.has(layer.id) &&
+            activeTool === 'scale' && (
+              <>
+                <span className="pointer-events-none absolute -top-1.5 -left-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
+                <span className="pointer-events-none absolute -top-1.5 -right-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
+                <span className="pointer-events-none absolute -bottom-1.5 -left-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
+                <span className="pointer-events-none absolute -right-1.5 -bottom-1.5 size-3 rounded-sm border border-[#0b090d] bg-[#f33b72]" />
+              </>
+            )}
         </div>
       );
     });
@@ -2428,7 +3288,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       id: 'undo',
       label: isZh ? '撤销上一步' : 'Undo last edit',
-      description: isZh ? '回到上一个图层状态' : 'Return to the previous layer state',
+      description: isZh
+        ? '回到上一个图层状态'
+        : 'Return to the previous layer state',
       shortcut: '⌘ Z',
       icon: Undo2,
       disabled: !canUndo,
@@ -2437,7 +3299,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       id: 'redo',
       label: isZh ? '重做' : 'Redo edit',
-      description: isZh ? '恢复刚刚撤销的操作' : 'Restore the last undone change',
+      description: isZh
+        ? '恢复刚刚撤销的操作'
+        : 'Restore the last undone change',
       shortcut: '⇧ ⌘ Z',
       icon: Redo2,
       disabled: !canRedo,
@@ -2446,7 +3310,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       id: 'versions',
       label: isZh ? '打开项目版本' : 'Open project versions',
-      description: isZh ? '保存或恢复版本快照' : 'Save or restore project snapshots',
+      description: isZh
+        ? '保存或恢复版本快照'
+        : 'Save or restore project snapshots',
       icon: Camera,
       disabled: layers.length === 0,
       run: () => setIsVersionPanelOpen(true),
@@ -2454,7 +3320,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       id: 'fit',
       label: isZh ? '适应画布' : 'Fit canvas to view',
-      description: isZh ? '重置缩放并完整显示作品' : 'Reset zoom and show the full composition',
+      description: isZh
+        ? '重置缩放并完整显示作品'
+        : 'Reset zoom and show the full composition',
       shortcut: '0',
       icon: Maximize2,
       disabled: layers.length === 0,
@@ -2471,7 +3339,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       id: 'select-all',
       label: isZh ? '选择全部图层' : 'Select all layers',
-      description: isZh ? '用于批量锁定、显隐、分组或删除' : 'Prepare layers for bulk visibility, locking, grouping, or deletion',
+      description: isZh
+        ? '用于批量锁定、显隐、分组或删除'
+        : 'Prepare layers for bulk visibility, locking, grouping, or deletion',
       shortcut: '⌘ A',
       icon: Images,
       disabled: layers.length === 0,
@@ -2483,7 +3353,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       id: 'export-project',
       label: isZh ? '导出工程文件' : 'Export project file',
-      description: isZh ? '保存图层、顺序、属性与锁定状态' : 'Save layers, order, properties, and locks',
+      description: isZh
+        ? '保存图层、顺序、属性与锁定状态'
+        : 'Save layers, order, properties, and locks',
       icon: Download,
       disabled: layers.length === 0,
       run: handleExportProjectFile,
@@ -2491,14 +3363,18 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       id: 'import-project',
       label: isZh ? '导入工程文件' : 'Import project file',
-      description: isZh ? '载入 Image Layered JSON 工程' : 'Load an Image Layered JSON project',
+      description: isZh
+        ? '载入 Image Layered JSON 工程'
+        : 'Load an Image Layered JSON project',
       icon: UploadCloud,
       run: () => projectFileInputRef.current?.click(),
     },
     {
       id: 'export',
       label: isZh ? '导出图像' : 'Export image',
-      description: isZh ? '打开高清导出设置' : 'Open high-resolution export settings',
+      description: isZh
+        ? '打开高清导出设置'
+        : 'Open high-resolution export settings',
       icon: Download,
       disabled: layers.length === 0,
       run: () => setIsExportModalOpen(true),
@@ -2506,7 +3382,9 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
     {
       id: 'share',
       label: isZh ? '分享项目' : 'Share project',
-      description: isZh ? '生成可分享的项目链接' : 'Create a shareable project link',
+      description: isZh
+        ? '生成可分享的项目链接'
+        : 'Create a shareable project link',
       icon: Share2,
       disabled: layers.length === 0,
       run: () => setIsShareModalOpen(true),
@@ -2514,915 +3392,1286 @@ const CrookedApp: React.FC<CrookedAppProps> = ({ embedded = false, initialImage 
   ];
 
   return (
-    <div className={`relative w-full overflow-hidden ${embedded ? 'rounded-[24px]' : 'min-h-screen'} bg-[#0b090d] text-white [font-family:var(--font-body)]`}>
+    <div
+      className={`relative w-full overflow-hidden ${embedded ? 'rounded-[24px]' : 'min-h-screen'} bg-[#0b090d] [font-family:var(--font-body)] text-white`}
+    >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_-12%,rgba(243,59,114,0.12),transparent_30rem),linear-gradient(180deg,#0d0b10_0%,#0b090d_100%)]" />
-      <div className={`relative flex w-full ${embedded ? 'min-h-[920px]' : 'min-h-screen'}`}>
+      <div
+        className={`relative flex w-full ${embedded ? 'min-h-[920px]' : 'min-h-screen'}`}
+      >
         {!embedded && <WorkspaceSidebar />}
         <div className="flex min-w-0 flex-1 flex-col gap-4 px-3 py-3 md:px-5 md:py-5">
-        <header className="rounded-2xl border border-white/[0.06] bg-[#151219]/92 px-4 py-3.5 shadow-[0_20px_64px_rgba(0,0,0,0.3)] backdrop-blur-xl md:px-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f33b72] text-white shadow-[0_16px_34px_rgba(243,59,114,0.24)]">
-                <Icons.Layer />
-              </div>
-              <div className="min-w-0">
-                {layers.length > 0 ? (
-                  <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-3">
-                    <div className="min-w-0">
-                      <h1 className="truncate text-lg font-semibold text-white md:text-xl">
-                        {isZh ? 'Layer Editor' : 'Layer Editor'}
-                      </h1>
-                      <p className="mt-1 text-xs text-cyan-100/58">
-                        {layers.length === 1
-                          ? (isZh ? '已上传图片，点击 Generate 开始分层' : 'Image uploaded. Click Generate to create layers.')
-                          : (isZh ? `${layers.length - 1} 个可编辑图层` : `${layers.length - 1} editable layers`)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] text-cyan-200/60 font-mono px-2 py-0.5 rounded-full bg-white/5 w-fit">
-                      {saveStatus === 'saving' && (
-                        <>
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          <span>Autosaving...</span>
-                        </>
-                      )}
-                      {saveStatus === 'saved' && (
-                        <>
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          <span>Autosaved</span>
-                        </>
-                      )}
-                      {saveStatus === 'error' && (
-                        <>
-                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
-                          <span>Save Error</span>
-                        </>
-                      )}
-                      {saveStatus === 'idle' && (
-                        <>
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
-                          <span>Saved Local</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <h1 className="truncate text-lg font-semibold text-white md:text-xl">{brand.title}</h1>
-                    <p className="mt-1 text-xs text-cyan-100/65">{brand.tagline}</p>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              {layers.length > 0 && (
-                <div className="flex items-center rounded-xl bg-white/[0.055] p-1" aria-label={isZh ? '编辑历史控制' : 'Edit history controls'}>
-                  <button
-                    type="button"
-                    onClick={undo}
-                    disabled={!canUndo}
-                    className="flex size-9 items-center justify-center rounded-lg text-slate-200 outline-none transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#b89fff] disabled:cursor-not-allowed disabled:opacity-30"
-                    title={isZh ? '撤销（⌘/Ctrl Z）' : 'Undo (⌘/Ctrl Z)'}
-                    aria-label={isZh ? '撤销' : 'Undo'}
-                  >
-                    <Undo2 className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={redo}
-                    disabled={!canRedo}
-                    className="flex size-9 items-center justify-center rounded-lg text-slate-200 outline-none transition-colors hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#b89fff] disabled:cursor-not-allowed disabled:opacity-30"
-                    title={isZh ? '重做（⌘/Ctrl Shift Z）' : 'Redo (⌘/Ctrl Shift Z)'}
-                    aria-label={isZh ? '重做' : 'Redo'}
-                  >
-                    <Redo2 className="size-4" />
-                  </button>
+          <header className="rounded-2xl border border-white/[0.06] bg-[#151219]/92 px-4 py-3.5 shadow-[0_20px_64px_rgba(0,0,0,0.3)] backdrop-blur-xl md:px-5">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f33b72] text-white shadow-[0_16px_34px_rgba(243,59,114,0.24)]">
+                  <Icons.Layer />
                 </div>
-              )}
-              {layers.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setIsCommandPaletteOpen(true)}
-                  className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-slate-200 outline-none transition-colors hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-[#b89fff]"
-                  title={isZh ? '命令面板（⌘/Ctrl K）' : 'Command palette (⌘/Ctrl K)'}
-                >
-                  <CommandIcon className="size-4" />
-                  <span className="hidden sm:inline">{isZh ? '命令' : 'Commands'}</span>
-                  <kbd className="rounded-md bg-black/20 px-1.5 py-0.5 text-[9px] text-slate-400">⌘K</kbd>
-                </button>
-              )}
-              {layers.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setIsVersionPanelOpen(true)}
-                  className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-slate-200 outline-none transition-colors hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-[#b89fff]"
-                >
-                  <Camera className="size-4" />
-                  <span>{isZh ? '版本' : 'Versions'}</span>
-                  {projectSnapshots.length > 0 && <span className="rounded-full bg-cyan-300 px-1.5 py-0.5 text-[9px] font-black text-[#071123]">{projectSnapshots.length}</span>}
-                </button>
-              )}
-              {layers.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-[#d8d2dc] outline-none transition-colors hover:bg-white/[0.09] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
-                >
-                  <UploadCloud className="size-4" />
-                  <span>{isZh ? '更换图片' : 'Change image'}</span>
-                </button>
-              )}
-              {layers.length > 0 && (
-                <button
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="flex items-center gap-2 rounded-xl bg-[#f33b72] px-4 py-2 text-xs font-bold text-white shadow-[0_12px_30px_rgba(243,59,114,0.22)] transition-all hover:bg-[#ff4f83] active:scale-95"
-                >
-                  <Share2 className="size-3.5" />
-                  <span>{isZh ? '分享海报' : 'Share Poster'}</span>
-                </button>
-              )}
-              <span className="rounded-full bg-white/6 px-4 py-2 text-xs font-medium text-cyan-100/70">
-                {workflow.editingEngine}
-              </span>
-              {!embedded && (
-                <a
-                  href="/"
-                  className="rounded-full bg-white/6 px-4 py-2 text-sm font-medium text-white/78 transition-colors hover:bg-white/10"
-                  title={brand.backHome}
-                >
-                  {brand.backHome}
-                </a>
-              )}
-            </div>
-          </div>
-        </header>
-
-        <section className="relative flex flex-1 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111015] shadow-[0_30px_110px_rgba(0,0,0,0.50)]">
-
-          {layers.length <= 1 ? (
-            <div className="relative grid min-h-[calc(100vh-150px)] flex-1 gap-4 p-4 md:grid-cols-[minmax(250px,292px)_minmax(0,1fr)] md:p-5">
-              <aside className="relative z-30 self-start md:sticky md:top-5">
-                <LayerSettingsPanel
-                  isZh={isZh}
-                  models={decompositionModelOptions}
-                  selectedModel={advancedConfig.model}
-                  onSelectModel={(model) => setAdvancedConfig((prev) => ({ ...prev, model }))}
-                  layerCount={layerCount}
-                  onLayerCountChange={setLayerCount}
-                  onGenerate={handleGenerateLayers}
-                  canGenerate={canGenerateLayers}
-                  isProcessing={isProcessing}
-                  hasImage={layers.length === 1}
-                  hasLayers={false}
-                />
-              </aside>
-              {baseLayer ? (
-                <div
-                  ref={mainRef}
-                  className="canvas-container relative flex h-[min(720px,calc(100vh-190px))] min-h-[520px] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/[0.055] bg-[#0a090c] p-12"
-                >
-                  <div
-                    className="transition-[width,height] duration-200 ease-out"
-                    style={{
-                      width: baseLayer.width * zoom,
-                      height: baseLayer.height * zoom,
-                    }}
-                  >
-                    <div
-                      className="relative overflow-hidden rounded-[18px] bg-[#070609] shadow-[0_34px_100px_rgba(0,0,0,0.72)] ring-1 ring-white/15"
-                      style={{
-                        width: baseLayer.width,
-                        height: baseLayer.height,
-                        transform: `scale(${zoom})`,
-                        transformOrigin: 'top left',
-                      }}
-                    >
-                      <img
-                        src={baseLayer.url}
-                        alt={projectName}
-                        className="absolute inset-0 h-full w-full object-cover"
-                        draggable={false}
-                      />
-                      {isProcessing && (
-                        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                          <div className="absolute inset-0 bg-black/20" />
-                          <div className="layer-scan-line absolute inset-x-[-12%] top-0 h-28 bg-[linear-gradient(180deg,transparent,rgba(178,255,245,0.18),rgba(255,255,255,0.68),rgba(114,255,238,0.22),transparent)] blur-[1px]" />
-                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/18 bg-black/72 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/86 backdrop-blur-md">
-                            {selectedDecompositionModel.mode === 'design-layering'
-                              ? (isZh ? 'Seedream 正在理解设计图层' : 'Seedream understanding design layers')
-                              : (isZh ? 'AI 正在扫描图层' : 'AI scanning layers')}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="group flex min-h-[520px] w-full flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-[#0f0d12] px-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.32)] outline-none transition-all hover:border-[#f33b72]/25 hover:bg-[#141118] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
-                >
-                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f33b72] text-white shadow-[0_18px_44px_rgba(243,59,114,0.25)] transition-transform group-hover:scale-105">
-                    <UploadCloud className="size-7" />
-                  </span>
-                  <span className="mt-7 text-[11px] font-black uppercase tracking-[0.36em] text-cyan-100/52">Image Layered AI</span>
-                  <span className="mt-3 max-w-xl text-3xl font-semibold leading-tight text-white md:text-5xl">
-                    {isZh ? '上传图片，自动拆成可编辑图层' : 'Upload an image, get editable layers'}
-                  </span>
-                  <span className="mt-4 max-w-lg text-sm leading-7 text-slate-300/70">
-                    {selectedDecompositionModel.mode === 'design-layering'
-                      ? (isZh
-                          ? 'Seedream 会按设计文件理解画面：背景板、主体、文字、Logo、信息块、阴影和效果层会尽量分开。'
-                          : 'Seedream reads the image like a design file: background plate, subject, text, logo, info blocks, shadows, and effects are separated where possible.')
-                      : (isZh
-                          ? '处理时会在图片上显示扫描动画，完成后进入左侧图层、右侧画布的编辑工作台。'
-                          : 'The image is scanned while the model works, then opens as a layer list beside the canvas.')}
-                  </span>
-                  <span className="mt-5 rounded-lg border border-[#f33b72]/20 bg-[#f33b72]/8 px-4 py-2 text-xs font-bold text-[#ff8aab]">
-                    {isZh ? `当前模型：${selectedDecompositionModel.label}` : `Model: ${selectedDecompositionModel.label}`}
-                  </span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex min-w-0 flex-1 flex-col">
-            <div className={`grid flex-1 gap-3 p-4 md:p-5 ${editorGridClass}`}>
-              <aside className={`flex h-[min(760px,calc(100vh-190px))] min-h-[620px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121016] shadow-[0_22px_68px_rgba(0,0,0,0.28)] ${isLayerSidebarCollapsed ? 'items-center p-2' : 'p-3'}`}>
-                {isLayerSidebarCollapsed ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsLayerSidebarCollapsed(false)}
-                    className="flex size-10 items-center justify-center rounded-xl bg-white/[0.055] text-[#9993a3] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
-                    aria-label={isZh ? '展开图层侧栏' : 'Expand layer sidebar'}
-                    title={isZh ? '展开图层侧栏' : 'Expand layer sidebar'}
-                  >
-                    <PanelLeftOpen className="size-4" />
-                  </button>
-                ) : (
-                  <>
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#77717f]">
-                    {isZh ? '图层面板' : 'Layers panel'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsLayerSidebarCollapsed(true)}
-                    className="flex size-8 items-center justify-center rounded-lg text-[#77717f] outline-none hover:bg-white/[0.055] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
-                    aria-label={isZh ? '折叠图层侧栏' : 'Collapse layer sidebar'}
-                    title={isZh ? '折叠图层侧栏' : 'Collapse layer sidebar'}
-                  >
-                    <PanelLeftClose className="size-4" />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="max-w-[180px] truncate text-base font-semibold text-white">{isZh ? '图层列表' : 'Layer stack'}</h2>
-                    <p className="mt-1 text-[10px] font-semibold text-[#77717f]">{selectedDecompositionModel.shortLabel}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="rounded-full bg-white/8 px-3 py-2 text-[11px] font-bold text-cyan-50/78 transition-colors hover:bg-white/14"
-                    >
-                      {isZh ? '换图' : 'Change'}
-                    </button>
-                    <button
-                      onClick={() => setIsExportModalOpen(true)}
-                      className="rounded-xl bg-[#f33b72] px-3 py-2 text-[11px] font-bold text-white transition-all hover:bg-[#ff4f83] active:scale-95"
-                    >
-                      {isZh ? '导出' : 'Export'}
-                    </button>
-                  </div>
-                </div>
-
-                <label className="flex items-center gap-2 rounded-xl bg-white/[0.045] px-3 py-2.5 focus-within:ring-2 focus-within:ring-[#ff6b96]">
-                  <Search className="size-4 shrink-0 text-[#77717f]" />
-                  <input
-                    value={layerSearch}
-                    onChange={(event) => setLayerSearch(event.target.value)}
-                    placeholder={isZh ? '搜索图层、分组或 AI 提示词' : 'Search layers, groups, or AI prompts'}
-                    className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
-                  />
-                  {layerSearch && (
-                    <button type="button" onClick={() => setLayerSearch('')} className="rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white" aria-label={isZh ? '清除搜索' : 'Clear search'}>
-                      <X className="size-3" />
-                    </button>
-                  )}
-                </label>
-
-                {selectedLayerIds.size > 1 && (
-                  <div className="rounded-xl bg-cyan-300/[0.08] p-2">
-                    <div className="flex items-center justify-between gap-2 px-1 pb-2">
-                      <span className="text-[10px] font-black uppercase tracking-[0.12em] text-cyan-100/70">
-                        {isZh ? `已选 ${selectedLayerIds.size} 个` : `${selectedLayerIds.size} selected`}
-                      </span>
-                      <button type="button" onClick={() => setSelectedLayerIds(selectedLayerId ? new Set([selectedLayerId]) : new Set())} className="text-[10px] font-bold text-slate-400 hover:text-white">
-                        {isZh ? '取消多选' : 'Clear multi-select'}
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-5 gap-1">
-                      <button type="button" onClick={handleGroupSelectedLayers} className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]" aria-label={isZh ? '创建分组' : 'Group selected layers'}><FolderPlus className="size-3.5" /></button>
-                      <button type="button" onClick={handleUngroupSelectedLayers} className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]" aria-label={isZh ? '取消分组' : 'Ungroup selected layers'}><Ungroup className="size-3.5" /></button>
-                      <button type="button" onClick={() => handleBulkUpdate({ locked: ![...selectedLayerIds].every((id) => layers.find((layer) => layer.id === id)?.locked) })} className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]" aria-label={isZh ? '切换锁定' : 'Toggle lock'}>
-                        {[...selectedLayerIds].every((id) => layers.find((layer) => layer.id === id)?.locked) ? <Unlock className="size-3.5" /> : <Lock className="size-3.5" />}
-                      </button>
-                      <button type="button" onClick={() => handleBulkUpdate({ visible: ![...selectedLayerIds].every((id) => layers.find((layer) => layer.id === id)?.visible) })} className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]" aria-label={isZh ? '切换显示' : 'Toggle visibility'}>
-                        {[...selectedLayerIds].every((id) => layers.find((layer) => layer.id === id)?.visible) ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-                      </button>
-                      <button type="button" onClick={handleDeleteSelectedLayers} className="flex h-8 items-center justify-center rounded-lg bg-rose-400/[0.10] text-rose-200 hover:bg-rose-400/[0.18]" aria-label={isZh ? '删除所选图层' : 'Delete selected layers'}><Trash2 className="size-3.5" /></button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="min-h-[410px] flex-1 space-y-1.5 overflow-auto pr-1">
-                  {filteredStackLayers.map((layer, index) => {
-                    const isSelected = selectedLayerIds.has(layer.id);
-                    const label = layer.name || `Layer ${layers.length - index}`;
-
-                    return (
-                      <div
-                        key={layer.id}
-                        role="button"
-                        tabIndex={0}
-                        draggable={!layer.locked}
-                        onDragStart={() => setDraggedStackLayerId(layer.id)}
-                        onDragEnd={() => setDraggedStackLayerId(null)}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          if (draggedStackLayerId) handleReorderLayers(draggedStackLayerId, layer.id);
-                          setDraggedStackLayerId(null);
-                        }}
-                        onClick={(event) => selectLayer(layer.id, event.metaKey || event.ctrlKey || event.shiftKey)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            selectLayer(layer.id, event.metaKey || event.ctrlKey || event.shiftKey);
-                          }
-                        }}
-                        className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left transition-all ${
-                          isSelected
-                            ? 'bg-[#f33b72]/12 text-white ring-1 ring-[#f33b72]/35'
-                            : 'bg-white/[0.045] text-[#d8d2dc] hover:bg-white/[0.075]'
-                        }`}
-                      >
-                        <GripVertical className={`size-3.5 shrink-0 ${isSelected ? 'text-[#ff7ca2]' : 'text-[#5f5966]'} ${layer.locked ? 'cursor-not-allowed' : 'cursor-grab'}`} />
-                        <div className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl ${isSelected ? 'bg-black/8' : 'bg-black/28'}`}>
-                          <img src={layer.url} alt={label} className="h-full w-full object-contain" draggable={false} loading="lazy" decoding="async" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold tracking-tight">{label}</p>
-                          <p className="mt-0.5 truncate text-[9px] font-black uppercase tracking-[0.14em] opacity-50">
-                            {layer.editMetadata
-                              ? (isZh ? 'AI 变体图层' : 'AI variation')
-                              : layer.groupName
-                                ? layer.groupName
-                                : layer.maskUrl
-                                  ? (isZh ? '可编辑蒙版' : 'editable mask')
-                                  : (isZh ? '图像图层' : 'image layer')}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setLayers((prev) => prev.map((item) => item.id === layer.id ? { ...item, locked: !item.locked } : item));
-                          }}
-                          className={`flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors ${layer.locked ? 'bg-[#f33b72]/12 text-[#ff8aab]' : 'text-[#5f5966] hover:bg-white/[0.06] hover:text-[#d8d2dc]'}`}
-                          aria-label={layer.locked ? (isZh ? '解锁图层' : 'Unlock layer') : (isZh ? '锁定图层' : 'Lock layer')}
-                        >
-                          {layer.locked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setLayers(prev => prev.map(item => item.id === layer.id ? { ...item, visible: !item.visible } : item));
-                          }}
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-                            isSelected ? 'bg-[#f33b72]/12 text-[#ff8aab]' : 'bg-white/[0.055] text-[#9993a3]'
-                          }`}
-                          aria-label={layer.visible ? 'Hide layer' : 'Show layer'}
-                        >
-                          {layer.visible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-                        </button>
+                <div className="min-w-0">
+                  {layers.length > 0 ? (
+                    <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-3">
+                      <div className="min-w-0">
+                        <h1 className="truncate text-lg font-semibold text-white md:text-xl">
+                          {isZh ? 'Layer Editor' : 'Layer Editor'}
+                        </h1>
+                        <p className="mt-1 text-xs text-cyan-100/58">
+                          {layers.length === 1
+                            ? isZh
+                              ? '图片已就绪，下一步创建可编辑图层'
+                              : 'Image ready. Next, create editable layers.'
+                            : isZh
+                              ? `${layers.length - 1} 个可编辑图层`
+                              : `${layers.length - 1} editable layers`}
+                        </p>
                       </div>
-                    );
-                  })}
-                  {filteredStackLayers.length === 0 && (
-                    <div className="rounded-xl bg-white/[0.045] px-4 py-8 text-center">
-                      <Search className="mx-auto size-5 text-slate-500" />
-                      <p className="mt-2 text-xs font-bold text-slate-300">{isZh ? '没有匹配的图层' : 'No matching layers'}</p>
-                      <button type="button" onClick={() => setLayerSearch('')} className="mt-2 text-[11px] font-bold text-cyan-200 hover:text-white">{isZh ? '清除搜索' : 'Clear search'}</button>
+                      <div className="flex w-fit items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 font-mono text-[10px] text-cyan-200/60">
+                        {saveStatus === 'saving' && (
+                          <>
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                            <span>Autosaving...</span>
+                          </>
+                        )}
+                        {saveStatus === 'saved' && (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            <span>Autosaved</span>
+                          </>
+                        )}
+                        {saveStatus === 'error' && (
+                          <>
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500" />
+                            <span>Save Error</span>
+                          </>
+                        )}
+                        {saveStatus === 'idle' && (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
+                            <span>Saved Local</span>
+                          </>
+                        )}
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      <h1 className="truncate text-lg font-semibold text-white md:text-xl">
+                        {brand.title}
+                      </h1>
+                      <p className="mt-1 text-xs text-cyan-100/65">
+                        {brand.tagline}
+                      </p>
+                    </>
                   )}
                 </div>
-                  </>
-                )}
-              </aside>
+              </div>
 
-              <main
-                ref={mainRef}
-                onPointerDown={handlePointerDown}
-                className={`canvas-container relative flex h-[min(760px,calc(100vh-190px))] min-h-[620px] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a090c] p-16 pb-24 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
-                style={{
-                  touchAction: 'none',
-                  backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.025) 25%,transparent 25%),linear-gradient(-45deg,rgba(255,255,255,.025) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,rgba(255,255,255,.025) 75%),linear-gradient(-45deg,transparent 75%,rgba(255,255,255,.025) 75%)',
-                  backgroundSize: '24px 24px',
-                  backgroundPosition: '0 0,0 12px,12px -12px,-12px 0',
-                }}
-              >
-                <div className="pointer-events-none absolute left-4 top-4 z-20 rounded-lg border border-white/[0.07] bg-[#17141c]/95 px-3 py-1.5 text-[10px] font-bold text-[#9993a3]">
-                  {isZh ? '画布' : 'Canvas'} · {baseLayer?.width ?? 0} × {baseLayer?.height ?? 0}
-                </div>
-                <div className="pointer-events-auto absolute right-4 top-4 z-20 flex gap-1 rounded-full border border-white/10 bg-black/34 p-1 backdrop-blur-md">
-                  {[
-                    { key: 'result' as const, label: isZh ? '结果' : 'Result' },
-                    { key: 'original' as const, label: isZh ? '原图' : 'Original' },
-                  ].map((item) => (
-                    <button
-                      key={item.key}
-                      onClick={() => setShowOriginal(item.key === 'original')}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition-colors ${
-                        (item.key === 'original') === showOriginal
-                          ? 'bg-[#f33b72] text-white'
-                          : 'text-slate-300/70 hover:text-white'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="pointer-events-auto absolute bottom-4 left-4 z-30 flex gap-1 rounded-xl border border-white/[0.07] bg-[#191620] p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)]">
-                  {[
-                    { tool: 'select' as ToolType, icon: MousePointer, label: isZh ? '选择' : 'Select' },
-                    { tool: 'move' as ToolType, icon: Hand, label: isZh ? '移动' : 'Move' },
-                    { tool: 'scale' as ToolType, icon: Scaling, label: isZh ? '缩放' : 'Scale' },
-                  ].map((item) => {
-                    const Icon = item.icon;
-                    const active = activeTool === item.tool;
-                    return (
-                      <button
-                        key={item.tool}
-                        onClick={() => setActiveTool(item.tool)}
-                        aria-pressed={active}
-                        className={`flex min-w-[58px] flex-col items-center gap-1 rounded-lg px-3 py-2 text-[10px] font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#ff6b96] ${
-                          active
-                            ? 'bg-[#f33b72] text-white'
-                            : 'text-[#9993a3] hover:bg-white/[0.065] hover:text-white'
-                        }`}
-                      >
-                        <Icon className="size-4" />
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="pointer-events-auto absolute bottom-4 right-4 z-30 flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#191620] p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)]">
-                  <button type="button" onClick={() => setZoom((value) => Math.max(0.1, value - 0.1))} className="flex size-8 items-center justify-center rounded-lg text-sm font-bold text-[#9993a3] hover:bg-white/[0.07] hover:text-white" aria-label={isZh ? '缩小画布' : 'Zoom out'}>−</button>
-                  <button type="button" onClick={fitCanvasToImage} className="min-w-14 rounded-lg px-2 py-2 text-[10px] font-bold text-[#d8d2dc] hover:bg-white/[0.07]" aria-label={isZh ? '适应画布' : 'Fit canvas'}>{Math.round(zoom * 100)}%</button>
-                  <button type="button" onClick={() => setZoom((value) => Math.min(4, value + 0.1))} className="flex size-8 items-center justify-center rounded-lg text-sm font-bold text-[#9993a3] hover:bg-white/[0.07] hover:text-white" aria-label={isZh ? '放大画布' : 'Zoom in'}>+</button>
-                </div>
-                {baseLayer && (
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {layers.length > 0 && (
                   <div
-                    className="transition-[width,height] duration-200 ease-out"
-                    style={{
-                      width: baseLayer.width * zoom,
-                      height: baseLayer.height * zoom,
-                    }}
+                    className="flex items-center rounded-xl bg-white/[0.055] p-1"
+                    aria-label={isZh ? '编辑历史控制' : 'Edit history controls'}
+                  >
+                    <button
+                      type="button"
+                      onClick={undo}
+                      disabled={!canUndo}
+                      className="flex size-9 items-center justify-center rounded-lg text-slate-200 transition-colors outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#b89fff] disabled:cursor-not-allowed disabled:opacity-30"
+                      title={isZh ? '撤销（⌘/Ctrl Z）' : 'Undo (⌘/Ctrl Z)'}
+                      aria-label={isZh ? '撤销' : 'Undo'}
+                    >
+                      <Undo2 className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={redo}
+                      disabled={!canRedo}
+                      className="flex size-9 items-center justify-center rounded-lg text-slate-200 transition-colors outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#b89fff] disabled:cursor-not-allowed disabled:opacity-30"
+                      title={
+                        isZh
+                          ? '重做（⌘/Ctrl Shift Z）'
+                          : 'Redo (⌘/Ctrl Shift Z)'
+                      }
+                      aria-label={isZh ? '重做' : 'Redo'}
+                    >
+                      <Redo2 className="size-4" />
+                    </button>
+                  </div>
+                )}
+                {layers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCommandPaletteOpen(true)}
+                    className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-slate-200 transition-colors outline-none hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-[#b89fff]"
+                    title={
+                      isZh
+                        ? '命令面板（⌘/Ctrl K）'
+                        : 'Command palette (⌘/Ctrl K)'
+                    }
+                  >
+                    <CommandIcon className="size-4" />
+                    <span className="hidden sm:inline">
+                      {isZh ? '命令' : 'Commands'}
+                    </span>
+                    <kbd className="rounded-md bg-black/20 px-1.5 py-0.5 text-[9px] text-slate-400">
+                      ⌘K
+                    </kbd>
+                  </button>
+                )}
+                {layers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsVersionPanelOpen(true)}
+                    className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-slate-200 transition-colors outline-none hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-[#b89fff]"
+                  >
+                    <Camera className="size-4" />
+                    <span>{isZh ? '版本' : 'Versions'}</span>
+                    {projectSnapshots.length > 0 && (
+                      <span className="rounded-full bg-cyan-300 px-1.5 py-0.5 text-[9px] font-black text-[#071123]">
+                        {projectSnapshots.length}
+                      </span>
+                    )}
+                  </button>
+                )}
+                {layers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 rounded-xl bg-white/[0.055] px-3 py-2 text-xs font-bold text-[#d8d2dc] transition-colors outline-none hover:bg-white/[0.09] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                  >
+                    <UploadCloud className="size-4" />
+                    <span>{isZh ? '更换图片' : 'Change image'}</span>
+                  </button>
+                )}
+                {layers.length > 0 && (
+                  <button
+                    onClick={() => setIsShareModalOpen(true)}
+                    className="flex items-center gap-2 rounded-xl bg-[#f33b72] px-4 py-2 text-xs font-bold text-white shadow-[0_12px_30px_rgba(243,59,114,0.22)] transition-all hover:bg-[#ff4f83] active:scale-95"
+                  >
+                    <Share2 className="size-3.5" />
+                    <span>{isZh ? '分享海报' : 'Share Poster'}</span>
+                  </button>
+                )}
+                {!embedded && (
+                  <a
+                    href="/"
+                    className="rounded-full bg-white/6 px-4 py-2 text-sm font-medium text-white/78 transition-colors hover:bg-white/10"
+                    title={brand.backHome}
+                  >
+                    {brand.backHome}
+                  </a>
+                )}
+              </div>
+            </div>
+          </header>
+
+          <section className="relative flex flex-1 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111015] shadow-[0_30px_110px_rgba(0,0,0,0.50)]">
+            {layers.length <= 1 ? (
+              <div className="relative grid min-h-[calc(100vh-150px)] flex-1 gap-4 p-4 md:grid-cols-[minmax(250px,292px)_minmax(0,1fr)] md:p-5">
+                <aside className="relative z-30 self-start md:sticky md:top-5">
+                  <LayerSettingsPanel
+                    isZh={isZh}
+                    onGenerate={handleGenerateLayers}
+                    canGenerate={canGenerateLayers}
+                    isProcessing={isProcessing}
+                    hasImage={layers.length === 1}
+                  />
+                </aside>
+                {baseLayer ? (
+                  <div
+                    ref={mainRef}
+                    className="canvas-container relative flex h-[min(720px,calc(100vh-190px))] min-h-[520px] w-full items-center justify-center overflow-hidden rounded-2xl border border-white/[0.055] bg-[#0a090c] p-12"
                   >
                     <div
-                      className="relative overflow-hidden rounded-[22px] bg-[#020817] shadow-[0_34px_100px_rgba(0,0,0,0.72)] ring-1 ring-cyan-100/42"
+                      className="transition-[width,height] duration-200 ease-out"
                       style={{
-                        width: baseLayer.width,
-                        height: baseLayer.height,
-                        transform: `translate(${dragOffset.x * zoom}px, ${dragOffset.y * zoom}px) scale(${zoom})`,
-                        transformOrigin: 'top left',
+                        width: baseLayer.width * zoom,
+                        height: baseLayer.height * zoom,
                       }}
                     >
-                      {showOriginal ? (
+                      <div
+                        className="relative overflow-hidden rounded-[18px] bg-[#070609] shadow-[0_34px_100px_rgba(0,0,0,0.72)] ring-1 ring-white/15"
+                        style={{
+                          width: baseLayer.width,
+                          height: baseLayer.height,
+                          transform: `scale(${zoom})`,
+                          transformOrigin: 'top left',
+                        }}
+                      >
                         <img
                           src={baseLayer.url}
-                          alt="Original image"
+                          alt={projectName}
                           className="absolute inset-0 h-full w-full object-cover"
                           draggable={false}
                         />
-                      ) : (
-                        renderLayerStack(true)
-                      )}
-                      {isProcessing && (
-                        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                          <div className="absolute inset-0 bg-black/20" />
-                          <div className="layer-scan-line absolute inset-x-[-12%] top-0 h-28 bg-[linear-gradient(180deg,transparent,rgba(178,255,245,0.18),rgba(255,255,255,0.68),rgba(114,255,238,0.22),transparent)] blur-[1px]" />
-                        </div>
-                      )}
+                        {isProcessing && (
+                          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                            <div className="absolute inset-0 bg-black/20" />
+                            <div className="layer-scan-line absolute inset-x-[-12%] top-0 h-28 bg-[linear-gradient(180deg,transparent,rgba(178,255,245,0.18),rgba(255,255,255,0.68),rgba(114,255,238,0.22),transparent)] blur-[1px]" />
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/18 bg-black/72 px-4 py-2 text-[10px] font-black tracking-[0.28em] text-white/86 uppercase backdrop-blur-md">
+                              {isZh
+                                ? '正在识别并拆分画面元素'
+                                : 'Finding and separating image elements'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
-              </main>
-              {isInspectorCollapsed ? (
-                <aside className="flex h-[min(760px,calc(100vh-190px))] min-h-[620px] items-start justify-center rounded-2xl border border-white/[0.06] bg-[#121016] p-2 md:col-span-2 xl:col-span-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsInspectorCollapsed(false)}
-                    className="flex size-10 items-center justify-center rounded-xl bg-white/[0.055] text-[#9993a3] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
-                    aria-label={isZh ? '展开属性侧栏' : 'Expand inspector sidebar'}
-                    title={isZh ? '展开属性侧栏' : 'Expand inspector sidebar'}
-                  >
-                    <PanelRightOpen className="size-4" />
-                  </button>
-                </aside>
-              ) : selectedLayer ? (
-                <div className="relative h-[min(760px,calc(100vh-190px))] min-h-[620px] md:col-span-2 xl:col-span-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsInspectorCollapsed(true)}
-                    className="absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-lg bg-[#17141c] text-[#77717f] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
-                    aria-label={isZh ? '折叠属性侧栏' : 'Collapse inspector sidebar'}
-                    title={isZh ? '折叠属性侧栏' : 'Collapse inspector sidebar'}
-                  >
-                    <PanelRightClose className="size-4" />
-                  </button>
-                  <LayerInspector
-                  layer={selectedLayer}
-                  isZh={isZh}
-                  activeTool={activeTool}
-                  editInstruction={editInstruction}
-                  editPlaceholder={editPlaceholder}
-                  isProcessing={isProcessing}
-                  history={editHistory}
-                  selectedCount={selectedLayerIds.size || 1}
-                  onSetTool={setActiveTool}
-                  onInstructionChange={setEditInstruction}
-                  onGenerate={() => handleEditAction(editInstruction || editPlaceholder)}
-                  onUpdate={handleUpdateSelectedLayer}
-                  onDuplicate={() => handleDuplicateLayer(selectedLayer.id)}
-                  onDownload={() => handleDownloadLayer(selectedLayer.id)}
-                  onDelete={handleDeleteSelectedLayer}
-                  onLockOthers={handleLockOtherLayers}
-                  onSendToBack={() => handleMoveSelectedLayer('back')}
-                  onMoveBackward={() => handleMoveSelectedLayer('backward')}
-                  onMoveForward={() => handleMoveSelectedLayer('forward')}
-                  onBringToFront={() => handleMoveSelectedLayer('front')}
-                />
-                </div>
-              ) : null}
-            </div>
-            <div className="mx-4 mb-4 flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#17141c] p-2 shadow-[0_18px_54px_rgba(0,0,0,0.34)] md:mx-5 md:mb-5">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff8aab]">
-                <Sparkles className="size-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <label htmlFor="studio-ai-instruction" className="sr-only">{isZh ? '向 AI 描述如何修改当前图层' : 'Ask AI how to edit the selected layer'}</label>
-                <input
-                  id="studio-ai-instruction"
-                  value={editInstruction}
-                  onChange={(event) => setEditInstruction(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' && editInstruction.trim() && !isProcessing && !selectedLayer?.locked) {
-                      handleEditAction(editInstruction);
-                    }
-                  }}
-                  placeholder={isZh ? `向 AI 描述如何修改“${selectedLayer?.name ?? '当前图层'}”，其他图层保持不变` : `Ask AI to edit “${selectedLayer?.name ?? 'selected layer'}” while keeping everything else unchanged`}
-                  className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#625c68]"
-                />
-                <p className="mt-1 text-[10px] text-[#77717f]">{isZh ? '锁定图层与保留特征会自动加入 AI 指令' : 'Layer locks and preserved features are automatically enforced'}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleEditAction(editInstruction)}
-                disabled={!editInstruction.trim() || isProcessing || !selectedLayer || selectedLayer.locked}
-                className="flex min-h-10 items-center gap-2 rounded-xl bg-[#f33b72] px-4 text-xs font-extrabold text-white outline-none transition-colors hover:bg-[#ff4f83] focus-visible:ring-2 focus-visible:ring-[#ff9ab7] disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <Sparkles className="size-4" />
-                {isProcessing ? (isZh ? '生成中' : 'Generating') : (isZh ? '生成' : 'Generate')}
-              </button>
-            </div>
-            </div>
-          )}
-
-          <style jsx>{`
-            .layer-scan-line {
-              animation: layer-scan 1.55s ease-in-out infinite;
-            }
-
-            @keyframes layer-scan {
-              0% {
-                transform: translateY(-120%);
-                opacity: 0.2;
-              }
-              45% {
-                opacity: 1;
-              }
-              100% {
-                transform: translateY(720%);
-                opacity: 0.2;
-              }
-            }
-          `}</style>
-        </section>
-
-        {layers.length > 1 && (
-          <section className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-            {/* Edit history */}
-            <div className="rounded-[28px] border border-white/10 bg-[#071123]/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/14 text-cyan-100">
-                  <History className="size-4" />
-                </span>
-                <div>
-                  <h2 className="text-sm font-black text-white">{isZh ? '编辑历史' : 'Edit history'}</h2>
-                  <p className="text-[11px] text-cyan-100/42">{isZh ? '本项目的最近操作记录' : 'Recent actions in this project'}</p>
-                </div>
-              </div>
-              <div className="mt-4 max-h-[260px] space-y-2 overflow-auto pr-1">
-                {editHistory.length === 0 ? (
-                  <p className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-center text-xs text-slate-400">
-                    {isZh ? '暂无操作记录，生成图层或编辑后会自动显示。' : 'No actions yet. Generate layers or edit to see history here.'}
-                  </p>
                 ) : (
-                  editHistory.map((entry, index) => (
-                    <div key={entry.id} className="flex items-center gap-3 rounded-2xl bg-white/[0.05] px-3 py-2.5">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/8 text-[10px] font-black text-cyan-100/70">
-                        {editHistory.length - index}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-bold text-white">{entry.action}</p>
-                        <p className="truncate text-[10px] text-slate-400">{entry.layer}</p>
-                      </div>
-                      <span className="shrink-0 text-[10px] font-semibold text-slate-500">
-                        {new Date(entry.time).toLocaleTimeString(isZh ? 'zh-CN' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  ))
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="group flex min-h-[520px] w-full flex-col items-center justify-center rounded-2xl border border-white/[0.06] bg-[#0f0d12] px-6 text-center shadow-[0_24px_80px_rgba(0,0,0,0.32)] transition-all outline-none hover:border-[#f33b72]/25 hover:bg-[#141118] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                  >
+                    <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f33b72] text-white shadow-[0_18px_44px_rgba(243,59,114,0.25)] transition-transform group-hover:scale-105">
+                      <UploadCloud className="size-7" />
+                    </span>
+                    <span className="mt-7 text-[11px] font-black tracking-[0.36em] text-cyan-100/52 uppercase">
+                      Image Layered AI
+                    </span>
+                    <span className="mt-3 max-w-xl text-3xl leading-tight font-semibold text-white md:text-5xl">
+                      {isZh
+                        ? '上传图片，自动拆成可编辑图层'
+                        : 'Upload an image, get editable layers'}
+                    </span>
+                    <span className="mt-4 max-w-lg text-sm leading-7 text-slate-300/70">
+                      {isZh
+                        ? '系统会识别主体、文字、背景与视觉元素，完成后直接进入图层编辑工作台。'
+                        : 'Subjects, text, backgrounds, and visual elements are detected automatically, then opened in the layer workspace.'}
+                    </span>
+                    <span className="mt-5 rounded-lg bg-white/[0.055] px-4 py-2 text-xs font-semibold text-[#b8b2bd]">
+                      {isZh
+                        ? '上传后即可自动创建可编辑图层'
+                        : 'Upload once, then create editable layers automatically'}
+                    </span>
+                  </button>
                 )}
               </div>
-            </div>
+            ) : (
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div
+                  className={`grid flex-1 gap-3 p-4 md:p-5 ${editorGridClass}`}
+                >
+                  <aside
+                    className={`flex h-[min(760px,calc(100vh-190px))] min-h-[620px] flex-col gap-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#121016] shadow-[0_22px_68px_rgba(0,0,0,0.28)] ${isLayerSidebarCollapsed ? 'items-center p-2' : 'p-3'}`}
+                  >
+                    {isLayerSidebarCollapsed ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsLayerSidebarCollapsed(false)}
+                        className="flex size-10 items-center justify-center rounded-xl bg-white/[0.055] text-[#9993a3] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                        aria-label={
+                          isZh ? '展开图层侧栏' : 'Expand layer sidebar'
+                        }
+                        title={isZh ? '展开图层侧栏' : 'Expand layer sidebar'}
+                      >
+                        <PanelLeftOpen className="size-4" />
+                      </button>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[10px] font-semibold tracking-[0.12em] text-[#77717f] uppercase">
+                            {isZh ? '图层面板' : 'Layers panel'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIsLayerSidebarCollapsed(true)}
+                            className="flex size-8 items-center justify-center rounded-lg text-[#77717f] outline-none hover:bg-white/[0.055] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                            aria-label={
+                              isZh ? '折叠图层侧栏' : 'Collapse layer sidebar'
+                            }
+                            title={
+                              isZh ? '折叠图层侧栏' : 'Collapse layer sidebar'
+                            }
+                          >
+                            <PanelLeftClose className="size-4" />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <h2 className="max-w-[180px] truncate text-base font-semibold text-white">
+                              {isZh ? '图层列表' : 'Layer stack'}
+                            </h2>
+                            <p className="mt-1 text-[10px] font-semibold text-[#77717f]">
+                              {isZh
+                                ? `${layers.length - 1} 个可编辑元素`
+                                : `${layers.length - 1} editable elements`}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => fileInputRef.current?.click()}
+                              className="rounded-full bg-white/8 px-3 py-2 text-[11px] font-bold text-cyan-50/78 transition-colors hover:bg-white/14"
+                            >
+                              {isZh ? '换图' : 'Change'}
+                            </button>
+                            <button
+                              onClick={() => setIsExportModalOpen(true)}
+                              className="rounded-xl bg-[#f33b72] px-3 py-2 text-[11px] font-bold text-white transition-all hover:bg-[#ff4f83] active:scale-95"
+                            >
+                              {isZh ? '导出' : 'Export'}
+                            </button>
+                          </div>
+                        </div>
 
-            {/* FAQ */}
-            <div className="space-y-4">
+                        <label className="flex items-center gap-2 rounded-xl bg-white/[0.045] px-3 py-2.5 focus-within:ring-2 focus-within:ring-[#ff6b96]">
+                          <Search className="size-4 shrink-0 text-[#77717f]" />
+                          <input
+                            value={layerSearch}
+                            onChange={(event) =>
+                              setLayerSearch(event.target.value)
+                            }
+                            placeholder={
+                              isZh
+                                ? '搜索图层、分组或 AI 提示词'
+                                : 'Search layers, groups, or AI prompts'
+                            }
+                            className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-slate-500"
+                          />
+                          {layerSearch && (
+                            <button
+                              type="button"
+                              onClick={() => setLayerSearch('')}
+                              className="rounded-md p-1 text-slate-400 hover:bg-white/10 hover:text-white"
+                              aria-label={isZh ? '清除搜索' : 'Clear search'}
+                            >
+                              <X className="size-3" />
+                            </button>
+                          )}
+                        </label>
+
+                        {selectedLayerIds.size > 1 && (
+                          <div className="rounded-xl bg-cyan-300/[0.08] p-2">
+                            <div className="flex items-center justify-between gap-2 px-1 pb-2">
+                              <span className="text-[10px] font-black tracking-[0.12em] text-cyan-100/70 uppercase">
+                                {isZh
+                                  ? `已选 ${selectedLayerIds.size} 个`
+                                  : `${selectedLayerIds.size} selected`}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setSelectedLayerIds(
+                                    selectedLayerId
+                                      ? new Set([selectedLayerId])
+                                      : new Set()
+                                  )
+                                }
+                                className="text-[10px] font-bold text-slate-400 hover:text-white"
+                              >
+                                {isZh ? '取消多选' : 'Clear multi-select'}
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1">
+                              <button
+                                type="button"
+                                onClick={handleGroupSelectedLayers}
+                                className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]"
+                                aria-label={
+                                  isZh ? '创建分组' : 'Group selected layers'
+                                }
+                              >
+                                <FolderPlus className="size-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleUngroupSelectedLayers}
+                                className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]"
+                                aria-label={
+                                  isZh ? '取消分组' : 'Ungroup selected layers'
+                                }
+                              >
+                                <Ungroup className="size-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleBulkUpdate({
+                                    locked: ![...selectedLayerIds].every(
+                                      (id) =>
+                                        layers.find((layer) => layer.id === id)
+                                          ?.locked
+                                    ),
+                                  })
+                                }
+                                className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]"
+                                aria-label={isZh ? '切换锁定' : 'Toggle lock'}
+                              >
+                                {[...selectedLayerIds].every(
+                                  (id) =>
+                                    layers.find((layer) => layer.id === id)
+                                      ?.locked
+                                ) ? (
+                                  <Unlock className="size-3.5" />
+                                ) : (
+                                  <Lock className="size-3.5" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleBulkUpdate({
+                                    visible: ![...selectedLayerIds].every(
+                                      (id) =>
+                                        layers.find((layer) => layer.id === id)
+                                          ?.visible
+                                    ),
+                                  })
+                                }
+                                className="flex h-8 items-center justify-center rounded-lg bg-white/[0.07] text-slate-200 hover:bg-white/[0.12]"
+                                aria-label={
+                                  isZh ? '切换显示' : 'Toggle visibility'
+                                }
+                              >
+                                {[...selectedLayerIds].every(
+                                  (id) =>
+                                    layers.find((layer) => layer.id === id)
+                                      ?.visible
+                                ) ? (
+                                  <EyeOff className="size-3.5" />
+                                ) : (
+                                  <Eye className="size-3.5" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleDeleteSelectedLayers}
+                                className="flex h-8 items-center justify-center rounded-lg bg-rose-400/[0.10] text-rose-200 hover:bg-rose-400/[0.18]"
+                                aria-label={
+                                  isZh
+                                    ? '删除所选图层'
+                                    : 'Delete selected layers'
+                                }
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="min-h-[410px] flex-1 space-y-1.5 overflow-auto pr-1">
+                          {filteredStackLayers.map((layer, index) => {
+                            const isSelected = selectedLayerIds.has(layer.id);
+                            const label =
+                              layer.name || `Layer ${layers.length - index}`;
+
+                            return (
+                              <div
+                                key={layer.id}
+                                role="button"
+                                tabIndex={0}
+                                draggable={!layer.locked}
+                                onDragStart={() =>
+                                  setDraggedStackLayerId(layer.id)
+                                }
+                                onDragEnd={() => setDraggedStackLayerId(null)}
+                                onDragOver={(event) => event.preventDefault()}
+                                onDrop={(event) => {
+                                  event.preventDefault();
+                                  if (draggedStackLayerId)
+                                    handleReorderLayers(
+                                      draggedStackLayerId,
+                                      layer.id
+                                    );
+                                  setDraggedStackLayerId(null);
+                                }}
+                                onClick={(event) =>
+                                  selectLayer(
+                                    layer.id,
+                                    event.metaKey ||
+                                      event.ctrlKey ||
+                                      event.shiftKey
+                                  )
+                                }
+                                onKeyDown={(event) => {
+                                  if (
+                                    event.key === 'Enter' ||
+                                    event.key === ' '
+                                  ) {
+                                    event.preventDefault();
+                                    selectLayer(
+                                      layer.id,
+                                      event.metaKey ||
+                                        event.ctrlKey ||
+                                        event.shiftKey
+                                    );
+                                  }
+                                }}
+                                className={`flex items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left transition-all ${
+                                  isSelected
+                                    ? 'bg-[#f33b72]/12 text-white ring-1 ring-[#f33b72]/35'
+                                    : 'bg-white/[0.045] text-[#d8d2dc] hover:bg-white/[0.075]'
+                                }`}
+                              >
+                                <GripVertical
+                                  className={`size-3.5 shrink-0 ${isSelected ? 'text-[#ff7ca2]' : 'text-[#5f5966]'} ${layer.locked ? 'cursor-not-allowed' : 'cursor-grab'}`}
+                                />
+                                <div
+                                  className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl ${isSelected ? 'bg-black/8' : 'bg-black/28'}`}
+                                >
+                                  <img
+                                    src={layer.url}
+                                    alt={label}
+                                    className="h-full w-full object-contain"
+                                    draggable={false}
+                                    loading="lazy"
+                                    decoding="async"
+                                  />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-bold tracking-tight">
+                                    {label}
+                                  </p>
+                                  <p className="mt-0.5 truncate text-[9px] font-black tracking-[0.14em] uppercase opacity-50">
+                                    {layer.editMetadata
+                                      ? isZh
+                                        ? 'AI 变体图层'
+                                        : 'AI variation'
+                                      : layer.groupName
+                                        ? layer.groupName
+                                        : layer.maskUrl
+                                          ? isZh
+                                            ? '可编辑蒙版'
+                                            : 'editable mask'
+                                          : isZh
+                                            ? '图像图层'
+                                            : 'image layer'}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setLayers((prev) =>
+                                      prev.map((item) =>
+                                        item.id === layer.id
+                                          ? { ...item, locked: !item.locked }
+                                          : item
+                                      )
+                                    );
+                                  }}
+                                  className={`flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors ${layer.locked ? 'bg-[#f33b72]/12 text-[#ff8aab]' : 'text-[#5f5966] hover:bg-white/[0.06] hover:text-[#d8d2dc]'}`}
+                                  aria-label={
+                                    layer.locked
+                                      ? isZh
+                                        ? '解锁图层'
+                                        : 'Unlock layer'
+                                      : isZh
+                                        ? '锁定图层'
+                                        : 'Lock layer'
+                                  }
+                                >
+                                  {layer.locked ? (
+                                    <Lock className="size-3.5" />
+                                  ) : (
+                                    <Unlock className="size-3.5" />
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setLayers((prev) =>
+                                      prev.map((item) =>
+                                        item.id === layer.id
+                                          ? { ...item, visible: !item.visible }
+                                          : item
+                                      )
+                                    );
+                                  }}
+                                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+                                    isSelected
+                                      ? 'bg-[#f33b72]/12 text-[#ff8aab]'
+                                      : 'bg-white/[0.055] text-[#9993a3]'
+                                  }`}
+                                  aria-label={
+                                    layer.visible ? 'Hide layer' : 'Show layer'
+                                  }
+                                >
+                                  {layer.visible ? (
+                                    <Eye className="size-4" />
+                                  ) : (
+                                    <EyeOff className="size-4" />
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })}
+                          {filteredStackLayers.length === 0 && (
+                            <div className="rounded-xl bg-white/[0.045] px-4 py-8 text-center">
+                              <Search className="mx-auto size-5 text-slate-500" />
+                              <p className="mt-2 text-xs font-bold text-slate-300">
+                                {isZh ? '没有匹配的图层' : 'No matching layers'}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => setLayerSearch('')}
+                                className="mt-2 text-[11px] font-bold text-cyan-200 hover:text-white"
+                              >
+                                {isZh ? '清除搜索' : 'Clear search'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </aside>
+
+                  <main
+                    ref={mainRef}
+                    onPointerDown={handlePointerDown}
+                    className={`canvas-container relative flex h-[min(760px,calc(100vh-190px))] min-h-[620px] items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0a090c] p-16 pb-24 ${isDraggingCanvas ? 'cursor-grabbing' : activeTool === 'move' || isSpacePressed ? 'cursor-grab' : 'cursor-default'}`}
+                    style={{
+                      touchAction: 'none',
+                      backgroundImage:
+                        'linear-gradient(45deg,rgba(255,255,255,.025) 25%,transparent 25%),linear-gradient(-45deg,rgba(255,255,255,.025) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,rgba(255,255,255,.025) 75%),linear-gradient(-45deg,transparent 75%,rgba(255,255,255,.025) 75%)',
+                      backgroundSize: '24px 24px',
+                      backgroundPosition: '0 0,0 12px,12px -12px,-12px 0',
+                    }}
+                  >
+                    <div className="pointer-events-none absolute top-4 left-4 z-20 rounded-lg border border-white/[0.07] bg-[#17141c]/95 px-3 py-1.5 text-[10px] font-bold text-[#9993a3]">
+                      {isZh ? '画布' : 'Canvas'} · {baseLayer?.width ?? 0} ×{' '}
+                      {baseLayer?.height ?? 0}
+                    </div>
+                    <div className="pointer-events-auto absolute top-4 right-4 z-20 flex gap-1 rounded-full border border-white/10 bg-black/34 p-1 backdrop-blur-md">
+                      {[
+                        {
+                          key: 'result' as const,
+                          label: isZh ? '结果' : 'Result',
+                        },
+                        {
+                          key: 'original' as const,
+                          label: isZh ? '原图' : 'Original',
+                        },
+                      ].map((item) => (
+                        <button
+                          key={item.key}
+                          onClick={() =>
+                            setShowOriginal(item.key === 'original')
+                          }
+                          className={`rounded-full px-3 py-1.5 text-[10px] font-black tracking-[0.14em] uppercase transition-colors ${
+                            (item.key === 'original') === showOriginal
+                              ? 'bg-[#f33b72] text-white'
+                              : 'text-slate-300/70 hover:text-white'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="pointer-events-auto absolute bottom-4 left-4 z-30 flex gap-1 rounded-xl border border-white/[0.07] bg-[#191620] p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)]">
+                      {[
+                        {
+                          tool: 'select' as ToolType,
+                          icon: MousePointer,
+                          label: isZh ? '选择' : 'Select',
+                        },
+                        {
+                          tool: 'move' as ToolType,
+                          icon: Hand,
+                          label: isZh ? '移动' : 'Move',
+                        },
+                        {
+                          tool: 'scale' as ToolType,
+                          icon: Scaling,
+                          label: isZh ? '缩放' : 'Scale',
+                        },
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        const active = activeTool === item.tool;
+                        return (
+                          <button
+                            key={item.tool}
+                            onClick={() => setActiveTool(item.tool)}
+                            aria-pressed={active}
+                            className={`flex min-w-[58px] flex-col items-center gap-1 rounded-lg px-3 py-2 text-[10px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#ff6b96] ${
+                              active
+                                ? 'bg-[#f33b72] text-white'
+                                : 'text-[#9993a3] hover:bg-white/[0.065] hover:text-white'
+                            }`}
+                          >
+                            <Icon className="size-4" />
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="pointer-events-auto absolute right-4 bottom-4 z-30 flex items-center gap-1 rounded-xl border border-white/[0.07] bg-[#191620] p-1.5 shadow-[0_18px_54px_rgba(0,0,0,0.42)]">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setZoom((value) => Math.max(0.1, value - 0.1))
+                        }
+                        className="flex size-8 items-center justify-center rounded-lg text-sm font-bold text-[#9993a3] hover:bg-white/[0.07] hover:text-white"
+                        aria-label={isZh ? '缩小画布' : 'Zoom out'}
+                      >
+                        −
+                      </button>
+                      <button
+                        type="button"
+                        onClick={fitCanvasToImage}
+                        className="min-w-14 rounded-lg px-2 py-2 text-[10px] font-bold text-[#d8d2dc] hover:bg-white/[0.07]"
+                        aria-label={isZh ? '适应画布' : 'Fit canvas'}
+                      >
+                        {Math.round(zoom * 100)}%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setZoom((value) => Math.min(4, value + 0.1))
+                        }
+                        className="flex size-8 items-center justify-center rounded-lg text-sm font-bold text-[#9993a3] hover:bg-white/[0.07] hover:text-white"
+                        aria-label={isZh ? '放大画布' : 'Zoom in'}
+                      >
+                        +
+                      </button>
+                    </div>
+                    {baseLayer && (
+                      <div
+                        className="transition-[width,height] duration-200 ease-out"
+                        style={{
+                          width: baseLayer.width * zoom,
+                          height: baseLayer.height * zoom,
+                        }}
+                      >
+                        <div
+                          className="relative overflow-hidden rounded-[22px] bg-[#020817] shadow-[0_34px_100px_rgba(0,0,0,0.72)] ring-1 ring-cyan-100/42"
+                          style={{
+                            width: baseLayer.width,
+                            height: baseLayer.height,
+                            transform: `translate(${dragOffset.x * zoom}px, ${dragOffset.y * zoom}px) scale(${zoom})`,
+                            transformOrigin: 'top left',
+                          }}
+                        >
+                          {showOriginal ? (
+                            <img
+                              src={baseLayer.url}
+                              alt="Original image"
+                              className="absolute inset-0 h-full w-full object-cover"
+                              draggable={false}
+                            />
+                          ) : (
+                            renderLayerStack(true)
+                          )}
+                          {isProcessing && (
+                            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                              <div className="absolute inset-0 bg-black/20" />
+                              <div className="layer-scan-line absolute inset-x-[-12%] top-0 h-28 bg-[linear-gradient(180deg,transparent,rgba(178,255,245,0.18),rgba(255,255,255,0.68),rgba(114,255,238,0.22),transparent)] blur-[1px]" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </main>
+                  {isInspectorCollapsed ? (
+                    <aside className="flex h-[min(760px,calc(100vh-190px))] min-h-[620px] items-start justify-center rounded-2xl border border-white/[0.06] bg-[#121016] p-2 md:col-span-2 xl:col-span-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsInspectorCollapsed(false)}
+                        className="flex size-10 items-center justify-center rounded-xl bg-white/[0.055] text-[#9993a3] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                        aria-label={
+                          isZh ? '展开属性侧栏' : 'Expand inspector sidebar'
+                        }
+                        title={
+                          isZh ? '展开属性侧栏' : 'Expand inspector sidebar'
+                        }
+                      >
+                        <PanelRightOpen className="size-4" />
+                      </button>
+                    </aside>
+                  ) : selectedLayer ? (
+                    <div className="relative h-[min(760px,calc(100vh-190px))] min-h-[620px] md:col-span-2 xl:col-span-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsInspectorCollapsed(true)}
+                        className="absolute top-3 right-3 z-20 flex size-8 items-center justify-center rounded-lg bg-[#17141c] text-[#77717f] outline-none hover:bg-[#f33b72]/12 hover:text-[#ff7ca2] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
+                        aria-label={
+                          isZh ? '折叠属性侧栏' : 'Collapse inspector sidebar'
+                        }
+                        title={
+                          isZh ? '折叠属性侧栏' : 'Collapse inspector sidebar'
+                        }
+                      >
+                        <PanelRightClose className="size-4" />
+                      </button>
+                      <LayerInspector
+                        layer={selectedLayer}
+                        isZh={isZh}
+                        activeTool={activeTool}
+                        editInstruction={editInstruction}
+                        editPlaceholder={editPlaceholder}
+                        isProcessing={isProcessing}
+                        history={editHistory}
+                        selectedCount={selectedLayerIds.size || 1}
+                        onSetTool={setActiveTool}
+                        onInstructionChange={setEditInstruction}
+                        onGenerate={() =>
+                          handleEditAction(editInstruction || editPlaceholder)
+                        }
+                        onUpdate={handleUpdateSelectedLayer}
+                        onDuplicate={() =>
+                          handleDuplicateLayer(selectedLayer.id)
+                        }
+                        onDownload={() => handleDownloadLayer(selectedLayer.id)}
+                        onDelete={handleDeleteSelectedLayer}
+                        onLockOthers={handleLockOtherLayers}
+                        onSendToBack={() => handleMoveSelectedLayer('back')}
+                        onMoveBackward={() =>
+                          handleMoveSelectedLayer('backward')
+                        }
+                        onMoveForward={() => handleMoveSelectedLayer('forward')}
+                        onBringToFront={() => handleMoveSelectedLayer('front')}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="mx-4 mb-4 flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-[#17141c] p-2 shadow-[0_18px_54px_rgba(0,0,0,0.34)] md:mx-5 md:mb-5">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff8aab]">
+                    <Sparkles className="size-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="studio-ai-instruction" className="sr-only">
+                      {isZh
+                        ? '向 AI 描述如何修改当前图层'
+                        : 'Ask AI how to edit the selected layer'}
+                    </label>
+                    <input
+                      id="studio-ai-instruction"
+                      value={editInstruction}
+                      onChange={(event) =>
+                        setEditInstruction(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === 'Enter' &&
+                          editInstruction.trim() &&
+                          !isProcessing &&
+                          !selectedLayer?.locked
+                        ) {
+                          handleEditAction(editInstruction);
+                        }
+                      }}
+                      placeholder={
+                        isZh
+                          ? `向 AI 描述如何修改“${selectedLayer?.name ?? '当前图层'}”，其他图层保持不变`
+                          : `Ask AI to edit “${selectedLayer?.name ?? 'selected layer'}” while keeping everything else unchanged`
+                      }
+                      className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#625c68]"
+                    />
+                    <p className="mt-1 text-[10px] text-[#77717f]">
+                      {isZh
+                        ? '锁定图层与保留特征会自动加入 AI 指令'
+                        : 'Layer locks and preserved features are automatically enforced'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleEditAction(editInstruction)}
+                    disabled={
+                      !editInstruction.trim() ||
+                      isProcessing ||
+                      !selectedLayer ||
+                      selectedLayer.locked
+                    }
+                    className="flex min-h-10 items-center gap-2 rounded-xl bg-[#f33b72] px-4 text-xs font-extrabold text-white transition-colors outline-none hover:bg-[#ff4f83] focus-visible:ring-2 focus-visible:ring-[#ff9ab7] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <Sparkles className="size-4" />
+                    {isProcessing
+                      ? isZh
+                        ? '生成中'
+                        : 'Generating'
+                      : isZh
+                        ? '生成'
+                        : 'Generate'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <style jsx>{`
+              .layer-scan-line {
+                animation: layer-scan 1.55s ease-in-out infinite;
+              }
+
+              @keyframes layer-scan {
+                0% {
+                  transform: translateY(-120%);
+                  opacity: 0.2;
+                }
+                45% {
+                  opacity: 1;
+                }
+                100% {
+                  transform: translateY(720%);
+                  opacity: 0.2;
+                }
+              }
+            `}</style>
+          </section>
+
+          {layers.length > 1 && (
+            <section className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+              {/* Edit history */}
               <div className="rounded-[28px] border border-white/10 bg-[#071123]/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/14 text-cyan-100">
-                    <HelpCircle className="size-4" />
+                    <History className="size-4" />
                   </span>
-                  <h2 className="text-sm font-black text-white">{isZh ? '常见问题' : 'FAQ'}</h2>
+                  <div>
+                    <h2 className="text-sm font-black text-white">
+                      {isZh ? '编辑历史' : 'Edit history'}
+                    </h2>
+                    <p className="text-[11px] text-cyan-100/42">
+                      {isZh
+                        ? '本项目的最近操作记录'
+                        : 'Recent actions in this project'}
+                    </p>
+                  </div>
                 </div>
-                <div className="mt-4 space-y-2">
-                  {[
-                    {
-                      q: isZh ? '如何把图片拆成可编辑图层？' : 'How do I split an image into editable layers?',
-                      a: isZh
-                        ? '上传图片后点击 Generate，AI 会把产品、人物、文字、背景、阴影等拆成透明 RGBA 图层，每个图层都可以单独编辑。'
-                        : 'Upload an image and click Generate. The AI separates products, people, text, background, and shadows into transparent RGBA layers — each editable independently.',
-                    },
-                    {
-                      q: isZh ? '可以只修改一个物体而不影响其他部分吗？' : 'Can I edit only one object without affecting the rest?',
-                      a: isZh
-                        ? '可以。在左侧图层列表选中目标图层，输入修改需求即可只对该图层生效，其余图层保持不变。'
-                        : 'Yes. Select the target layer in the layer list, then describe the change — only that layer is edited and the rest stays untouched.',
-                    },
-                    {
-                      q: isZh ? '和 Remove.bg 之类的去背景工具有什么区别？' : 'How is this different from background removers like Remove.bg?',
-                      a: isZh
-                        ? '去背景工具只输出一个主体抠图；这里会把整张图拆成多个可编辑图层，还能对每个图层做 AI 提示词编辑、调色、替换和删除。'
-                        : 'Background removers return one cutout. Image Layered splits the whole image into multiple editable layers and lets you prompt-edit, recolor, replace, or delete each one.',
-                    },
-                    {
-                      q: isZh ? '编辑结果如何导出？' : 'How do I export the result?',
-                      a: isZh
-                        ? '点击右上角导出，可导出合成后的整图，也可以单独提取某个图层用于广告、店铺和设计稿。'
-                        : 'Click Export in the top-right to download the composited result, or extract a single layer for ads, stores, and design files.',
-                    },
-                  ].map((faq, index) => (
-                    <div key={index} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05]">
-                      <button
-                        onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                <div className="mt-4 max-h-[260px] space-y-2 overflow-auto pr-1">
+                  {editHistory.length === 0 ? (
+                    <p className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-center text-xs text-slate-400">
+                      {isZh
+                        ? '暂无操作记录，生成图层或编辑后会自动显示。'
+                        : 'No actions yet. Generate layers or edit to see history here.'}
+                    </p>
+                  ) : (
+                    editHistory.map((entry, index) => (
+                      <div
+                        key={entry.id}
+                        className="flex items-center gap-3 rounded-2xl bg-white/[0.05] px-3 py-2.5"
                       >
-                        <span className="text-xs font-bold text-slate-100">{faq.q}</span>
-                        <ChevronDown className={`size-4 shrink-0 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180' : ''}`} />
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/8 text-[10px] font-black text-cyan-100/70">
+                          {editHistory.length - index}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-white">
+                            {entry.action}
+                          </p>
+                          <p className="truncate text-[10px] text-slate-400">
+                            {entry.layer}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-[10px] font-semibold text-slate-500">
+                          {new Date(entry.time).toLocaleTimeString(
+                            isZh ? 'zh-CN' : 'en-US',
+                            { hour: '2-digit', minute: '2-digit' }
+                          )}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* FAQ */}
+              <div className="space-y-4">
+                <div className="rounded-[28px] border border-white/10 bg-[#071123]/60 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-300/14 text-cyan-100">
+                      <HelpCircle className="size-4" />
+                    </span>
+                    <h2 className="text-sm font-black text-white">
+                      {isZh ? '常见问题' : 'FAQ'}
+                    </h2>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {[
+                      {
+                        q: isZh
+                          ? '如何把图片拆成可编辑图层？'
+                          : 'How do I split an image into editable layers?',
+                        a: isZh
+                          ? '上传图片后点击 Generate，AI 会把产品、人物、文字、背景、阴影等拆成透明 RGBA 图层，每个图层都可以单独编辑。'
+                          : 'Upload an image and click Generate. The AI separates products, people, text, background, and shadows into transparent RGBA layers — each editable independently.',
+                      },
+                      {
+                        q: isZh
+                          ? '可以只修改一个物体而不影响其他部分吗？'
+                          : 'Can I edit only one object without affecting the rest?',
+                        a: isZh
+                          ? '可以。在左侧图层列表选中目标图层，输入修改需求即可只对该图层生效，其余图层保持不变。'
+                          : 'Yes. Select the target layer in the layer list, then describe the change — only that layer is edited and the rest stays untouched.',
+                      },
+                      {
+                        q: isZh
+                          ? '和 Remove.bg 之类的去背景工具有什么区别？'
+                          : 'How is this different from background removers like Remove.bg?',
+                        a: isZh
+                          ? '去背景工具只输出一个主体抠图；这里会把整张图拆成多个可编辑图层，还能对每个图层做 AI 提示词编辑、调色、替换和删除。'
+                          : 'Background removers return one cutout. Image Layered splits the whole image into multiple editable layers and lets you prompt-edit, recolor, replace, or delete each one.',
+                      },
+                      {
+                        q: isZh
+                          ? '编辑结果如何导出？'
+                          : 'How do I export the result?',
+                        a: isZh
+                          ? '点击右上角导出，可导出合成后的整图，也可以单独提取某个图层用于广告、店铺和设计稿。'
+                          : 'Click Export in the top-right to download the composited result, or extract a single layer for ads, stores, and design files.',
+                      },
+                    ].map((faq, index) => (
+                      <div
+                        key={index}
+                        className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05]"
+                      >
+                        <button
+                          onClick={() =>
+                            setOpenFaq(openFaq === index ? null : index)
+                          }
+                          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                        >
+                          <span className="text-xs font-bold text-slate-100">
+                            {faq.q}
+                          </span>
+                          <ChevronDown
+                            className={`size-4 shrink-0 text-slate-400 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                        {openFaq === index && (
+                          <p className="border-t border-white/8 px-4 py-3 text-xs leading-6 text-slate-300">
+                            {faq.a}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            className="hidden"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+          />
+          <input
+            type="file"
+            ref={projectFileInputRef}
+            onChange={handleImportProjectFile}
+            className="hidden"
+            accept="application/json,.json"
+          />
+
+          <CrookedExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            onExport={handleExport}
+            isProcessing={isProcessing}
+            initialWidth={layers[0]?.width || 1024}
+            initialHeight={layers[0]?.height || 1024}
+          />
+
+          <EditorCommandPalette
+            open={isCommandPaletteOpen}
+            isZh={isZh}
+            commands={editorCommands}
+            onClose={() => setIsCommandPaletteOpen(false)}
+          />
+
+          <ProjectVersionPanel
+            open={isVersionPanelOpen}
+            isZh={isZh}
+            snapshots={projectSnapshots}
+            onClose={() => setIsVersionPanelOpen(false)}
+            onCreate={handleCreateProjectSnapshot}
+            onRestore={handleRestoreProjectSnapshot}
+            onDelete={handleDeleteProjectSnapshot}
+          />
+
+          {/* Guest Conversion Modal */}
+          <CrookedUpgradeModal
+            isOpen={upgradeModalOpen}
+            onClose={() => setUpgradeModalOpen(false)}
+            type={upgradeModalType}
+            remainingUploads={getRemainingUploads()}
+          />
+
+          {isShareModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+              <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.08] bg-[#17141c] p-6 shadow-[0_32px_96px_rgba(0,0,0,0.6)]">
+                <button
+                  onClick={() => setIsShareModalOpen(false)}
+                  className="absolute top-4 right-4 rounded-full bg-white/5 p-2 text-gray-400 hover:bg-white/10 hover:text-white"
+                >
+                  <X className="size-4" />
+                </button>
+
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff7ca2]">
+                    <Share2 className="size-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">
+                    {isZh ? '分享您的创作空间' : 'Share Your Workspace'}
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-400">
+                    {isZh
+                      ? '生成一个公开只读链接，其他人可以查看您的图层，并一键克隆到他们自己的工作区。'
+                      : 'Generate a public, view-only link. Others can view your layers and clone (Remix) them into their own workspace.'}
+                  </p>
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  <div>
+                    <label className="text-[11px] font-semibold text-[#9993a3]">
+                      {isZh ? '分享地址' : 'Share Link'}
+                    </label>
+                    <div className="mt-1.5 flex gap-2 rounded-xl bg-white/5 p-1 ring-1 ring-white/10">
+                      <input
+                        type="text"
+                        readOnly
+                        value={
+                          projectId
+                            ? `${window.location.origin}/${params?.locale || 'en'}/share/${projectId}`
+                            : ''
+                        }
+                        className="w-full bg-transparent px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                      />
+                      <button
+                        onClick={handleCopyShareLink}
+                        className="shrink-0 rounded-lg bg-[#f33b72] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#ff4f83]"
+                      >
+                        {isZh ? '复制' : 'Copy'}
                       </button>
-                      {openFaq === index && (
-                        <p className="border-t border-white/8 px-4 py-3 text-xs leading-6 text-slate-300">{faq.a}</p>
-                      )}
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="flex gap-3 rounded-2xl border border-white/5 bg-white/5 p-4">
+                    <Sparkles className="size-5 shrink-0 text-[#ff7ca2]" />
+                    <div className="text-left text-xs leading-relaxed text-slate-400">
+                      <p className="font-bold text-slate-200">
+                        {isZh ? '什么是裂变 Remix？' : 'What is a Remix?'}
+                      </p>
+                      <p className="mt-1">
+                        {isZh
+                          ? '访客可以通过此链接查看您的每一层设计、开启或隐藏图层，然后点击“克隆海报”复制到自己的编辑器中继续创作。这对于传播非常有效！'
+                          : 'Visitors will see a high-end interactive canvas. They can toggle layer visibilities and click "Remix Poster" to start editing. Great for viral loops!'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </section>
-        )}
+          )}
 
-        <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileUpload}
-        className="hidden"
-        accept="image/jpeg,image/png,image/webp,image/avif"
-      />
-      <input
-        type="file"
-        ref={projectFileInputRef}
-        onChange={handleImportProjectFile}
-        className="hidden"
-        accept="application/json,.json"
-      />
+          {showExitIntent && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+              <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.08] bg-[#17141c] p-8 shadow-[0_32px_96px_rgba(0,0,0,0.58)]">
+                <button
+                  onClick={() => {
+                    setShowExitIntent(false);
+                    sessionStorage.setItem(
+                      'layered_exit_intent_dismissed',
+                      'true'
+                    );
+                  }}
+                  className="absolute top-4 right-4 rounded-full bg-white/5 p-2 text-gray-400 hover:bg-white/10 hover:text-white"
+                >
+                  <X className="size-4" />
+                </button>
 
-      <CrookedExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        onExport={handleExport}
-        isProcessing={isProcessing}
-        initialWidth={layers[0]?.width || 1024}
-        initialHeight={layers[0]?.height || 1024}
-      />
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff7ca2]">
+                    <Mail className="size-7" />
+                  </div>
+                  <h3 className="text-2xl font-black tracking-tight text-white">
+                    {isZh ? '保存您的海报图层' : 'Keep your poster layers'}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                    {isZh
+                      ? '这是一个退出前的保存提醒。留下邮箱即可获得 5 个高清导出额度和 AI 海报提示词手册，方便之后继续完成这张图。'
+                      : 'This is an exit reminder. Leave your email to get 5 HD export credits and our AI poster prompt guide so you can continue this image later.'}
+                  </p>
+                </div>
 
-      <EditorCommandPalette
-        open={isCommandPaletteOpen}
-        isZh={isZh}
-        commands={editorCommands}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
-
-      <ProjectVersionPanel
-        open={isVersionPanelOpen}
-        isZh={isZh}
-        snapshots={projectSnapshots}
-        onClose={() => setIsVersionPanelOpen(false)}
-        onCreate={handleCreateProjectSnapshot}
-        onRestore={handleRestoreProjectSnapshot}
-        onDelete={handleDeleteProjectSnapshot}
-      />
-
-      {/* Guest Conversion Modal */}
-      <CrookedUpgradeModal
-        isOpen={upgradeModalOpen}
-        onClose={() => setUpgradeModalOpen(false)}
-        type={upgradeModalType}
-        remainingUploads={getRemainingUploads()}
-      />
-
-      {isShareModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.08] bg-[#17141c] p-6 shadow-[0_32px_96px_rgba(0,0,0,0.6)]">
-            <button
-              onClick={() => setIsShareModalOpen(false)}
-              className="absolute right-4 top-4 rounded-full bg-white/5 p-2 text-gray-400 hover:bg-white/10 hover:text-white"
-            >
-              <X className="size-4" />
-            </button>
-
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff7ca2]">
-                <Share2 className="size-6" />
-              </div>
-              <h3 className="text-xl font-bold text-white">
-                {isZh ? '分享您的创作空间' : 'Share Your Workspace'}
-              </h3>
-              <p className="mt-2 text-sm text-gray-400">
-                {isZh
-                  ? '生成一个公开只读链接，其他人可以查看您的图层，并一键克隆到他们自己的工作区。'
-                  : 'Generate a public, view-only link. Others can view your layers and clone (Remix) them into their own workspace.'}
-              </p>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <div>
-                <label className="text-[11px] font-semibold text-[#9993a3]">
-                  {isZh ? '分享地址' : 'Share Link'}
-                </label>
-                <div className="mt-1.5 flex gap-2 rounded-xl bg-white/5 p-1 ring-1 ring-white/10">
+                <form
+                  onSubmit={handleExitIntentSubmit}
+                  className="mt-6 space-y-3"
+                >
                   <input
-                    type="text"
-                    readOnly
-                    value={projectId ? `${window.location.origin}/${params?.locale || 'en'}/share/${projectId}` : ''}
-                    className="w-full bg-transparent px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                    type="email"
+                    required
+                    value={exitIntentEmail}
+                    onChange={(e) => setExitIntentEmail(e.target.value)}
+                    placeholder={
+                      isZh ? '输入您的电子邮箱' : 'Enter your email address'
+                    }
+                    className="w-full rounded-xl border border-white/[0.08] bg-[#0f0d13] px-4 py-3 text-sm font-semibold text-white outline-none placeholder:text-[#625c68] focus:border-[#f33b72]/45 focus:ring-2 focus:ring-[#f33b72]/18"
                   />
                   <button
-                    onClick={handleCopyShareLink}
-                    className="shrink-0 rounded-lg bg-[#f33b72] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#ff4f83]"
+                    type="submit"
+                    disabled={exitIntentSubmitting}
+                    className="w-full rounded-xl bg-[#f33b72] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_34px_rgba(243,59,114,0.24)] hover:bg-[#ff4f83] active:scale-[0.99] disabled:opacity-50"
                   >
-                    {isZh ? '复制' : 'Copy'}
+                    {exitIntentSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        {isZh ? '正在提交...' : 'Submitting...'}
+                      </span>
+                    ) : (
+                      <span>
+                        {isZh ? '订阅并获取礼包' : 'Subscribe & Claim Gift'}
+                      </span>
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep !== null &&
+            onboardingStep >= 0 &&
+            onboardingStep < 4 && (
+              <div className="fixed right-6 bottom-6 z-50 w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#17141c] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#ff7ca2]">
+                    {isZh
+                      ? `步骤 ${onboardingStep + 1} / 4`
+                      : `Step ${onboardingStep + 1} / 4`}
+                  </span>
+                  <button
+                    onClick={handleSkipOnboarding}
+                    className="text-[10px] text-gray-500 hover:text-white"
+                  >
+                    {isZh ? '跳过' : 'Skip Tour'}
+                  </button>
+                </div>
+
+                <h4 className="mt-2 text-base font-bold text-white">
+                  {tourSteps[onboardingStep].title}
+                </h4>
+                <p className="mt-2 text-xs leading-relaxed text-slate-400">
+                  {tourSteps[onboardingStep].content}
+                </p>
+
+                <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3].map((s) => (
+                      <div
+                        key={s}
+                        className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                          s === onboardingStep ? 'bg-[#f33b72]' : 'bg-white/10'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleNextOnboardingStep}
+                    className="flex items-center gap-1 rounded-lg bg-[#f33b72] px-4 py-2 text-xs font-bold text-white hover:bg-[#ff4f83] active:scale-95"
+                  >
+                    <span>
+                      {onboardingStep === 3
+                        ? isZh
+                          ? '完成'
+                          : 'Finish'
+                        : isZh
+                          ? '下一步'
+                          : 'Next'}
+                    </span>
                   </button>
                 </div>
               </div>
-
-              <div className="rounded-2xl border border-white/5 bg-white/5 p-4 flex gap-3">
-                <Sparkles className="size-5 shrink-0 text-[#ff7ca2]" />
-                <div className="text-left text-xs leading-relaxed text-slate-400">
-                  <p className="font-bold text-slate-200">
-                    {isZh ? '什么是裂变 Remix？' : 'What is a Remix?'}
-                  </p>
-                  <p className="mt-1">
-                    {isZh
-                      ? '访客可以通过此链接查看您的每一层设计、开启或隐藏图层，然后点击“克隆海报”复制到自己的编辑器中继续创作。这对于传播非常有效！'
-                      : 'Visitors will see a high-end interactive canvas. They can toggle layer visibilities and click "Remix Poster" to start editing. Great for viral loops!'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showExitIntent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.08] bg-[#17141c] p-8 shadow-[0_32px_96px_rgba(0,0,0,0.58)]">
-            <button
-              onClick={() => {
-                setShowExitIntent(false);
-                sessionStorage.setItem('layered_exit_intent_dismissed', 'true');
-              }}
-              className="absolute right-4 top-4 rounded-full bg-white/5 p-2 text-gray-400 hover:bg-white/10 hover:text-white"
-            >
-              <X className="size-4" />
-            </button>
-
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#f33b72]/12 text-[#ff7ca2]">
-                <Mail className="size-7" />
-              </div>
-              <h3 className="text-2xl font-black text-white tracking-tight">
-                {isZh ? '保存您的海报图层' : 'Keep your poster layers'}
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                {isZh
-                  ? '这是一个退出前的保存提醒。留下邮箱即可获得 5 个高清导出额度和 AI 海报提示词手册，方便之后继续完成这张图。'
-                  : 'This is an exit reminder. Leave your email to get 5 HD export credits and our AI poster prompt guide so you can continue this image later.'}
-              </p>
-            </div>
-
-            <form onSubmit={handleExitIntentSubmit} className="mt-6 space-y-3">
-              <input
-                type="email"
-                required
-                value={exitIntentEmail}
-                onChange={(e) => setExitIntentEmail(e.target.value)}
-                placeholder={isZh ? '输入您的电子邮箱' : 'Enter your email address'}
-                className="w-full rounded-xl border border-white/[0.08] bg-[#0f0d13] px-4 py-3 text-sm font-semibold text-white placeholder:text-[#625c68] outline-none focus:border-[#f33b72]/45 focus:ring-2 focus:ring-[#f33b72]/18"
-              />
-              <button
-                type="submit"
-                disabled={exitIntentSubmitting}
-                className="w-full rounded-xl bg-[#f33b72] px-5 py-3 text-sm font-bold text-white shadow-[0_14px_34px_rgba(243,59,114,0.24)] hover:bg-[#ff4f83] active:scale-[0.99] disabled:opacity-50"
-              >
-                {exitIntentSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    {isZh ? '正在提交...' : 'Submitting...'}
-                  </span>
-                ) : (
-                  <span>{isZh ? '订阅并获取礼包' : 'Subscribe & Claim Gift'}</span>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {onboardingStep !== null && onboardingStep >= 0 && onboardingStep < 4 && (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#17141c] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-[#ff7ca2]">
-              {isZh ? `步骤 ${onboardingStep + 1} / 4` : `Step ${onboardingStep + 1} / 4`}
-            </span>
-            <button
-              onClick={handleSkipOnboarding}
-              className="text-[10px] text-gray-500 hover:text-white"
-            >
-              {isZh ? '跳过' : 'Skip Tour'}
-            </button>
-          </div>
-
-          <h4 className="mt-2 text-base font-bold text-white">
-            {tourSteps[onboardingStep].title}
-          </h4>
-          <p className="mt-2 text-xs leading-relaxed text-slate-400">
-            {tourSteps[onboardingStep].content}
-          </p>
-
-          <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
-            <div className="flex gap-1">
-              {[0, 1, 2, 3].map((s) => (
-                <div
-                  key={s}
-                  className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                    s === onboardingStep ? 'bg-[#f33b72]' : 'bg-white/10'
-                  }`}
-                />
-              ))}
-            </div>
-            <button
-              onClick={handleNextOnboardingStep}
-              className="flex items-center gap-1 rounded-lg bg-[#f33b72] px-4 py-2 text-xs font-bold text-white hover:bg-[#ff4f83] active:scale-95"
-            >
-              <span>{onboardingStep === 3 ? (isZh ? '完成' : 'Finish') : (isZh ? '下一步' : 'Next')}</span>
-            </button>
-          </div>
-        </div>
-      )}
-
+            )}
         </div>
       </div>
     </div>

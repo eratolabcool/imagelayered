@@ -65,6 +65,7 @@ export type DecompositionModel =
   | 'fal-ai/qwen-image-layered'
   | 'fal-ai/qwen-image-layered/lora'
   | 'bytedance/seedream/v5/pro/edit'
+  | 'seedream/5-pro-layer-decomposition'
   | 'openai/gpt-image-2/edit';
 
 export type LayeringMode = 'native-layering' | 'seedream-design-layering' | 'semantic-layering';

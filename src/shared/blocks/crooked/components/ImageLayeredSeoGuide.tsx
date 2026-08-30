@@ -90,10 +90,10 @@ export default function ImageLayeredSeoGuide({ locale, surface }: SeoGuideProps)
           ))}
         </div>
         <nav className="mt-10 flex flex-wrap gap-3" aria-label={language === 'zh' ? '相关页面' : 'Related pages'}>
-          <Link href={`/${locale}/qwenimagelayered`} className="rounded-xl bg-[#f33b72] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#ff4f83]">
+          <Link href={`/${locale}/studio`} className="rounded-xl bg-[#f33b72] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#ff4f83]">
             {language === 'zh' ? '打开图像编辑器' : 'Open the image editor'}
           </Link>
-          <Link href={`/${locale}/qwenimagelayered/guide`} className="rounded-xl bg-white/[0.055] px-4 py-2.5 text-sm font-bold text-[#d8d2dc] hover:bg-white/[0.09] hover:text-white">
+          <Link href={`/${locale}/studio/guide`} className="rounded-xl bg-white/[0.055] px-4 py-2.5 text-sm font-bold text-[#d8d2dc] hover:bg-white/[0.09] hover:text-white">
             {language === 'zh' ? '阅读图像分层指南' : 'Read the image layering guide'}
           </Link>
           <Link href={`/${locale}/pricing`} className="rounded-xl bg-white/[0.055] px-4 py-2.5 text-sm font-bold text-[#d8d2dc] hover:bg-white/[0.09] hover:text-white">

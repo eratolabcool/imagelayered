@@ -69,7 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     // AI tools pages
     {
-      url: '/qwenimagelayered',
+      url: '/studio',
       lastModified: currentDate,
       changeFrequency: 'daily' as const,
       priority: 0.95,

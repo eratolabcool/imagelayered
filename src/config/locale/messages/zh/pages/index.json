@@ -11,7 +11,7 @@
       "usage",
       "features",
       "stats",
-     
+
       "faq",
       "cta"
     ],
@@ -24,14 +24,14 @@
         "announcement": {
           "badge": "NEW",
           "title": "✨ 将任何海报转换为可编辑的 AI 图层",
-          "url": "/qwenimagelayered"
+          "url": "/studio"
         },
         "tip": "为创作者提供海报改图、商品替换和可编辑 AI 图层",
         "buttons": [
           {
             "title": "立即免费试用",
             "icon": "Zap",
-            "url": "/qwenimagelayered",
+            "url": "/studio",
             "target": "_self",
             "variant": "default"
           },
@@ -49,7 +49,7 @@
       },
       "logos": {
         "id": "logos",
-        "title": "图层拆解 + GPT Image 2 海报级编辑",
+        "title": "自动图层拆解与选中元素编辑",
         "items": [
           {
             "title": "Next.js",
@@ -385,7 +385,7 @@
         "buttons": [
           {
             "title": "立即免费试用",
-            "url": "/qwenimagelayered",
+            "url": "/studio",
             "target": "_self",
             "icon": "Zap"
           },

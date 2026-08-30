@@ -21,7 +21,7 @@ export default function ProjectsPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'en';
   const isZh = locale === 'zh';
-  const editorPath = `/${locale}/qwenimagelayered`;
+  const editorPath = `/${locale}/studio`;
 
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [loading, setLoading] = useState(true);

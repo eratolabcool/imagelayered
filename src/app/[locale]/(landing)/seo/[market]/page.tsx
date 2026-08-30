@@ -152,7 +152,7 @@ export default async function SeoMarketPage({
           <p className="mt-6 max-w-3xl text-lg leading-8 text-[#4f463d]">{hero.description}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href="/qwenimagelayered"
+              href="/studio"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 py-3 text-sm font-black text-white"
             >
               {hero.cta}
@@ -213,7 +213,7 @@ export default async function SeoMarketPage({
             </p>
           </div>
           <a
-            href="/qwenimagelayered"
+            href="/studio"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-5 py-3 text-sm font-black text-[#071123]"
           >
             Open editor

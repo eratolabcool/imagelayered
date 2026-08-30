@@ -27,7 +27,7 @@ const WorkspaceResourceShell = ({
           <div className="mx-auto max-w-6xl">
             <div className="flex items-center justify-between gap-4 lg:hidden">
               <Link
-                href={`/${locale}/qwenimagelayered`}
+                href={`/${locale}/studio`}
                 className="flex items-center gap-2 rounded-xl bg-white/[0.06] px-3 py-2 text-xs font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-[#b89fff]"
               >
                 <ArrowLeft className="size-4" />

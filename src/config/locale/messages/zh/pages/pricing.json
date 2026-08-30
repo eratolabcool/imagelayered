@@ -53,7 +53,7 @@
             "tip": "适合偶尔处理项目，包含的使用量永不过期。",
             "button": {
               "title": "开始项目",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "icon": "RiFlashlightFill"
             },
             "product_id": "credits-100",
@@ -88,7 +88,7 @@
             "tip": "适合稳定的创作工作，可随时取消。",
             "button": {
               "title": "选择 Creator",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "icon": "RiFlashlightFill"
             },
             "product_id": "pro-monthly",
@@ -126,7 +126,7 @@
             "tip": "按年计费，适合持续生产的团队。",
             "button": {
               "title": "选择 Studio",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "icon": "RiFlashlightFill"
             },
             "product_id": "pro-yearly",

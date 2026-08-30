@@ -2,7 +2,9 @@ import { useTranslations } from 'next-intl';
 
 type TranslationGetter = (key: string, fallback: string) => string;
 
-const getWithFallback = (t: ReturnType<typeof useTranslations>): TranslationGetter => {
+const getWithFallback = (
+  t: ReturnType<typeof useTranslations>
+): TranslationGetter => {
   const defaultVars = {
     count: '{count}',
     width: '{width}',
@@ -32,7 +34,7 @@ const fallbackCopy = {
     upload: 'Upload poster',
     decompose: 'Auto layers',
     edit: 'Prompt edit',
-    editingEngine: 'Qwen layers + GPT Image editing',
+    editingEngine: 'Automatic layering and focused editing',
     maskReady: 'Mask ready',
     noMask: 'No mask',
   },
@@ -140,7 +142,8 @@ const fallbackCopy = {
     resolutionPro: 'PRO',
     start: 'Start Export',
     processing: 'Processing high-res export...',
-    disclaimer: 'PNG export is composited locally and does not consume credits.',
+    disclaimer:
+      'PNG export is composited locally and does not consume credits.',
     learnBilling: 'View pricing',
   },
   upgrade: {
@@ -159,32 +162,38 @@ const fallbackCopy = {
     },
     export: {
       title: 'HD Export Without Watermark',
-      message: 'Log in and use credits to export high-resolution layered images without watermarks.',
+      message:
+        'Log in and use credits to export high-resolution layered images without watermarks.',
       cta: 'Get Credits',
       subtext: '5 credits per layer decomposition',
     },
     limit: {
       title: 'Trial Limit Reached',
-      message: 'You have used your free trials ({used}/3). Log in to get more free credits!',
+      message:
+        'You have used your free trials ({used}/3). Log in to get more free credits!',
       cta: 'Sign Up Now',
       subtext: 'Get 10 credits upon registration',
     },
     login: {
       title: 'Log In to Continue',
-      message: 'Log in to access full features including save, export, and unlimited AI layering.',
+      message:
+        'Log in to access full features including save, export, and unlimited AI layering.',
       cta: 'Log In Now',
       subtext: 'Supports Google / GitHub Quick Login',
     },
     default: {
       title: 'Upgrade Your Experience',
-      message: 'Unlock more features and enjoy the full AI image layering experience.',
+      message:
+        'Unlock more features and enjoy the full AI image layering experience.',
       cta: 'Learn More',
       subtext: '',
     },
   },
   editBar: {
-    recolorPlaceholder: 'Describe new color (e.g., change car to metallic red)...',
-    replacePlaceholder: 'What do you want to replace it with? (e.g., a cyberpunk warrior)...',
+    recolorPlaceholder:
+      'Describe new color (e.g., change car to metallic red)...',
+    replacePlaceholder:
+      'What do you want to replace it with? (e.g., a cyberpunk warrior)...',
     removePlaceholder: 'Removing object precisely...',
     defaultPlaceholder: 'Enter editing instruction...',
   },
@@ -213,13 +222,19 @@ export function useCrookedCopy(): CrookedCopy {
       upload: g('workflow.upload', fallbackCopy.workflow.upload),
       decompose: g('workflow.decompose', fallbackCopy.workflow.decompose),
       edit: g('workflow.edit', fallbackCopy.workflow.edit),
-      editingEngine: g('workflow.editingEngine', fallbackCopy.workflow.editingEngine),
+      editingEngine: g(
+        'workflow.editingEngine',
+        fallbackCopy.workflow.editingEngine
+      ),
       maskReady: g('workflow.maskReady', fallbackCopy.workflow.maskReady),
       noMask: g('workflow.noMask', fallbackCopy.workflow.noMask),
     },
     buttons: {
       changeImage: g('buttons.changeImage', fallbackCopy.buttons.changeImage),
-      exportProject: g('buttons.exportProject', fallbackCopy.buttons.exportProject),
+      exportProject: g(
+        'buttons.exportProject',
+        fallbackCopy.buttons.exportProject
+      ),
       guestQuota: g('buttons.guestQuota', fallbackCopy.buttons.guestQuota),
       resetView: g('buttons.resetView', fallbackCopy.buttons.resetView),
       fitToScreen: g('buttons.fitToScreen', fallbackCopy.buttons.fitToScreen),
@@ -227,8 +242,14 @@ export function useCrookedCopy(): CrookedCopy {
       hideLayers: g('buttons.hideLayers', fallbackCopy.buttons.hideLayers),
       processing: g('buttons.processing', fallbackCopy.buttons.processing),
       execute: g('buttons.execute', fallbackCopy.buttons.execute),
-      processingOverlayTitle: g('buttons.processingOverlayTitle', fallbackCopy.buttons.processingOverlayTitle),
-      processingOverlaySubtitle: g('buttons.processingOverlaySubtitle', fallbackCopy.buttons.processingOverlaySubtitle),
+      processingOverlayTitle: g(
+        'buttons.processingOverlayTitle',
+        fallbackCopy.buttons.processingOverlayTitle
+      ),
+      processingOverlaySubtitle: g(
+        'buttons.processingOverlaySubtitle',
+        fallbackCopy.buttons.processingOverlaySubtitle
+      ),
     },
     empty: {
       title: g('empty.title', fallbackCopy.empty.title),
@@ -245,7 +266,10 @@ export function useCrookedCopy(): CrookedCopy {
     sidebar: {
       expand: g('sidebar.expand', fallbackCopy.sidebar.expand),
       collapse: g('sidebar.collapse', fallbackCopy.sidebar.collapse),
-      expandPrompt: g('sidebar.expandPrompt', fallbackCopy.sidebar.expandPrompt),
+      expandPrompt: g(
+        'sidebar.expandPrompt',
+        fallbackCopy.sidebar.expandPrompt
+      ),
       selectTool: g('sidebar.selectTool', fallbackCopy.sidebar.selectTool),
       recolorTool: g('sidebar.recolorTool', fallbackCopy.sidebar.recolorTool),
       replaceTool: g('sidebar.replaceTool', fallbackCopy.sidebar.replaceTool),
@@ -258,17 +282,44 @@ export function useCrookedCopy(): CrookedCopy {
       panView: g('toolbar.panView', fallbackCopy.toolbar.panView),
       recolor: g('toolbar.recolor', fallbackCopy.toolbar.recolor),
       aiReplace: g('toolbar.aiReplace', fallbackCopy.toolbar.aiReplace),
-      removeObject: g('toolbar.removeObject', fallbackCopy.toolbar.removeObject),
-      layerCountPlaceholder: g('toolbar.layerCountPlaceholder', fallbackCopy.toolbar.layerCountPlaceholder),
-      numberOfLayers: g('toolbar.numberOfLayers', fallbackCopy.toolbar.numberOfLayers),
-      manualDecompose: g('toolbar.manualDecompose', fallbackCopy.toolbar.manualDecompose),
-      autoDecompose: g('toolbar.autoDecompose', fallbackCopy.toolbar.autoDecompose),
+      removeObject: g(
+        'toolbar.removeObject',
+        fallbackCopy.toolbar.removeObject
+      ),
+      layerCountPlaceholder: g(
+        'toolbar.layerCountPlaceholder',
+        fallbackCopy.toolbar.layerCountPlaceholder
+      ),
+      numberOfLayers: g(
+        'toolbar.numberOfLayers',
+        fallbackCopy.toolbar.numberOfLayers
+      ),
+      manualDecompose: g(
+        'toolbar.manualDecompose',
+        fallbackCopy.toolbar.manualDecompose
+      ),
+      autoDecompose: g(
+        'toolbar.autoDecompose',
+        fallbackCopy.toolbar.autoDecompose
+      ),
       lightMode: g('toolbar.lightMode', fallbackCopy.toolbar.lightMode),
       darkMode: g('toolbar.darkMode', fallbackCopy.toolbar.darkMode),
-      switchToLight: g('toolbar.switchToLight', fallbackCopy.toolbar.switchToLight),
-      switchToDark: g('toolbar.switchToDark', fallbackCopy.toolbar.switchToDark),
-      advancedSettings: g('toolbar.advancedSettings', fallbackCopy.toolbar.advancedSettings),
-      decomposeCallToAction: g('toolbar.decomposeCallToAction', fallbackCopy.toolbar.decomposeCallToAction),
+      switchToLight: g(
+        'toolbar.switchToLight',
+        fallbackCopy.toolbar.switchToLight
+      ),
+      switchToDark: g(
+        'toolbar.switchToDark',
+        fallbackCopy.toolbar.switchToDark
+      ),
+      advancedSettings: g(
+        'toolbar.advancedSettings',
+        fallbackCopy.toolbar.advancedSettings
+      ),
+      decomposeCallToAction: g(
+        'toolbar.decomposeCallToAction',
+        fallbackCopy.toolbar.decomposeCallToAction
+      ),
       processing: g('toolbar.processing', fallbackCopy.toolbar.processing),
     },
     advanced: {
@@ -276,29 +327,68 @@ export function useCrookedCopy(): CrookedCopy {
       aiModel: g('advanced.aiModel', fallbackCopy.advanced.aiModel),
       standard: g('advanced.standard', fallbackCopy.advanced.standard),
       lora: g('advanced.lora', fallbackCopy.advanced.lora),
-      standardDesc: g('advanced.standardDesc', fallbackCopy.advanced.standardDesc),
+      standardDesc: g(
+        'advanced.standardDesc',
+        fallbackCopy.advanced.standardDesc
+      ),
       loraDesc: g('advanced.loraDesc', fallbackCopy.advanced.loraDesc),
       prompt: g('advanced.prompt', fallbackCopy.advanced.prompt),
-      promptPlaceholder: g('advanced.promptPlaceholder', fallbackCopy.advanced.promptPlaceholder),
-      negativePrompt: g('advanced.negativePrompt', fallbackCopy.advanced.negativePrompt),
-      negativePromptPlaceholder: g('advanced.negativePromptPlaceholder', fallbackCopy.advanced.negativePromptPlaceholder),
-      randomizeSeed: g('advanced.randomizeSeed', fallbackCopy.advanced.randomizeSeed),
-      guidanceScale: g('advanced.guidanceScale', fallbackCopy.advanced.guidanceScale),
-      inferenceSteps: g('advanced.inferenceSteps', fallbackCopy.advanced.inferenceSteps),
-      cfgNormalization: g('advanced.cfgNormalization', fallbackCopy.advanced.cfgNormalization),
-      languageToggle: g('advanced.languageToggle', fallbackCopy.advanced.languageToggle),
+      promptPlaceholder: g(
+        'advanced.promptPlaceholder',
+        fallbackCopy.advanced.promptPlaceholder
+      ),
+      negativePrompt: g(
+        'advanced.negativePrompt',
+        fallbackCopy.advanced.negativePrompt
+      ),
+      negativePromptPlaceholder: g(
+        'advanced.negativePromptPlaceholder',
+        fallbackCopy.advanced.negativePromptPlaceholder
+      ),
+      randomizeSeed: g(
+        'advanced.randomizeSeed',
+        fallbackCopy.advanced.randomizeSeed
+      ),
+      guidanceScale: g(
+        'advanced.guidanceScale',
+        fallbackCopy.advanced.guidanceScale
+      ),
+      inferenceSteps: g(
+        'advanced.inferenceSteps',
+        fallbackCopy.advanced.inferenceSteps
+      ),
+      cfgNormalization: g(
+        'advanced.cfgNormalization',
+        fallbackCopy.advanced.cfgNormalization
+      ),
+      languageToggle: g(
+        'advanced.languageToggle',
+        fallbackCopy.advanced.languageToggle
+      ),
       switch: g('advanced.switch', fallbackCopy.advanced.switch),
       apply: g('advanced.apply', fallbackCopy.advanced.apply),
-      sidebarSettings: g('advanced.sidebarSettings', fallbackCopy.advanced.sidebarSettings),
-      supportedFormats: g('advanced.supportedFormats', fallbackCopy.advanced.supportedFormats),
+      sidebarSettings: g(
+        'advanced.sidebarSettings',
+        fallbackCopy.advanced.sidebarSettings
+      ),
+      supportedFormats: g(
+        'advanced.supportedFormats',
+        fallbackCopy.advanced.supportedFormats
+      ),
     },
     layerPanel: {
       title: g('layerPanel.title', fallbackCopy.layerPanel.title),
       nodeCount: g('layerPanel.nodeCount', fallbackCopy.layerPanel.nodeCount),
-      layersLabel: g('layerPanel.layersLabel', fallbackCopy.layerPanel.layersLabel),
+      layersLabel: g(
+        'layerPanel.layersLabel',
+        fallbackCopy.layerPanel.layersLabel
+      ),
       split: g('layerPanel.split', fallbackCopy.layerPanel.split),
       deep: g('layerPanel.deep', fallbackCopy.layerPanel.deep),
-      visibility: g('layerPanel.visibility', fallbackCopy.layerPanel.visibility),
+      visibility: g(
+        'layerPanel.visibility',
+        fallbackCopy.layerPanel.visibility
+      ),
       remove: g('layerPanel.remove', fallbackCopy.layerPanel.remove),
       lock: g('layerPanel.lock', fallbackCopy.layerPanel.lock),
       unlock: g('layerPanel.unlock', fallbackCopy.layerPanel.unlock),
@@ -312,25 +402,55 @@ export function useCrookedCopy(): CrookedCopy {
     },
     exportModal: {
       title: g('exportModal.title', fallbackCopy.exportModal.title),
-      originalSize: g('exportModal.originalSize', fallbackCopy.exportModal.originalSize),
-      originalSizeSelected: g('exportModal.originalSizeSelected', fallbackCopy.exportModal.originalSizeSelected),
+      originalSize: g(
+        'exportModal.originalSize',
+        fallbackCopy.exportModal.originalSize
+      ),
+      originalSizeSelected: g(
+        'exportModal.originalSizeSelected',
+        fallbackCopy.exportModal.originalSizeSelected
+      ),
       width: g('exportModal.width', fallbackCopy.exportModal.width),
       height: g('exportModal.height', fallbackCopy.exportModal.height),
       aiUpscale: g('exportModal.aiUpscale', fallbackCopy.exportModal.aiUpscale),
-      aiUpscaleSub: g('exportModal.aiUpscaleSub', fallbackCopy.exportModal.aiUpscaleSub),
-      resolutionPro: g('exportModal.resolutionPro', fallbackCopy.exportModal.resolutionPro),
+      aiUpscaleSub: g(
+        'exportModal.aiUpscaleSub',
+        fallbackCopy.exportModal.aiUpscaleSub
+      ),
+      resolutionPro: g(
+        'exportModal.resolutionPro',
+        fallbackCopy.exportModal.resolutionPro
+      ),
       start: g('exportModal.start', fallbackCopy.exportModal.start),
-      processing: g('exportModal.processing', fallbackCopy.exportModal.processing),
-      disclaimer: g('exportModal.disclaimer', fallbackCopy.exportModal.disclaimer),
-      learnBilling: g('exportModal.learnBilling', fallbackCopy.exportModal.learnBilling),
+      processing: g(
+        'exportModal.processing',
+        fallbackCopy.exportModal.processing
+      ),
+      disclaimer: g(
+        'exportModal.disclaimer',
+        fallbackCopy.exportModal.disclaimer
+      ),
+      learnBilling: g(
+        'exportModal.learnBilling',
+        fallbackCopy.exportModal.learnBilling
+      ),
     },
     upgrade: {
-      viewPackages: g('upgrade.viewPackages', fallbackCopy.upgrade.viewPackages),
+      viewPackages: g(
+        'upgrade.viewPackages',
+        fallbackCopy.upgrade.viewPackages
+      ),
       notNow: g('upgrade.notNow', fallbackCopy.upgrade.notNow),
       badges: {
         secure: g('upgrade.badges.secure', fallbackCopy.upgrade.badges.secure),
-        payAsYouGo: g('upgrade.badges.payAsYouGo', fallbackCopy.upgrade.badges.payAsYouGo),
-        cancelAnytime: g('upgrade.badges.cancelAnytime', fallbackCopy.upgrade.badges.cancelAnytime),
+        payAsYouGo: g(
+          'upgrade.badges.payAsYouGo',
+          fallbackCopy.upgrade.badges.payAsYouGo
+        ),
+        cancelAnytime: g(
+          'upgrade.badges.cancelAnytime',
+          fallbackCopy.upgrade.badges.cancelAnytime
+        ),
       },
       save: {
         title: g('upgrade.save.title', fallbackCopy.upgrade.save.title),
@@ -340,9 +460,15 @@ export function useCrookedCopy(): CrookedCopy {
       },
       export: {
         title: g('upgrade.export.title', fallbackCopy.upgrade.export.title),
-        message: g('upgrade.export.message', fallbackCopy.upgrade.export.message),
+        message: g(
+          'upgrade.export.message',
+          fallbackCopy.upgrade.export.message
+        ),
         cta: g('upgrade.export.cta', fallbackCopy.upgrade.export.cta),
-        subtext: g('upgrade.export.subtext', fallbackCopy.upgrade.export.subtext),
+        subtext: g(
+          'upgrade.export.subtext',
+          fallbackCopy.upgrade.export.subtext
+        ),
       },
       limit: {
         title: g('upgrade.limit.title', fallbackCopy.upgrade.limit.title),
@@ -358,23 +484,56 @@ export function useCrookedCopy(): CrookedCopy {
       },
       default: {
         title: g('upgrade.default.title', fallbackCopy.upgrade.default.title),
-        message: g('upgrade.default.message', fallbackCopy.upgrade.default.message),
+        message: g(
+          'upgrade.default.message',
+          fallbackCopy.upgrade.default.message
+        ),
         cta: g('upgrade.default.cta', fallbackCopy.upgrade.default.cta),
-        subtext: g('upgrade.default.subtext', fallbackCopy.upgrade.default.subtext),
+        subtext: g(
+          'upgrade.default.subtext',
+          fallbackCopy.upgrade.default.subtext
+        ),
       },
     },
     editBar: {
-      recolorPlaceholder: g('editBar.recolorPlaceholder', fallbackCopy.editBar.recolorPlaceholder),
-      replacePlaceholder: g('editBar.replacePlaceholder', fallbackCopy.editBar.replacePlaceholder),
-      removePlaceholder: g('editBar.removePlaceholder', fallbackCopy.editBar.removePlaceholder),
-      defaultPlaceholder: g('editBar.defaultPlaceholder', fallbackCopy.editBar.defaultPlaceholder),
+      recolorPlaceholder: g(
+        'editBar.recolorPlaceholder',
+        fallbackCopy.editBar.recolorPlaceholder
+      ),
+      replacePlaceholder: g(
+        'editBar.replacePlaceholder',
+        fallbackCopy.editBar.replacePlaceholder
+      ),
+      removePlaceholder: g(
+        'editBar.removePlaceholder',
+        fallbackCopy.editBar.removePlaceholder
+      ),
+      defaultPlaceholder: g(
+        'editBar.defaultPlaceholder',
+        fallbackCopy.editBar.defaultPlaceholder
+      ),
     },
     notifications: {
-      loadImageFail: g('notifications.loadImageFail', fallbackCopy.notifications.loadImageFail),
-      decomposeFail: g('notifications.decomposeFail', fallbackCopy.notifications.decomposeFail),
-      editFail: g('notifications.editFail', fallbackCopy.notifications.editFail),
-      exportFail: g('notifications.exportFail', fallbackCopy.notifications.exportFail),
-      noVisibleLayers: g('notifications.noVisibleLayers', fallbackCopy.notifications.noVisibleLayers),
+      loadImageFail: g(
+        'notifications.loadImageFail',
+        fallbackCopy.notifications.loadImageFail
+      ),
+      decomposeFail: g(
+        'notifications.decomposeFail',
+        fallbackCopy.notifications.decomposeFail
+      ),
+      editFail: g(
+        'notifications.editFail',
+        fallbackCopy.notifications.editFail
+      ),
+      exportFail: g(
+        'notifications.exportFail',
+        fallbackCopy.notifications.exportFail
+      ),
+      noVisibleLayers: g(
+        'notifications.noVisibleLayers',
+        fallbackCopy.notifications.noVisibleLayers
+      ),
     },
   };
 }

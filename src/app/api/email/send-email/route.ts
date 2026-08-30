@@ -1,4 +1,3 @@
-import { VerificationCode } from '@/shared/blocks/email/verification-code';
 import { respData, respErr } from '@/shared/lib/resp';
 import { getEmailService } from '@/shared/services/email';
 
@@ -11,7 +10,7 @@ export async function POST(req: Request) {
     const result = await emailService.sendEmail({
       to: emails,
       subject: subject,
-      react: VerificationCode({ code: '123455' }),
+      html: `<div><h1>Verification Code</h1><p>Your verification code is: 123455</p></div>`,
     });
 
     console.log('send email result', result);

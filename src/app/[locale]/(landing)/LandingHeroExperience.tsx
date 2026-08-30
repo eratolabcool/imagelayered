@@ -237,7 +237,7 @@ const copy = {
 
 const editorPath = (locale?: string | string[]) => {
   const value = Array.isArray(locale) ? locale[0] : locale;
-  return value ? `/${value}/qwenimagelayered` : '/qwenimagelayered';
+  return value ? `/${value}/studio` : '/studio';
 };
 
 export default function LandingHeroExperience() {

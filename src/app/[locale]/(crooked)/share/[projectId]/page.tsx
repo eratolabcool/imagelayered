@@ -134,7 +134,7 @@ export default function PublicSharePage() {
     sessionStorage.setItem('guest_project_draft', JSON.stringify(remixedDraft));
 
     // Redirect to editor
-    router.push(`/${locale}/qwenimagelayered`);
+    router.push(`/${locale}/studio`);
   };
 
   if (loading) {

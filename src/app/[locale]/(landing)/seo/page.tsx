@@ -109,7 +109,7 @@ export default async function SeoHubPage({
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href="/qwenimagelayered"
+              href="/studio"
               className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-5 py-3 text-sm font-black text-[#071123]"
             >
               Try the editor

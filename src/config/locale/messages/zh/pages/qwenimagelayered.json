@@ -2,8 +2,8 @@
   "page": {
     "slug": "qwenimagelayered",
     "title": "Image Layered - 海报级 AI Photoshop",
-    "description": "上传任意海报，自动拆成可编辑 AI 图层，使用 GPT Image 2 编辑选中元素，并导出重新设计后的海报。",
-    "keywords": "AI Photoshop, 海报编辑器, 可编辑AI图层, 图层分解, GPT Image编辑, 商品图编辑, 图像蒙版"
+    "description": "上传任意海报，自动创建可编辑 AI 图层，修改选中元素，并导出重新设计后的海报。",
+    "keywords": "AI Photoshop, 海报编辑器, 可编辑AI图层, 图层分解, 商品图编辑, 图像蒙版"
   },
   "tool": {
     "brand": {
@@ -15,7 +15,7 @@
       "upload": "上传海报",
       "decompose": "自动分层",
       "edit": "提示词编辑",
-      "editingEngine": "Qwen 分层 + GPT Image 编辑",
+      "editingEngine": "自动分层与选中元素编辑",
       "maskReady": "已生成蒙版",
       "noMask": "无蒙版"
     },

@@ -144,6 +144,54 @@ export class KieProvider implements AIProvider {
       throw new Error('prompt is required');
     }
 
+    // Layer-decomposition models take a single image_url + size; other image
+    // models use image_input/aspect_ratio/resolution.
+    if (params.model === 'seedream/5-pro-layer-decomposition') {
+      const options = params.options || {};
+      const sourceUrls: string[] =
+        (Array.isArray(options.image_urls) && options.image_urls) ||
+        (Array.isArray(options.image_input) && options.image_input) ||
+        [];
+      if (sourceUrls.length === 0) {
+        throw new Error('image_urls is required for layer decomposition');
+      }
+
+      const input: Record<string, unknown> = {
+        image_url: sourceUrls[0],
+        prompt: params.prompt,
+        output_format: 'png',
+      };
+
+      // map fal-style size hints onto kie size levels
+      if (options.image_size === 'auto_2K' || options.size === '2K') {
+        input.size = '2K';
+      } else if (typeof options.size === 'string') {
+        input.size = options.size;
+      }
+
+      const resp = await fetch(`${this.baseUrl}/jobs/createTask`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ model: params.model, callBackUrl: params.callbackUrl, input }),
+      });
+      if (!resp.ok) {
+        throw new Error(`request failed with status: ${resp.status}`);
+      }
+      const { code, msg, data } = await resp.json();
+      if (code !== 200) {
+        throw new Error(`generate image failed: ${msg}`);
+      }
+      if (!data || !data.taskId) {
+        throw new Error(`generate image failed: no taskId`);
+      }
+      return {
+        taskStatus: AITaskStatus.PENDING,
+        taskId: data.taskId,
+        taskInfo: {},
+        taskResult: data,
+      };
+    }
+
     // build request params
     let payload: any = {
       model: params.model,

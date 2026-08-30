@@ -1,6 +1,3 @@
-import { render } from '@react-email/components';
-import { Resend, type CreateEmailOptions } from 'resend';
-
 import type {
   EmailConfigs,
   EmailMessage,
@@ -25,17 +22,13 @@ export class ResendProvider implements EmailProvider {
   readonly name = 'resend';
   configs: ResendConfigs;
 
-  private client: Resend;
-
   constructor(configs: ResendConfigs) {
     this.configs = configs;
-    this.client = new Resend(configs.apiKey);
   }
 
   async sendEmail(email: EmailMessage): Promise<EmailSendResult> {
     try {
-      // Convert our format to Resend format
-      const resendEmail: Partial<CreateEmailOptions> = {
+      const resendEmail: Record<string, unknown> = {
         from: email.from || this.configs.defaultFrom || '',
         to: Array.isArray(email.to) ? email.to : [email.to],
         subject: email.subject,
@@ -60,7 +53,10 @@ export class ResendProvider implements EmailProvider {
       if (email.attachments) {
         resendEmail.attachments = email.attachments.map((att) => ({
           filename: att.filename,
-          content: att.content,
+          content:
+            typeof att.content === 'string'
+              ? att.content
+              : att.content.toString('base64'),
           content_type: att.contentType,
         }));
       }
@@ -74,29 +70,36 @@ export class ResendProvider implements EmailProvider {
         resendEmail.headers = email.headers;
       }
 
-      if (email.react) {
-        // Explicitly render React to HTML for better compatibility (especially on Edge/Workers)
-        const html = await render(email.react);
-        resendEmail.html = html;
-      }
+      // Use Resend's HTTP API directly. The SDK bundles an optional React
+      // renderer which pulls Prettier into the Worker even when unused.
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.configs.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(resendEmail),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        id?: string;
+        message?: string;
+        error?: { message?: string };
+      };
 
-      const result = await this.client.emails.send(
-        resendEmail as CreateEmailOptions
-      );
-
-      console.log('resend email result', result);
-
-      if (result.error) {
+      if (!response.ok) {
         return {
           success: false,
-          error: result.error.message,
+          error:
+            result.message ||
+            result.error?.message ||
+            `Resend request failed (${response.status})`,
           provider: this.name,
         };
       }
 
       return {
         success: true,
-        messageId: result.data?.id,
+        messageId: result.id,
         provider: this.name,
       };
     } catch (error) {

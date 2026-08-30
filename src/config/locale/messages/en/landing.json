@@ -30,7 +30,7 @@
             {
               "title": "Layer Editor",
               "description": "Split any image into editable layers",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "icon": "RiImage2Line"
             }
           ]
@@ -119,22 +119,22 @@
           "children": [
             {
               "title": "Layer Editor",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "target": "_self"
             },
             {
               "title": "AI Replace",
-              "url": "/qwenimagelayered?tool=replace",
+              "url": "/studio?tool=replace",
               "target": "_self"
             },
             {
-              "title": "AI Expand",
-              "url": "/qwenimagelayered?tool=expand",
+              "title": "AI Recolor",
+              "url": "/studio?tool=recolor",
               "target": "_self"
             },
             {
               "title": "AI Remove",
-              "url": "/qwenimagelayered?tool=remove",
+              "url": "/studio?tool=remove",
               "target": "_self"
             },
             {

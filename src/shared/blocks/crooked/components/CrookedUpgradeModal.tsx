@@ -48,17 +48,16 @@ const CrookedUpgradeModal: React.FC<UpgradeModalProps> = ({
 
   const handleSignIn = () => {
     trackFunnel('signup_click', { type });
-    // 跳转到注册页面，带上回调
-    // Use window.location.pathname is safer for full path including locale if not handled by router,
-    // but since we are using i18n router now, we can just use the relative path if needed, 
-    // or keep full path for callback to be safe.
-    const currentPath = window.location.pathname;
-    
-    // Check if we should redirect to sign-up for "Register" actions
+    // Return to the editor after signing in. Use pathname + search so the
+    // current project/query is preserved across the auth flow.
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+
+    // Check if we should redirect to sign-up for "Register" actions.
+    // The auth pages read the `callbackUrl` query param (not `callback`).
     if (type === 'limit' || type === 'export') {
-       router.push(`/sign-up?callback=${encodeURIComponent(currentPath)}`);
+      router.push(`/sign-up?callbackUrl=${encodeURIComponent(currentPath)}`);
     } else {
-       router.push(`/sign-in?callback=${encodeURIComponent(currentPath)}`);
+      router.push(`/sign-in?callbackUrl=${encodeURIComponent(currentPath)}`);
     }
     onClose();
   };

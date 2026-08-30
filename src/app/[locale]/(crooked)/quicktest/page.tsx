@@ -77,7 +77,7 @@ export default function QuickTestPage() {
             </div>
             <div className="flex items-center gap-3">
               <a
-                href="/qwenimagelayered"
+                href="/studio"
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white text-sm transition-colors"
               >
                 Editor
@@ -144,7 +144,7 @@ export default function QuickTestPage() {
                 </li>
               </ul>
               <a
-                href="/qwenimagelayered"
+                href="/studio"
                 className="block w-full text-center px-6 py-3 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold transition-all"
               >
                 Try Free Editor →
@@ -269,7 +269,7 @@ export default function QuickTestPage() {
                 Research Paper
               </a>
               <a
-                href="/qwenimagelayered"
+                href="/studio"
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white text-sm transition-colors"
               >
                 Try Qwen Image Layered Editor

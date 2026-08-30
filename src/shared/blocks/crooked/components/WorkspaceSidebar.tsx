@@ -23,7 +23,7 @@ const WorkspaceSidebar = () => {
 
   const items = [
     {
-      href: `/${locale}/qwenimagelayered`,
+      href: `/${locale}/studio`,
       label: isZh ? '分层工作区' : 'Layer workspace',
       description: isZh ? '上传、拆分与编辑' : 'Upload, split, and edit',
       icon: Layers3,
@@ -36,7 +36,7 @@ const WorkspaceSidebar = () => {
       icon: FolderClosed,
     },
     {
-      href: `/${locale}/qwenimagelayered/guide`,
+      href: `/${locale}/studio/guide`,
       label: isZh ? '分层指南' : 'Layering guide',
       description: isZh ? '获得更干净的图层' : 'Get cleaner layers',
       icon: BookOpen,
@@ -55,7 +55,7 @@ const WorkspaceSidebar = () => {
         {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
       </button>
       <Link
-        href={`/${locale}/qwenimagelayered`}
+        href={`/${locale}/studio`}
         className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors outline-none hover:bg-white/[0.05] focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
       >
         <span className="flex size-10 items-center justify-center rounded-xl bg-[#f33b72] text-white shadow-[0_12px_30px_rgba(243,59,114,0.24)]">

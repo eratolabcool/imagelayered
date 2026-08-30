@@ -1,10 +1,10 @@
-import { redirect } from 'next/navigation';
+import { redirect } from '@/core/i18n/navigation';
 
-export default async function WorkflowsPage({
+export default async function QwenImageLayeredWorkflowsRedirect({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  redirect(`/${locale}/qwenimagelayered`);
+  redirect({ href: '/studio/workflows', locale });
 }

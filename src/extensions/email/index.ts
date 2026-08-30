@@ -1,5 +1,3 @@
-import { ReactNode } from 'react';
-
 /**
  * Email attachment interface
  */
@@ -25,7 +23,6 @@ export interface EmailMessage {
   priority?: 'high' | 'normal' | 'low';
   tags?: string[];
   headers?: Record<string, string>;
-  react?: ReactNode;
 }
 
 /**

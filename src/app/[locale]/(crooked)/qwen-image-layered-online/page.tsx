@@ -193,7 +193,7 @@ export default function QwenImageLayeredOnlinePage() {
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/qwenimagelayered"
+                href="/studio"
                 className="inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-teal-200"
               >
                 Open the editor — first layers free
@@ -308,7 +308,7 @@ export default function QwenImageLayeredOnlinePage() {
               the layer stack before you decide anything.
             </p>
             <Link
-              href="/qwenimagelayered"
+              href="/studio"
               className="mt-8 inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-8 py-3 text-sm font-black text-black transition hover:bg-teal-200"
             >
               Start with your image

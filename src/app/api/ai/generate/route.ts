@@ -1,6 +1,10 @@
 import { envConfigs } from '@/config';
 import { AIMediaType, AITaskStatus } from '@/extensions/ai';
 import { getUuid } from '@/shared/lib/hash';
+import {
+  IMAGE_LAYERED_CAPABILITIES,
+  LEGACY_IMAGE_LAYERED_MODELS,
+} from '@/shared/lib/image-layered-capabilities';
 import { respData, respErr } from '@/shared/lib/resp';
 import { createAITask, NewAITask } from '@/shared/models/ai_task';
 import { getAllConfigs } from '@/shared/models/config';
@@ -31,9 +35,10 @@ function hasGeneratedImages(result: any) {
   }
 
   try {
-    const taskResult = typeof rawTaskResult === 'string'
-      ? JSON.parse(rawTaskResult)
-      : rawTaskResult;
+    const taskResult =
+      typeof rawTaskResult === 'string'
+        ? JSON.parse(rawTaskResult)
+        : rawTaskResult;
 
     return (
       (Array.isArray(taskResult?.images) && taskResult.images.length > 0) ||
@@ -65,12 +70,63 @@ export async function POST(request: Request) {
 
     if (mediaType === AIMediaType.IMAGE) {
       if (scene === 'image-decomposition') {
-        provider = provider || configs.layer_decomposition_provider || 'fal';
-        model = model || configs.layer_decomposition_model || 'fal-ai/qwen-image-layered';
-      } else if (['image-recolor', 'image-replace', 'image-remove', 'lookbook-generate'].includes(scene)) {
-        provider = provider || configs.poster_edit_provider || 'fal';
-        model = model || configs.poster_edit_model || 'openai/gpt-image-2/edit';
+        const configuredModel = configs.layer_decomposition_model;
+        const usePreferredCapability =
+          !configuredModel ||
+          configuredModel === LEGACY_IMAGE_LAYERED_MODELS.decompose;
+        provider =
+          provider ||
+          (usePreferredCapability
+            ? IMAGE_LAYERED_CAPABILITIES.decompose.provider
+            : configs.layer_decomposition_provider ||
+              IMAGE_LAYERED_CAPABILITIES.decompose.provider);
+        model =
+          model ||
+          (usePreferredCapability
+            ? IMAGE_LAYERED_CAPABILITIES.decompose.model
+            : configuredModel);
+      } else if (
+        [
+          'image-recolor',
+          'image-replace',
+          'image-remove',
+          'lookbook-generate',
+        ].includes(scene)
+      ) {
+        const configuredModel = configs.poster_edit_model;
+        const usePreferredCapability =
+          !configuredModel ||
+          configuredModel === LEGACY_IMAGE_LAYERED_MODELS.editLayer;
+        provider =
+          provider ||
+          (usePreferredCapability
+            ? IMAGE_LAYERED_CAPABILITIES.editLayer.provider
+            : configs.poster_edit_provider ||
+              IMAGE_LAYERED_CAPABILITIES.editLayer.provider);
+        model =
+          model ||
+          (usePreferredCapability
+            ? IMAGE_LAYERED_CAPABILITIES.editLayer.model
+            : configuredModel);
       }
+    }
+
+    // Keep the workspace usable while the preferred decomposition provider is
+    // being provisioned. This must run after capability resolution because
+    // clients normally omit provider/model and let the server choose them.
+    if (
+      mediaType === AIMediaType.IMAGE &&
+      scene === 'image-decomposition' &&
+      provider === IMAGE_LAYERED_CAPABILITIES.decompose.provider &&
+      model === IMAGE_LAYERED_CAPABILITIES.decompose.model &&
+      !aiService.getProvider(IMAGE_LAYERED_CAPABILITIES.decompose.provider) &&
+      aiService.getProvider('fal')
+    ) {
+      console.warn(
+        '[generate] Preferred decomposition provider is unavailable; using fallback capability'
+      );
+      provider = 'fal';
+      model = LEGACY_IMAGE_LAYERED_MODELS.decompose;
     }
 
     if (!provider || !model) {
@@ -135,30 +191,37 @@ export async function POST(request: Request) {
     if (!user) {
       // Special handling for Guest users (no auth)
       // Only allow image-decomposition for guests
-      if (scene !== 'image-decomposition' && scene !== 'image-recolor' && scene !== 'image-replace' && scene !== 'image-remove') {
+      if (
+        scene !== 'image-decomposition' &&
+        scene !== 'image-recolor' &&
+        scene !== 'image-replace' &&
+        scene !== 'image-remove'
+      ) {
         throw new Error('no auth, please sign in');
       }
-      
+
       // For guests, we skip credit check and credit consumption
       // But we still create a task record (with null userId or special guest ID if model allows)
       // Since createAITask requires userId, we might need a workaround or skip task recording
-      
+
       const callbackUrl = `${envConfigs.app_url}/api/ai/notify/${provider}`;
       const params: any = {
         mediaType,
         model,
         prompt,
         callbackUrl,
-        options: { ...options, scene, layeringMode }, 
+        options: { ...options, scene, layeringMode },
       };
 
       console.log('AI generate params (GUEST):', params);
       const result = await aiProvider.generate({ params });
 
       if (!result?.taskId) {
-        throw new Error(`ai generate failed, mediaType: ${mediaType}, provider: ${provider}`);
+        throw new Error(
+          `ai generate failed, mediaType: ${mediaType}, provider: ${provider}`
+        );
       }
-      
+
       // Return a partial task object since we can't save to DB without userId
       // Encode provider and taskId into the ID for stateless polling
       return respData({
@@ -166,7 +229,9 @@ export async function POST(request: Request) {
         status: result.taskStatus,
         taskId: result.taskId,
         taskInfo: result.taskInfo ? JSON.stringify(result.taskInfo) : null,
-        taskResult: result.taskResult ? JSON.stringify(result.taskResult) : null,
+        taskResult: result.taskResult
+          ? JSON.stringify(result.taskResult)
+          : null,
       });
     }
 
@@ -192,11 +257,20 @@ export async function POST(request: Request) {
     const result = await aiProvider.generate({ params });
 
     // Debug log
-    console.log('[generate] AI provider result:', JSON.stringify(result, null, 2));
+    console.log(
+      '[generate] AI provider result:',
+      JSON.stringify(result, null, 2)
+    );
     console.log('[generate] taskStatus:', result.taskStatus);
     console.log('[generate] taskId:', result.taskId);
-    console.log('[generate] taskInfo:', JSON.stringify(result.taskInfo, null, 2));
-    console.log('[generate] taskResult keys:', result.taskResult ? Object.keys(result.taskResult) : 'null');
+    console.log(
+      '[generate] taskInfo:',
+      JSON.stringify(result.taskInfo, null, 2)
+    );
+    console.log(
+      '[generate] taskResult keys:',
+      result.taskResult ? Object.keys(result.taskResult) : 'null'
+    );
 
     if (!result?.taskId) {
       throw new Error(
@@ -207,23 +281,37 @@ export async function POST(request: Request) {
     // Validate result for image editing scenes
     // For recolor/replace/remove, we must have an image in the result
     if (['image-recolor', 'image-replace', 'image-remove'].includes(scene)) {
-      if (!hasGeneratedImages(result) && result.taskStatus === AITaskStatus.SUCCESS) {
-        console.error('[generate] Image editing task completed but no image returned:', {
-          scene,
-          taskInfo: result.taskInfo,
-          taskResult: result.taskResult
-        });
-        throw new Error(`Image editing failed: no image generated for scene ${scene}`);
+      if (
+        !hasGeneratedImages(result) &&
+        result.taskStatus === AITaskStatus.SUCCESS
+      ) {
+        console.error(
+          '[generate] Image editing task completed but no image returned:',
+          {
+            scene,
+            taskInfo: result.taskInfo,
+            taskResult: result.taskResult,
+          }
+        );
+        throw new Error(
+          `Image editing failed: no image generated for scene ${scene}`
+        );
       }
     }
 
     // Validate result for decomposition
-    if (scene === 'image-decomposition' && result.taskStatus === AITaskStatus.SUCCESS) {
+    if (
+      scene === 'image-decomposition' &&
+      result.taskStatus === AITaskStatus.SUCCESS
+    ) {
       if (!hasGeneratedImages(result)) {
-        console.error('[generate] Decomposition completed but no layers returned:', {
-          taskInfo: result.taskInfo,
-          taskResult: result.taskResult
-        });
+        console.error(
+          '[generate] Decomposition completed but no layers returned:',
+          {
+            taskInfo: result.taskInfo,
+            taskResult: result.taskResult,
+          }
+        );
         throw new Error('Image decomposition failed: no layers generated');
       }
     }
@@ -262,7 +350,9 @@ export async function POST(request: Request) {
           layeringMode,
         }),
       });
-      console.log(`[generate] Consumed ${costCredits} credits from user ${user.id}`);
+      console.log(
+        `[generate] Consumed ${costCredits} credits from user ${user.id}`
+      );
     } catch (creditError: any) {
       console.error('[generate] Failed to consume credits:', creditError);
       // Note: We don't rollback the task creation here because:

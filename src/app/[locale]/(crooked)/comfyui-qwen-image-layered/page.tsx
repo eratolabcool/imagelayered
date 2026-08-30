@@ -134,7 +134,7 @@ export default function ComfyUITutorialPage() {
               </svg>
             </a>
             <Link
-              href="/qwenimagelayered"
+              href="/studio"
               className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/20 transition-colors"
             >
               Back to Editor
@@ -590,7 +590,7 @@ export default function ComfyUITutorialPage() {
           <h2 className="text-3xl font-bold text-white mb-8">Related Resources</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Link
-              href="/qwenimagelayered"
+              href="/studio"
               className="p-6 rounded-xl bg-gradient-to-br from-blue-900/20 to-purple-900/10 border border-white/10 hover:border-blue-500/50 transition-colors group"
             >
               <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">

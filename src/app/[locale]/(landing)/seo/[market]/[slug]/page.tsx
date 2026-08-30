@@ -200,7 +200,7 @@ export default async function LocalizedSeoPage({
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[#4f463d]">{page.intro}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
-                href="/qwenimagelayered"
+                href="/studio"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 py-3 text-sm font-black text-white shadow-[0_16px_30px_rgba(17,17,17,0.2)]"
               >
                 {page.cta}
@@ -368,7 +368,7 @@ export default async function LocalizedSeoPage({
           <h2 className="text-2xl font-black [font-family:var(--font-display)]">Keep going</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <a
-              href="/qwenimagelayered/guide"
+              href="/studio/guide"
               className="rounded-lg border border-black/10 bg-white p-4 text-sm font-black leading-6 hover:bg-white/70"
             >
               Canvas guide

@@ -30,7 +30,7 @@
             {
               "title": "Layer Editor",
               "description": "将任意图片拆分成可编辑图层",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "icon": "RiImage2Line"
             }
           ]
@@ -119,22 +119,22 @@
           "children": [
             {
               "title": "图层编辑器",
-              "url": "/qwenimagelayered",
+              "url": "/studio",
               "target": "_self"
             },
             {
               "title": "AI 替换",
-              "url": "/qwenimagelayered?tool=replace",
+              "url": "/studio?tool=replace",
               "target": "_self"
             },
             {
-              "title": "AI 扩展",
-              "url": "/qwenimagelayered?tool=expand",
+              "title": "AI 重着色",
+              "url": "/studio?tool=recolor",
               "target": "_self"
             },
             {
               "title": "AI 移除",
-              "url": "/qwenimagelayered?tool=remove",
+              "url": "/studio?tool=remove",
               "target": "_self"
             },
             {

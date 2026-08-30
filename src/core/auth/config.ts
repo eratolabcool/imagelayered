@@ -5,7 +5,6 @@ import { getLocale } from 'next-intl/server';
 import { db } from '@/core/db';
 import { envConfigs } from '@/config';
 import * as schema from '@/config/db/schema';
-import { VerifyEmail } from '@/shared/blocks/email/verify-email';
 import {
   getCookieFromCtx,
   getHeaderValue,
@@ -14,7 +13,6 @@ import {
 import { getUuid } from '@/shared/lib/hash';
 import { getClientIp } from '@/shared/lib/ip';
 import { grantCreditsForNewUser } from '@/shared/models/credit';
-import { getEmailService } from '@/shared/services/email';
 import { grantRoleForNewUser } from '@/shared/services/rbac';
 
 // Best-effort dedupe to prevent sending verification emails too frequently.
@@ -184,6 +182,16 @@ export async function getAuthOptions(configs: Record<string, string>) {
                   recentVerificationEmailSentAt.set(key, now);
                 }
 
+                // Lazy-load email dependencies so the auth/session code path
+                // (sign-in, sign-up, pricing) never pulls @react-email/components
+                // into the Cloudflare Worker bundle. Its prettier import is not
+                // available in the Workers runtime and would 500 those pages.
+                const [{ getEmailService }, { renderVerifyEmailHtml }] =
+                  await Promise.all([
+                    import('@/shared/services/email'),
+                    import('@/shared/blocks/email/verify-email'),
+                  ]);
+
                 const emailService = await getEmailService(configs as any);
                 const logoUrl = envConfigs.app_logo?.startsWith('http')
                   ? envConfigs.app_logo
@@ -192,7 +200,7 @@ export async function getAuthOptions(configs: Record<string, string>) {
                 await emailService.sendEmail({
                   to: user.email,
                   subject: `Verify your email - ${envConfigs.app_name}`,
-                  react: VerifyEmail({
+                  html: renderVerifyEmailHtml({
                     appName: envConfigs.app_name,
                     logoUrl,
                     url,
