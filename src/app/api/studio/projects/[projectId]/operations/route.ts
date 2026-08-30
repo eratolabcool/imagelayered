@@ -1,5 +1,4 @@
 import { AIMediaType } from '@/extensions/ai';
-import { getUuid } from '@/shared/lib/hash';
 import { respData, respErr } from '@/shared/lib/resp';
 
 export const dynamic = 'force-dynamic';
@@ -26,13 +25,21 @@ export async function POST(
     }
 
     const scene = sceneByOperation[type as keyof typeof sceneByOperation];
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    const cookie = request.headers.get('cookie');
+    if (cookie) headers.cookie = cookie;
+
     const generateResponse = await fetch(new URL('/api/ai/generate', request.url), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         mediaType: AIMediaType.IMAGE,
         scene,
-        prompt: prompt || (type === 'decompose' ? 'Decompose image into editable layers' : undefined),
+        prompt:
+          prompt ||
+          (type === 'decompose'
+            ? 'Decompose image into editable transparent layers'
+            : undefined),
         options: {
           ...options,
           projectId,
@@ -46,13 +53,17 @@ export async function POST(
     const generated = await generateResponse.json();
 
     if (!generateResponse.ok || generated?.code !== 0) {
-      throw new Error(generated?.message || generated?.error || 'AI operation failed');
+      throw new Error(
+        generated?.message || generated?.error || 'AI operation failed'
+      );
     }
 
     const task = generated.data;
+    const aiTaskId = task?.id || task?.taskId;
+    if (!aiTaskId) throw new Error('AI operation did not return a task id');
 
     return respData({
-      id: getUuid(),
+      id: aiTaskId,
       projectId,
       type,
       inputRevisionId: baseRevisionId || '',
@@ -61,7 +72,7 @@ export async function POST(
       provider: task?.provider,
       model: task?.model,
       status: task?.status === 'success' ? 'succeeded' : 'running',
-      aiTaskId: task?.id || task?.taskId,
+      aiTaskId,
       costCredits: task?.costCredits,
       createdAt: new Date().toISOString(),
     });
