@@ -1,9 +1,11 @@
 import { AIMediaType } from '@/extensions/ai';
-import { getStudioActor } from '@/features/studio/server/identity';
+import {
+  getStudioActor,
+  STUDIO_GUEST_COOKIE,
+} from '@/features/studio/server/identity';
 import { IMAGE_LAYERED_CAPABILITIES } from '@/shared/lib/image-layered-capabilities';
 import { respData, respErr } from '@/shared/lib/resp';
 import {
-  consumeStudioGuestAIQuota,
   createStudioOperationRecord,
   updateStudioOperationRecord,
 } from '@/shared/models/studio';
@@ -56,10 +58,11 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
-  const actor = await getStudioActor();
+  let actor: Awaited<ReturnType<typeof getStudioActor>> | null = null;
   let operationId: string | null = null;
 
   try {
+    actor = await getStudioActor();
     const { projectId } = await params;
     const body = await request.json();
     const {
@@ -95,12 +98,14 @@ export async function POST(
     });
     operationId = operation.id;
 
-    await consumeStudioGuestAIQuota(actor.actorKey);
-
     const scene = sceneByOperation[type as keyof typeof sceneByOperation];
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
-    const cookie = request.headers.get('cookie');
-    if (cookie) headers.cookie = cookie;
+    const incomingCookie = request.headers.get('cookie');
+    if (incomingCookie) {
+      headers.cookie = incomingCookie;
+    } else if (actor.guestId) {
+      headers.cookie = `${STUDIO_GUEST_COOKIE}=${encodeURIComponent(actor.guestId)}`;
+    }
 
     const generateResponse = await fetch(
       new URL('/api/ai/generate', request.url),
@@ -177,7 +182,7 @@ export async function POST(
       result,
     });
   } catch (error: any) {
-    if (operationId) {
+    if (operationId && actor) {
       await updateStudioOperationRecord(operationId, actor.actorKey, {
         status: 'failed',
         errorCode: error.message || 'studio_operation_failed',
