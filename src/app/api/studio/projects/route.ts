@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       });
     }
 
-    return respData(studioProject);
+    return respData({ project: studioProject, layers: [originalLayer] });
   } catch (error: any) {
     console.error('[Studio] create project failed', error);
     return respErr(error.message);
