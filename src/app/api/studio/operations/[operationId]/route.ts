@@ -1,4 +1,9 @@
+import { getStudioActor } from '@/features/studio/server/identity';
 import { respData, respErr } from '@/shared/lib/resp';
+import {
+  findStudioOperationForActor,
+  updateStudioOperationRecord,
+} from '@/shared/models/studio';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,7 +35,20 @@ function extractImages(taskInfo: any, taskResult: any): string[] {
     ...(Array.isArray(taskResult?.resultUrls) ? taskResult.resultUrls : []),
   ];
 
-  return [...new Set(candidates.filter((value): value is string => typeof value === 'string'))];
+  return [
+    ...new Set(
+      candidates.filter((value): value is string => typeof value === 'string')
+    ),
+  ];
+}
+
+function parseTargetLayerIds(value: string) {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function GET(
@@ -39,10 +57,37 @@ export async function GET(
 ) {
   try {
     const { operationId } = await params;
-    const url = new URL(request.url);
-    const model = url.searchParams.get('model') || undefined;
-    const type = url.searchParams.get('type') || 'replace';
-    const projectId = url.searchParams.get('projectId') || '';
+    const actor = await getStudioActor();
+    const operation = await findStudioOperationForActor(
+      operationId,
+      actor.actorKey
+    );
+    if (!operation) throw new Error('Studio operation not found');
+
+    if (operation.status === 'succeeded' || operation.status === 'failed') {
+      return respData({
+        id: operation.id,
+        projectId: operation.projectId,
+        type: operation.type,
+        inputRevisionId: operation.inputRevisionId || '',
+        targetLayerIds: parseTargetLayerIds(operation.targetLayerIds),
+        prompt: operation.prompt || undefined,
+        provider: operation.provider || undefined,
+        model: operation.model || undefined,
+        status: operation.status,
+        aiTaskId: operation.aiTaskId || undefined,
+        costCredits: operation.costCredits || undefined,
+        errorCode: operation.errorCode || undefined,
+        result: parseJson(operation.result),
+        createdAt: operation.createdAt.toISOString(),
+        completedAt: operation.completedAt?.toISOString(),
+      });
+    }
+
+    if (!operation.aiTaskId) {
+      throw new Error('Studio operation has no AI task id');
+    }
+
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
     const cookie = request.headers.get('cookie');
     if (cookie) headers.cookie = cookie;
@@ -51,10 +96,12 @@ export async function GET(
       method: 'POST',
       headers,
       cache: 'no-store',
-      body: JSON.stringify({ taskId: operationId, model }),
+      body: JSON.stringify({
+        taskId: operation.aiTaskId,
+        model: operation.model || undefined,
+      }),
     });
     const payload = await response.json();
-
     if (!response.ok || payload?.code !== 0) {
       throw new Error(payload?.message || 'Unable to query Studio operation');
     }
@@ -63,32 +110,46 @@ export async function GET(
     const taskInfo = parseJson(task.taskInfo);
     const taskResult = parseJson(task.taskResult);
     const status = mapStatus(task.status);
+    const result = {
+      images: extractImages(taskInfo, taskResult),
+      taskInfo,
+      taskResult,
+    };
+    const completedAt =
+      status === 'succeeded' || status === 'failed' ? new Date() : null;
+
+    await updateStudioOperationRecord(operation.id, actor.actorKey, {
+      status,
+      provider: task.provider || operation.provider,
+      model: task.model || operation.model,
+      costCredits: task.costCredits ?? operation.costCredits,
+      result: JSON.stringify(result),
+      errorCode:
+        status === 'failed'
+          ? taskInfo?.errorCode || taskInfo?.errorMessage || 'ai_task_failed'
+          : null,
+      completedAt,
+    });
 
     return respData({
-      id: operationId,
-      projectId,
-      type,
-      inputRevisionId: '',
-      targetLayerIds: [],
-      prompt: task.prompt,
-      provider: task.provider,
-      model: task.model || model,
+      id: operation.id,
+      projectId: operation.projectId,
+      type: operation.type,
+      inputRevisionId: operation.inputRevisionId || '',
+      targetLayerIds: parseTargetLayerIds(operation.targetLayerIds),
+      prompt: operation.prompt || undefined,
+      provider: task.provider || operation.provider || undefined,
+      model: task.model || operation.model || undefined,
       status,
-      aiTaskId: operationId,
-      costCredits: task.costCredits,
-      createdAt:
-        typeof task.createdAt === 'string'
-          ? task.createdAt
-          : new Date(task.createdAt || Date.now()).toISOString(),
-      completedAt:
-        status === 'succeeded' || status === 'failed'
-          ? new Date().toISOString()
+      aiTaskId: operation.aiTaskId,
+      costCredits: task.costCredits ?? operation.costCredits ?? undefined,
+      errorCode:
+        status === 'failed'
+          ? taskInfo?.errorCode || taskInfo?.errorMessage || 'ai_task_failed'
           : undefined,
-      result: {
-        images: extractImages(taskInfo, taskResult),
-        taskInfo,
-        taskResult,
-      },
+      result,
+      createdAt: operation.createdAt.toISOString(),
+      completedAt: completedAt?.toISOString(),
     });
   } catch (error: any) {
     return respErr(error.message);
