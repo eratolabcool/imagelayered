@@ -48,4 +48,5 @@ jobs:
           NEXT_PUBLIC_DEFAULT_LOCALE: en
           DATABASE_PROVIDER: sqlite
           DATABASE_URL: file:/tmp/image-layered-ci.db
+          DB_SCHEMA_FILE: ./src/config/db/schema.ts
           AUTH_SECRET: studio-p0-ci-only-secret
