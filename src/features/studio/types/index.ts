@@ -74,6 +74,7 @@ export interface StudioLayer {
   type: StudioLayerType;
   semanticType: StudioSemanticType;
   assetId: string;
+  storageKey?: string;
   maskAssetId?: string;
   x: number;
   y: number;
@@ -120,6 +121,12 @@ export interface StudioRevision {
   createdAt: string;
 }
 
+export interface StudioOperationResult {
+  images?: string[];
+  taskInfo?: unknown;
+  taskResult?: unknown;
+}
+
 export interface StudioOperation {
   id: string;
   projectId: string;
@@ -135,6 +142,7 @@ export interface StudioOperation {
   outputRevisionId?: string;
   costCredits?: number;
   errorCode?: string;
+  result?: StudioOperationResult;
   createdAt: string;
   completedAt?: string;
 }
