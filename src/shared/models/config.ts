@@ -16,6 +16,22 @@ export type Configs = Record<string, string>;
 
 export const CACHE_TAG_CONFIGS = 'configs';
 
+function isMissingLocalConfigTable(error: unknown) {
+  if (
+    process.env.NODE_ENV !== 'development' ||
+    !process.env.DATABASE_URL?.startsWith('file:')
+  ) {
+    return false;
+  }
+
+  let cause: unknown = error;
+  while (cause instanceof Error) {
+    if (cause.message.includes('no such table: config')) return true;
+    cause = cause.cause;
+  }
+  return false;
+}
+
 export async function saveConfigs(configs: Record<string, string>) {
   const result = await db().transaction(async (tx: any) => {
     const configEntries = Object.entries(configs);
@@ -83,7 +99,9 @@ export async function getAllConfigs(): Promise<Configs> {
     try {
       dbConfigs = await getConfigs();
     } catch (e) {
-      console.log(`get configs from db failed:`, e);
+      if (!isMissingLocalConfigTable(e)) {
+        console.log(`get configs from db failed:`, e);
+      }
       dbConfigs = {};
     }
   }

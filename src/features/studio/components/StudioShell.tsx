@@ -86,6 +86,10 @@ type TransformState =
 type Props = { projectId: string };
 
 const GUEST_KEY_PREFIX = 'image-layered:studio-project:';
+
+function isRenderableAsset(assetId: string) {
+  return /^(https?:|data:|\/)/.test(assetId);
+}
 const MIN_LAYER_SIZE = 24;
 
 function cloneLayers(layers: StudioLayer[]) {
@@ -740,7 +744,7 @@ export function StudioShell({ projectId }: Props) {
             {[...layers].sort((a, b) => b.zIndex - a.zIndex).map((layer) => (
               <button key={layer.id} onClick={() => selectLayer(layer.id)} className={`flex w-full items-center gap-2 rounded-md border px-2 py-2 text-left text-sm ${selectedLayerId === layer.id ? 'border-zinc-600 bg-zinc-800' : 'border-transparent hover:bg-zinc-900'}`}>
                 <span className="size-8 overflow-hidden rounded bg-zinc-800">
-                  {(layer.assetId.startsWith('http') || layer.assetId.startsWith('data:')) ? <img src={layer.assetId} alt="" className="size-full object-cover" /> : null}
+                  {isRenderableAsset(layer.assetId) ? <img src={layer.assetId} alt="" className="size-full object-cover" /> : null}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{layer.name}</span>
                 {layer.locked ? <Lock className="size-3.5 text-zinc-500" /> : null}
@@ -767,7 +771,7 @@ export function StudioShell({ projectId }: Props) {
               const selected = layer.id === selectedLayerId;
               return (
                 <div key={layer.id} className={`pointer-events-none absolute ${selected ? 'outline outline-2 outline-offset-1 outline-white/90' : ''}`} style={{ left: `${(layer.x / project.width) * 100}%`, top: `${(layer.y / project.height) * 100}%`, width: `${(layer.width / project.width) * 100}%`, height: `${(layer.height / project.height) * 100}%`, opacity: layer.opacity, zIndex: layer.zIndex, transform: `scale(${layer.scaleX}, ${layer.scaleY}) rotate(${layer.rotation}deg)`, transformOrigin: 'center' }}>
-                  {(layer.assetId.startsWith('http') || layer.assetId.startsWith('data:')) ? <img draggable={false} src={layer.assetId} alt={layer.name} className="size-full object-contain" /> : null}
+                  {isRenderableAsset(layer.assetId) ? <img draggable={false} src={layer.assetId} alt={layer.name} className="size-full object-contain" /> : null}
                   {selected && !layer.locked ? (
                     <>
                       <button type="button" aria-label="Rotate layer" onPointerDown={(event) => beginRotate(event, layer)} onPointerMove={moveTransform} onPointerUp={endTransform} onPointerCancel={endTransform} className="pointer-events-auto absolute left-1/2 -top-8 size-4 -translate-x-1/2 cursor-grab rounded-full border-2 border-zinc-950 bg-white shadow" />

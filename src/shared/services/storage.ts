@@ -4,8 +4,17 @@ import { Configs, getAllConfigs } from '@/shared/models/config';
 /**
  * get storage service with configs
  */
-export function getStorageServiceWithConfigs(configs: Configs) {
+export async function getStorageServiceWithConfigs(configs: Configs) {
   const storageManager = new StorageManager();
+
+  const useLocalStorage =
+    process.env.NODE_ENV === 'development' &&
+    process.env.DATABASE_URL?.startsWith('file:');
+
+  if (useLocalStorage) {
+    const { LocalStorageProvider } = await import('@/extensions/storage/local');
+    storageManager.addProvider(new LocalStorageProvider(), true);
+  }
 
   // Add R2 provider if configured
   if (
@@ -28,7 +37,7 @@ export function getStorageServiceWithConfigs(configs: Configs) {
         endpoint: configs.r2_endpoint, // Optional custom endpoint
         publicDomain: configs.r2_domain,
       }),
-      true // Set R2 as default
+      !useLocalStorage // Keep local storage as the development default.
     );
   }
 
@@ -61,9 +70,12 @@ export async function getStorageService(
   configs?: Configs
 ): Promise<StorageManager> {
   if (!configs) {
-    configs = await getAllConfigs();
+    const useLocalStorage =
+      process.env.NODE_ENV === 'development' &&
+      process.env.DATABASE_URL?.startsWith('file:');
+    configs = useLocalStorage ? {} : await getAllConfigs();
   }
-  storageService = getStorageServiceWithConfigs(configs);
+  storageService = await getStorageServiceWithConfigs(configs);
 
   return storageService;
 }
