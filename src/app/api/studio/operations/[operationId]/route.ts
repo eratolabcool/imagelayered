@@ -11,7 +11,14 @@ export const runtime = 'nodejs';
 function mapStatus(status?: string) {
   const normalized = status?.toLowerCase();
   if (normalized === 'success' || normalized === 'succeeded') return 'succeeded';
-  if (normalized === 'failed' || normalized === 'error') return 'failed';
+  if (
+    normalized === 'failed' ||
+    normalized === 'error' ||
+    normalized === 'cancelled' ||
+    normalized === 'canceled'
+  ) {
+    return 'failed';
+  }
   if (normalized === 'pending' || normalized === 'queued') return 'queued';
   return 'running';
 }
@@ -51,6 +58,28 @@ function parseTargetLayerIds(value: string) {
   }
 }
 
+function toStoredPayload(operation: any) {
+  return {
+    id: operation.id,
+    projectId: operation.projectId,
+    type: operation.type,
+    inputRevisionId: operation.inputRevisionId || '',
+    outputRevisionId: operation.outputRevisionId || undefined,
+    targetLayerIds: parseTargetLayerIds(operation.targetLayerIds),
+    prompt: operation.prompt || undefined,
+    provider: operation.provider || undefined,
+    model: operation.model || undefined,
+    status: operation.status,
+    aiTaskId: operation.aiTaskId || undefined,
+    costCredits: operation.costCredits || undefined,
+    creditState: operation.creditState || 'none',
+    errorCode: operation.errorCode || undefined,
+    result: parseJson(operation.result),
+    createdAt: operation.createdAt.toISOString(),
+    completedAt: operation.completedAt?.toISOString(),
+  };
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ operationId: string }> }
@@ -65,23 +94,7 @@ export async function GET(
     if (!operation) throw new Error('Studio operation not found');
 
     if (operation.status === 'succeeded' || operation.status === 'failed') {
-      return respData({
-        id: operation.id,
-        projectId: operation.projectId,
-        type: operation.type,
-        inputRevisionId: operation.inputRevisionId || '',
-        targetLayerIds: parseTargetLayerIds(operation.targetLayerIds),
-        prompt: operation.prompt || undefined,
-        provider: operation.provider || undefined,
-        model: operation.model || undefined,
-        status: operation.status,
-        aiTaskId: operation.aiTaskId || undefined,
-        costCredits: operation.costCredits || undefined,
-        errorCode: operation.errorCode || undefined,
-        result: parseJson(operation.result),
-        createdAt: operation.createdAt.toISOString(),
-        completedAt: operation.completedAt?.toISOString(),
-      });
+      return respData(toStoredPayload(operation));
     }
 
     if (!operation.aiTaskId) {
@@ -117,40 +130,31 @@ export async function GET(
     };
     const completedAt =
       status === 'succeeded' || status === 'failed' ? new Date() : null;
+    const creditState = actor.userId
+      ? status === 'failed'
+        ? 'refunded'
+        : operation.creditState || 'charged'
+      : 'guest';
 
-    await updateStudioOperationRecord(operation.id, actor.actorKey, {
-      status,
-      provider: task.provider || operation.provider,
-      model: task.model || operation.model,
-      costCredits: task.costCredits ?? operation.costCredits,
-      result: JSON.stringify(result),
-      errorCode:
-        status === 'failed'
-          ? taskInfo?.errorCode || taskInfo?.errorMessage || 'ai_task_failed'
-          : null,
-      completedAt,
-    });
+    const updated = await updateStudioOperationRecord(
+      operation.id,
+      actor.actorKey,
+      {
+        status,
+        provider: task.provider || operation.provider,
+        model: task.model || operation.model,
+        costCredits: task.costCredits ?? operation.costCredits,
+        creditState,
+        result: JSON.stringify(result),
+        errorCode:
+          status === 'failed'
+            ? taskInfo?.errorCode || taskInfo?.errorMessage || 'ai_task_failed'
+            : null,
+        completedAt,
+      }
+    );
 
-    return respData({
-      id: operation.id,
-      projectId: operation.projectId,
-      type: operation.type,
-      inputRevisionId: operation.inputRevisionId || '',
-      targetLayerIds: parseTargetLayerIds(operation.targetLayerIds),
-      prompt: operation.prompt || undefined,
-      provider: task.provider || operation.provider || undefined,
-      model: task.model || operation.model || undefined,
-      status,
-      aiTaskId: operation.aiTaskId,
-      costCredits: task.costCredits ?? operation.costCredits ?? undefined,
-      errorCode:
-        status === 'failed'
-          ? taskInfo?.errorCode || taskInfo?.errorMessage || 'ai_task_failed'
-          : undefined,
-      result,
-      createdAt: operation.createdAt.toISOString(),
-      completedAt: completedAt?.toISOString(),
-    });
+    return respData(toStoredPayload(updated));
   } catch (error: any) {
     return respErr(error.message);
   }
