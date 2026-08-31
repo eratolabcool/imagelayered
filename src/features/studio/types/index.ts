@@ -40,6 +40,13 @@ export type StudioOperationStatus =
   | 'succeeded'
   | 'failed';
 
+export type StudioCreditState =
+  | 'none'
+  | 'guest'
+  | 'charged'
+  | 'refunded'
+  | 'released';
+
 export interface StudioProject {
   id: string;
   userId: string | null;
@@ -139,6 +146,7 @@ export interface StudioOperation {
   status: StudioOperationStatus;
   aiTaskId?: string;
   creditReservationId?: string;
+  creditState?: StudioCreditState;
   outputRevisionId?: string;
   costCredits?: number;
   errorCode?: string;
