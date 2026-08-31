@@ -95,6 +95,7 @@ export async function POST(
       provider: defaultCapability.provider,
       model: defaultCapability.model,
       status: 'queued',
+      creditState: actor.userId ? 'none' : 'guest',
     });
     operationId = operation.id;
 
@@ -150,6 +151,13 @@ export async function POST(
       taskInfo,
       taskResult,
     };
+    const creditState = actor.userId
+      ? status === 'failed'
+        ? 'refunded'
+        : task?.costCredits
+          ? 'charged'
+          : 'none'
+      : 'guest';
 
     await updateStudioOperationRecord(operation.id, actor.actorKey, {
       aiTaskId,
@@ -157,6 +165,7 @@ export async function POST(
       model: task?.model || defaultCapability.model,
       status,
       costCredits: task?.costCredits,
+      creditState,
       result: JSON.stringify(result),
       completedAt:
         status === 'succeeded' || status === 'failed' ? new Date() : null,
@@ -174,6 +183,7 @@ export async function POST(
       status,
       aiTaskId,
       costCredits: task?.costCredits,
+      creditState,
       createdAt: operation.createdAt.toISOString(),
       completedAt:
         status === 'succeeded' || status === 'failed'
@@ -185,6 +195,7 @@ export async function POST(
     if (operationId && actor) {
       await updateStudioOperationRecord(operationId, actor.actorKey, {
         status: 'failed',
+        creditState: actor.userId ? 'released' : 'guest',
         errorCode: error.message || 'studio_operation_failed',
         completedAt: new Date(),
       }).catch(() => undefined);
