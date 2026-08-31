@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, lte } from 'drizzle-orm';
+import { and, desc, eq, lt, lte, sql } from 'drizzle-orm';
 
 import {
   studioGuestUsage,
@@ -118,7 +118,7 @@ export async function consumeStudioGuestAIQuota(actorKey: string) {
   const [updated] = await db()
     .update(studioGuestUsage)
     .set({
-      aiOperations: studioGuestUsage.aiOperations + 1,
+      aiOperations: sql`${studioGuestUsage.aiOperations} + 1`,
       updatedAt: now,
     })
     .where(
@@ -161,7 +161,5 @@ export async function consumeStudioGuestAIQuota(actorKey: string) {
     .returning();
 
   if (inserted.length) return;
-
-  // Another request won the first-use insert race. Re-run the atomic check.
   return consumeStudioGuestAIQuota(actorKey);
 }
