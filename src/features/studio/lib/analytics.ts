@@ -30,19 +30,43 @@ export const STUDIO_EVENTS = {
 } as const;
 
 export type StudioEventName = (typeof STUDIO_EVENTS)[keyof typeof STUDIO_EVENTS];
+export type StudioEventProperties = Record<
+  string,
+  string | number | boolean | null | undefined
+>;
 
+type AnalyticsWindow = Window & {
+  dataLayer?: unknown[];
+  gtag?: (...args: unknown[]) => void;
+  plausible?: (event: string, options?: unknown) => void;
+  openpanel?: { track?: (event: string, properties?: unknown) => void };
+  op?: (event: string, properties?: unknown) => void;
+};
+
+/**
+ * Studio is intentionally provider-agnostic. Existing analytics scripts can
+ * receive these events without making the editor depend on one vendor SDK.
+ */
 export function trackStudioEvent(
   event: StudioEventName,
-  properties: Record<string, string | number | boolean | null | undefined> = {}
+  properties: StudioEventProperties = {}
 ) {
   if (typeof window === 'undefined') return;
 
+  const cleanProperties = Object.fromEntries(
+    Object.entries(properties).filter(([, value]) => value !== undefined)
+  );
+  const analyticsWindow = window as AnalyticsWindow;
+
+  analyticsWindow.dataLayer?.push({ event, ...cleanProperties });
+  analyticsWindow.gtag?.('event', event, cleanProperties);
+  analyticsWindow.plausible?.(event, { props: cleanProperties });
+  analyticsWindow.openpanel?.track?.(event, cleanProperties);
+  analyticsWindow.op?.(event, cleanProperties);
+
   window.dispatchEvent(
     new CustomEvent('image-layered:analytics', {
-      detail: {
-        event,
-        properties,
-      },
+      detail: { event, properties: cleanProperties },
     })
   );
 }
