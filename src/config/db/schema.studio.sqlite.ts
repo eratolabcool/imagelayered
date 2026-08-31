@@ -33,6 +33,7 @@ export const studioOperation = sqliteTable(
     actorKey: text('actor_key').notNull(),
     type: text('type').notNull(),
     inputRevisionId: text('input_revision_id'),
+    outputRevisionId: text('output_revision_id'),
     targetLayerIds: text('target_layer_ids').notNull().default('[]'),
     prompt: text('prompt'),
     provider: text('provider'),
@@ -40,6 +41,7 @@ export const studioOperation = sqliteTable(
     status: text('status').notNull(),
     aiTaskId: text('ai_task_id'),
     costCredits: integer('cost_credits'),
+    creditState: text('credit_state').notNull().default('none'),
     result: text('result'),
     errorCode: text('error_code'),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
