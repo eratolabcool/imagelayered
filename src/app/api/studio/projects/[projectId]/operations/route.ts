@@ -3,6 +3,7 @@ import {
   getStudioActor,
   STUDIO_GUEST_COOKIE,
 } from '@/features/studio/server/identity';
+import { persistStudioResultImages } from '@/features/studio/server/persist-result';
 import { IMAGE_LAYERED_CAPABILITIES } from '@/shared/lib/image-layered-capabilities';
 import { respData, respErr } from '@/shared/lib/resp';
 import {
@@ -146,11 +147,12 @@ export async function POST(
     const taskInfo = parseJson(task?.taskInfo);
     const taskResult = parseJson(task?.taskResult);
     const status = normalizeStatus(task?.status);
-    const result = {
-      images: extractImages(taskInfo, taskResult),
-      taskInfo,
-      taskResult,
-    };
+    const rawImages = extractImages(taskInfo, taskResult);
+    const images =
+      status === 'succeeded' && rawImages.length
+        ? await persistStudioResultImages(rawImages)
+        : rawImages;
+    const result = { images, taskInfo, taskResult };
     const creditState = actor.userId
       ? status === 'failed'
         ? 'refunded'
