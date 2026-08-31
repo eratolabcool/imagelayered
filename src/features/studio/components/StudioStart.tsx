@@ -1,9 +1,10 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ImagePlus, LoaderCircle, Upload } from 'lucide-react';
 
+import { STUDIO_EVENTS, trackStudioEvent } from '../lib/analytics';
 import { createStudioProject, uploadStudioImage } from '../services/api';
 
 function getImageSize(file: File) {
@@ -24,6 +25,7 @@ function getImageSize(file: File) {
 
 export function StudioStart() {
   const router = useRouter();
+  const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,10 @@ export function StudioStart() {
     if (!file || busy) return;
     setBusy(true);
     setError(null);
+    trackStudioEvent(STUDIO_EVENTS.uploadStarted, {
+      filename: file.name,
+      bytes: file.size,
+    });
 
     try {
       const [{ width, height }, uploaded] = await Promise.all([
@@ -53,10 +59,17 @@ export function StudioStart() {
         );
       }
 
-      router.push(`/studio/${bootstrap.project.id}`);
+      trackStudioEvent(STUDIO_EVENTS.uploadCompleted, {
+        project_id: bootstrap.project.id,
+        width,
+        height,
+      });
+      const studioBase = (pathname || '/studio').replace(/\/$/, '');
+      router.push(`${studioBase}/${bootstrap.project.id}`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to start Studio');
       setBusy(false);
+      trackStudioEvent(STUDIO_EVENTS.uploadFailed, { filename: file.name });
     }
   }
 
@@ -93,7 +106,7 @@ export function StudioStart() {
             <span className="font-medium">
               {busy ? 'Preparing your project…' : 'Drop an image here or click to upload'}
             </span>
-            <span className="mt-2 text-xs text-zinc-500">PNG, JPG or WEBP · up to 10 MB</span>
+            <span className="mt-2 text-xs text-zinc-500">PNG, JPG or WEBP · up to 25 MB</span>
           </button>
 
           <input
