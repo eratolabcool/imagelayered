@@ -6,6 +6,7 @@ import {
 import { persistStudioResultImages } from '@/features/studio/server/persist-result';
 import { IMAGE_LAYERED_CAPABILITIES } from '@/shared/lib/image-layered-capabilities';
 import { respData, respErr } from '@/shared/lib/resp';
+import { refundStudioConsumedCredits } from '@/shared/models/studio-credit';
 import {
   createStudioOperationRecord,
   updateStudioOperationRecord,
@@ -50,7 +51,14 @@ function extractImages(taskInfo: any, taskResult: any): string[] {
 function normalizeStatus(status?: string) {
   const value = status?.toLowerCase();
   if (value === 'success' || value === 'succeeded') return 'succeeded';
-  if (value === 'failed' || value === 'error') return 'failed';
+  if (
+    value === 'failed' ||
+    value === 'error' ||
+    value === 'cancelled' ||
+    value === 'canceled'
+  ) {
+    return 'failed';
+  }
   if (value === 'pending' || value === 'queued') return 'queued';
   return 'running';
 }
@@ -147,6 +155,15 @@ export async function POST(
     const taskInfo = parseJson(task?.taskInfo);
     const taskResult = parseJson(task?.taskResult);
     const status = normalizeStatus(task?.status);
+
+    if (actor.userId && status === 'failed' && task?.creditId) {
+      await refundStudioConsumedCredits(
+        task.creditId,
+        actor.userId,
+        `studio_${scene}_failed`
+      );
+    }
+
     const rawImages = extractImages(taskInfo, taskResult);
     const images =
       status === 'succeeded' && rawImages.length
