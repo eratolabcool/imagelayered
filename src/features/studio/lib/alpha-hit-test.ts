@@ -30,7 +30,6 @@ function loadMask(url: string): Promise<AlphaMask | null> {
         }
         resolve({ width: canvas.width, height: canvas.height, alpha });
       } catch {
-        // Third-party assets without CORS still remain selectable by geometry.
         resolve(null);
       }
     };
@@ -70,6 +69,8 @@ export async function pickStudioLayerAtPoint(
   y: number,
   alphaThreshold = 12
 ): Promise<StudioLayer | null> {
+  if (x < 0 || y < 0 || x > project.width || y > project.height) return null;
+
   const ordered = [...layers]
     .filter((layer) => layer.visible && layer.opacity > 0 && layer.assetId)
     .sort((a, b) => b.zIndex - a.zIndex);
@@ -81,8 +82,14 @@ export async function pickStudioLayerAtPoint(
     const mask = await loadMask(layer.assetId);
     if (!mask) return layer;
 
-    const pixelX = Math.min(mask.width - 1, Math.max(0, Math.floor(point.u * mask.width)));
-    const pixelY = Math.min(mask.height - 1, Math.max(0, Math.floor(point.v * mask.height)));
+    const pixelX = Math.min(
+      mask.width - 1,
+      Math.max(0, Math.floor(point.u * mask.width))
+    );
+    const pixelY = Math.min(
+      mask.height - 1,
+      Math.max(0, Math.floor(point.v * mask.height))
+    );
     if (mask.alpha[pixelY * mask.width + pixelX] >= alphaThreshold) {
       return layer;
     }
