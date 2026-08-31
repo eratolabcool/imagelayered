@@ -47,6 +47,9 @@ jobs:
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           NEXT_PUBLIC_DEFAULT_LOCALE: en
           DATABASE_PROVIDER: sqlite
-          DATABASE_URL: file:/tmp/image-layered-ci.db
+          # Static builds do not need a database. A file: URL is intentionally
+          # avoided because the Cloudflare-compatible libSQL web client only
+          # supports remote HTTP/WebSocket transports.
+          DATABASE_URL: ''
           DB_SCHEMA_FILE: ./src/config/db/schema.ts
           AUTH_SECRET: studio-p0-ci-only-secret
