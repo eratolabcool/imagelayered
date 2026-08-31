@@ -13,6 +13,13 @@ type ApiEnvelope<T> = {
   data?: T;
 };
 
+type UploadResult = {
+  url: string;
+  key: string;
+  filename: string;
+  deduped: boolean;
+};
+
 async function request<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init);
   const payload = (await response.json()) as ApiEnvelope<T>;
@@ -24,14 +31,21 @@ async function request<T>(input: RequestInfo | URL, init?: RequestInit): Promise
   return payload.data;
 }
 
-export function uploadStudioImage(file: File) {
+export async function uploadStudioImage(file: File) {
   const body = new FormData();
-  body.append('file', file);
+  body.append('files', file);
 
-  return request<{ url: string; key: string; size: number; type: string }>(
-    '/api/storage/upload-image',
-    { method: 'POST', body }
-  );
+  const payload = await request<{
+    urls: string[];
+    results: UploadResult[];
+  }>('/api/storage/upload-image', { method: 'POST', body });
+
+  const uploaded = payload.results[0];
+  if (!uploaded?.url || !uploaded.key) {
+    throw new Error('Image upload completed without a usable asset');
+  }
+
+  return uploaded;
 }
 
 export function createStudioProject(input: {
