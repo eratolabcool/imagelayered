@@ -1,6 +1,7 @@
+import { getStudioActor } from '@/features/studio/server/identity';
+
 import { envConfigs } from '@/config';
 import { AIMediaType, AITaskStatus } from '@/extensions/ai';
-import { getStudioActor } from '@/features/studio/server/identity';
 import { getUuid } from '@/shared/lib/hash';
 import {
   IMAGE_LAYERED_CAPABILITIES,
@@ -182,6 +183,8 @@ export async function POST(request: Request) {
 
       return respData({
         id: `guest-${provider}-${result.taskId}`,
+        provider,
+        model,
         status: result.taskStatus,
         taskId: result.taskId,
         taskInfo: result.taskInfo ? JSON.stringify(result.taskInfo) : null,

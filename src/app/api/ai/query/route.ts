@@ -93,6 +93,8 @@ export async function POST(req: Request) {
 
       return respData({
         id: taskId,
+        provider,
+        model: requestedModel,
         status: result.taskStatus,
         taskInfo: result.taskInfo ? JSON.stringify(result.taskInfo) : null,
         taskResult: result.taskResult

@@ -420,6 +420,11 @@ export class FalProvider implements AIProvider {
 
   // get query model name
   private getQueryModel(model?: string): string {
+    // Seedream v5 edit is submitted through the versioned endpoint, while FAL
+    // returns queue status/result URLs under the canonical model path.
+    if (model === 'bytedance/seedream/v5/pro/edit') {
+      return 'bytedance/seedream';
+    }
     return model || '';
   }
 

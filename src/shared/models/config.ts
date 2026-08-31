@@ -93,9 +93,16 @@ export const getConfigs = unstable_cache(
 
 export async function getAllConfigs(): Promise<Configs> {
   let dbConfigs: Configs = {};
+  const useLocalDevelopmentDatabase =
+    process.env.NODE_ENV === 'development' &&
+    envConfigs.database_url.startsWith('file:');
 
   // only get configs from db in server side
-  if (typeof window === 'undefined' && envConfigs.database_url) {
+  if (
+    typeof window === 'undefined' &&
+    envConfigs.database_url &&
+    !useLocalDevelopmentDatabase
+  ) {
     try {
       dbConfigs = await getConfigs();
     } catch (e) {

@@ -1,4 +1,5 @@
 import type { StudioLayer, StudioProject } from '../types';
+import { getCanvasSafeImageUrl } from './image-url';
 
 type AlphaMask = {
   width: number;
@@ -23,7 +24,12 @@ function loadMask(url: string): Promise<AlphaMask | null> {
         const context = canvas.getContext('2d', { willReadFrequently: true });
         if (!context) return resolve(null);
         context.drawImage(image, 0, 0);
-        const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+        const pixels = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        ).data;
         const alpha = new Uint8ClampedArray(canvas.width * canvas.height);
         for (let source = 3, target = 0; source < pixels.length; source += 4) {
           alpha[target++] = pixels[source];
@@ -34,7 +40,7 @@ function loadMask(url: string): Promise<AlphaMask | null> {
       }
     };
     image.onerror = () => resolve(null);
-    image.src = url;
+    image.src = getCanvasSafeImageUrl(url);
   });
 
   maskCache.set(url, promise);

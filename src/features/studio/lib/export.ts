@@ -1,4 +1,5 @@
 import type { StudioLayer, StudioProject } from '../types';
+import { getCanvasSafeImageUrl } from './image-url';
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -16,8 +17,9 @@ async function loadImage(url: string): Promise<HTMLImageElement> {
     const image = new Image();
     image.crossOrigin = 'anonymous';
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('Unable to load a layer for export.'));
-    image.src = url;
+    image.onerror = () =>
+      reject(new Error('Unable to load a layer for export.'));
+    image.src = getCanvasSafeImageUrl(url);
   });
 }
 
@@ -69,7 +71,8 @@ export async function exportStudioComposite(
   canvas.width = project.width;
   canvas.height = project.height;
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('Canvas export is unavailable in this browser.');
+  if (!context)
+    throw new Error('Canvas export is unavailable in this browser.');
 
   const visibleLayers = [...layers]
     .filter((layer) => layer.visible && layer.assetId)
@@ -102,7 +105,8 @@ export async function exportStudioLayer(layer: StudioLayer) {
   canvas.width = Math.max(1, rotatedWidth);
   canvas.height = Math.max(1, rotatedHeight);
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('Canvas export is unavailable in this browser.');
+  if (!context)
+    throw new Error('Canvas export is unavailable in this browser.');
 
   context.translate(canvas.width / 2, canvas.height / 2);
   context.rotate(radians);

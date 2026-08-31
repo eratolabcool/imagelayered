@@ -9,7 +9,8 @@ export async function getStorageServiceWithConfigs(configs: Configs) {
 
   const useLocalStorage =
     process.env.NODE_ENV === 'development' &&
-    process.env.DATABASE_URL?.startsWith('file:');
+    process.env.DATABASE_URL?.startsWith('file:') &&
+    process.env.STUDIO_STORAGE_MODE !== 'remote';
 
   if (useLocalStorage) {
     const { LocalStorageProvider } = await import('@/extensions/storage/local');
@@ -72,7 +73,8 @@ export async function getStorageService(
   if (!configs) {
     const useLocalStorage =
       process.env.NODE_ENV === 'development' &&
-      process.env.DATABASE_URL?.startsWith('file:');
+      process.env.DATABASE_URL?.startsWith('file:') &&
+      process.env.STUDIO_STORAGE_MODE !== 'remote';
     configs = useLocalStorage ? {} : await getAllConfigs();
   }
   storageService = await getStorageServiceWithConfigs(configs);
