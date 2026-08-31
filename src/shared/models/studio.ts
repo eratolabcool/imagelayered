@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, lt, lte } from 'drizzle-orm';
 
 import {
   studioGuestUsage,
@@ -21,6 +21,7 @@ export type NewStudioOperation = {
   provider?: string | null;
   model?: string | null;
   status?: string;
+  creditState?: string;
 };
 
 export async function createStudioOperationRecord(input: NewStudioOperation) {
@@ -37,6 +38,7 @@ export async function createStudioOperationRecord(input: NewStudioOperation) {
       provider: input.provider || null,
       model: input.model || null,
       status: input.status || 'queued',
+      creditState: input.creditState || 'none',
       createdAt: new Date(),
       updatedAt: new Date(),
     })
@@ -111,6 +113,25 @@ export async function consumeStudioGuestAIQuota(actorKey: string) {
   const now = new Date();
   const dayKey = now.toISOString().slice(0, 10);
   const id = `${actorKey}:${dayKey}`;
+  const cutoff = new Date(now.getTime() - STUDIO_GUEST_OPERATION_COOLDOWN_MS);
+
+  const [updated] = await db()
+    .update(studioGuestUsage)
+    .set({
+      aiOperations: studioGuestUsage.aiOperations + 1,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(studioGuestUsage.id, id),
+        lt(studioGuestUsage.aiOperations, STUDIO_GUEST_DAILY_AI_LIMIT),
+        lte(studioGuestUsage.updatedAt, cutoff)
+      )
+    )
+    .returning();
+
+  if (updated) return;
+
   const [current] = await db()
     .select()
     .from(studioGuestUsage)
@@ -123,29 +144,24 @@ export async function consumeStudioGuestAIQuota(actorKey: string) {
         `Guest AI limit reached (${STUDIO_GUEST_DAILY_AI_LIMIT}/day). Sign in to continue.`
       );
     }
-    if (
-      now.getTime() - current.updatedAt.getTime() <
-      STUDIO_GUEST_OPERATION_COOLDOWN_MS
-    ) {
-      throw new Error('Please wait a few seconds before starting another AI edit.');
-    }
-
-    await db()
-      .update(studioGuestUsage)
-      .set({
-        aiOperations: current.aiOperations + 1,
-        updatedAt: now,
-      })
-      .where(eq(studioGuestUsage.id, id));
-    return;
+    throw new Error('Please wait a few seconds before starting another AI edit.');
   }
 
-  await db().insert(studioGuestUsage).values({
-    id,
-    actorKey,
-    dayKey,
-    aiOperations: 1,
-    createdAt: now,
-    updatedAt: now,
-  });
+  const inserted = await db()
+    .insert(studioGuestUsage)
+    .values({
+      id,
+      actorKey,
+      dayKey,
+      aiOperations: 1,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoNothing()
+    .returning();
+
+  if (inserted.length) return;
+
+  // Another request won the first-use insert race. Re-run the atomic check.
+  return consumeStudioGuestAIQuota(actorKey);
 }
