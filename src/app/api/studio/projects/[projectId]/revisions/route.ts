@@ -3,6 +3,7 @@ import { respData, respErr } from '@/shared/lib/resp';
 import {
   createStudioRevisionRecord,
   listStudioRevisions,
+  updateStudioOperationRecord,
 } from '@/shared/models/studio';
 
 export const dynamic = 'force-dynamic';
@@ -65,6 +66,12 @@ export async function POST(
       operationId: operationId || null,
       snapshot,
     });
+
+    if (operationId) {
+      await updateStudioOperationRecord(operationId, actor.actorKey, {
+        outputRevisionId: row.id,
+      });
+    }
 
     return respData(toPayload(row));
   } catch (error: any) {
