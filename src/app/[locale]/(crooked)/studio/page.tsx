@@ -1,13 +1,12 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
+import { setRequestLocale } from 'next-intl/server';
 
-import ImageLayeredSeoGuide from '@/shared/blocks/crooked/components/ImageLayeredSeoGuide';
-
-import CrookedAppWrapper from './CrookedAppWrapper';
+import { StudioStart } from '@/features/studio/components/StudioStart';
 
 export const metadata: Metadata = {
-  title: 'Image Layered | AI Photoshop for Posters',
+  title: 'Image Layered Studio',
   description:
-    'Upload any poster, automatically create editable layers, revise selected elements, and export a polished redesigned poster.',
+    'Upload an image, work with editable layers, and make focused AI edits without regenerating the whole composition.',
   alternates: {
     canonical: '/studio',
   },
@@ -21,36 +20,13 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Image Layered',
-  applicationCategory: 'DesignApplication',
-  operatingSystem: 'Web Browser',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
-  description:
-    'Upload a poster, automatically split it into editable AI layers, edit selected objects by prompt, and export a redesigned visual.',
-};
-
-export default async function QwenImageLayeredPage({
+export default async function StudioPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  setRequestLocale(locale);
 
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <CrookedAppWrapper />
-      <ImageLayeredSeoGuide locale={locale} surface="tool" />
-    </>
-  );
+  return <StudioStart />;
 }

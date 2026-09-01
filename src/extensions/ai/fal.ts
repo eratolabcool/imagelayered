@@ -256,6 +256,25 @@ export class FalProvider implements AIProvider {
     });
 
     if (!resultResp.ok) {
+      if (resultResp.status === 422) {
+        const errorBody = await resultResp.json().catch(() => null);
+        const detail = Array.isArray(errorBody?.detail)
+          ? errorBody.detail[0]
+          : null;
+
+        return {
+          taskId,
+          taskStatus: AITaskStatus.FAILED,
+          taskInfo: {
+            status: 'FAILED',
+            errorCode: detail?.type || 'fal_result_unprocessable',
+            errorMessage:
+              detail?.msg || 'FAL completed without a processable result',
+            createTime: new Date(),
+          },
+          taskResult: errorBody,
+        };
+      }
       throw new Error(`request failed with status: ${resultResp.status}`);
     }
 
@@ -420,6 +439,11 @@ export class FalProvider implements AIProvider {
 
   // get query model name
   private getQueryModel(model?: string): string {
+    // Seedream v5 edit is submitted through the versioned endpoint, while FAL
+    // returns queue status/result URLs under the canonical model path.
+    if (model === 'bytedance/seedream/v5/pro/edit') {
+      return 'bytedance/seedream';
+    }
     return model || '';
   }
 

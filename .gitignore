@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+/public/uploads/
 
 # production
 /build
@@ -61,6 +62,8 @@ src/config/db/migrations*
 
 *.sql
 !scripts/turso-project-schema.sql
+!scripts/d1/
+!scripts/d1/**/*.sql
 .source
 
 .chats

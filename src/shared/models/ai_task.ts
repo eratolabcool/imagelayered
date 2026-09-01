@@ -1,11 +1,13 @@
 import { and, count, desc, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/core/db';
+import { envConfigs } from '@/config';
 import { aiTask, credit } from '@/config/db/schema';
 import { AITaskStatus } from '@/extensions/ai';
 import { appendUserToResult, User } from '@/shared/models/user';
 
 import { consumeCredits, CreditStatus } from './credit';
+import { createAITaskWithD1Credits } from './d1-studio-credit';
 
 export type AITask = typeof aiTask.$inferSelect & {
   user?: User;
@@ -14,6 +16,10 @@ export type NewAITask = typeof aiTask.$inferInsert;
 export type UpdateAITask = Partial<Omit<NewAITask, 'id' | 'createdAt'>>;
 
 export async function createAITask(newAITask: NewAITask) {
+  if (envConfigs.database_provider === 'd1') {
+    return createAITaskWithD1Credits(newAITask);
+  }
+
   const result = await db().transaction(async (tx: any) => {
     // 1. create task record
     const [taskResult] = await tx.insert(aiTask).values(newAITask).returning();
@@ -55,6 +61,33 @@ export async function findAITaskById(id: string) {
 }
 
 export async function updateAITaskById(id: string, updateAITask: UpdateAITask) {
+  if (envConfigs.database_provider === 'd1') {
+    const [existing] = await db()
+      .select({ userId: aiTask.userId })
+      .from(aiTask)
+      .where(eq(aiTask.id, id));
+
+    if (
+      existing &&
+      updateAITask.status === AITaskStatus.FAILED &&
+      updateAITask.creditId
+    ) {
+      const { refundStudioCreditsWithD1 } = await import('./d1-studio-credit');
+      await refundStudioCreditsWithD1(
+        updateAITask.creditId,
+        existing.userId,
+        'ai_task_failed'
+      );
+    }
+
+    const [result] = await db()
+      .update(aiTask)
+      .set(updateAITask)
+      .where(eq(aiTask.id, id))
+      .returning();
+    return result;
+  }
+
   const result = await db().transaction(async (tx: any) => {
     // task failed, Revoke credit consumption record
     if (updateAITask.status === AITaskStatus.FAILED && updateAITask.creditId) {

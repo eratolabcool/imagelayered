@@ -1,11 +1,31 @@
-import { R2Provider, S3Provider, StorageManager } from '@/extensions/storage';
+import {
+  CloudflareR2Provider,
+  R2Provider,
+  S3Provider,
+  StorageManager,
+} from '@/extensions/storage';
+import { envConfigs } from '@/config';
 import { Configs, getAllConfigs } from '@/shared/models/config';
 
 /**
  * get storage service with configs
  */
-export function getStorageServiceWithConfigs(configs: Configs) {
+export async function getStorageServiceWithConfigs(configs: Configs) {
   const storageManager = new StorageManager();
+
+  const useLocalStorage =
+    process.env.NODE_ENV === 'development' &&
+    process.env.DATABASE_URL?.startsWith('file:') &&
+    process.env.STUDIO_STORAGE_MODE !== 'remote';
+
+  if (useLocalStorage) {
+    const { LocalStorageProvider } = await import('@/extensions/storage/local');
+    storageManager.addProvider(new LocalStorageProvider(), true);
+  }
+
+  if (envConfigs.database_provider === 'd1') {
+    storageManager.addProvider(new CloudflareR2Provider(), true);
+  }
 
   // Add R2 provider if configured
   if (
@@ -28,7 +48,7 @@ export function getStorageServiceWithConfigs(configs: Configs) {
         endpoint: configs.r2_endpoint, // Optional custom endpoint
         publicDomain: configs.r2_domain,
       }),
-      true // Set R2 as default
+      !useLocalStorage // Keep local storage as the development default.
     );
   }
 
@@ -61,9 +81,13 @@ export async function getStorageService(
   configs?: Configs
 ): Promise<StorageManager> {
   if (!configs) {
-    configs = await getAllConfigs();
+    const useLocalStorage =
+      process.env.NODE_ENV === 'development' &&
+      process.env.DATABASE_URL?.startsWith('file:') &&
+      process.env.STUDIO_STORAGE_MODE !== 'remote';
+    configs = useLocalStorage ? {} : await getAllConfigs();
   }
-  storageService = getStorageServiceWithConfigs(configs);
+  storageService = await getStorageServiceWithConfigs(configs);
 
   return storageService;
 }

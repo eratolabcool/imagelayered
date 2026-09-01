@@ -1,7 +1,7 @@
 import { revalidateTag, unstable_cache } from 'next/cache';
 
 import { db } from '@/core/db';
-import { envConfigs } from '@/config';
+import { envConfigs, hasDatabaseConfig } from '@/config';
 import { config } from '@/config/db/schema';
 import {
   getAllSettingNames,
@@ -15,6 +15,22 @@ export type UpdateConfig = Partial<Omit<NewConfig, 'name'>>;
 export type Configs = Record<string, string>;
 
 export const CACHE_TAG_CONFIGS = 'configs';
+
+function isMissingLocalConfigTable(error: unknown) {
+  if (
+    process.env.NODE_ENV !== 'development' ||
+    !process.env.DATABASE_URL?.startsWith('file:')
+  ) {
+    return false;
+  }
+
+  let cause: unknown = error;
+  while (cause instanceof Error) {
+    if (cause.message.includes('no such table: config')) return true;
+    cause = cause.cause;
+  }
+  return false;
+}
 
 export async function saveConfigs(configs: Record<string, string>) {
   const result = await db().transaction(async (tx: any) => {
@@ -53,7 +69,7 @@ export const getConfigs = unstable_cache(
   async (): Promise<Configs> => {
     const configs: Record<string, string> = {};
 
-    if (!envConfigs.database_url) {
+    if (!hasDatabaseConfig()) {
       return configs;
     }
 
@@ -77,13 +93,22 @@ export const getConfigs = unstable_cache(
 
 export async function getAllConfigs(): Promise<Configs> {
   let dbConfigs: Configs = {};
+  const useLocalDevelopmentDatabase =
+    process.env.NODE_ENV === 'development' &&
+    envConfigs.database_url.startsWith('file:');
 
   // only get configs from db in server side
-  if (typeof window === 'undefined' && envConfigs.database_url) {
+  if (
+    typeof window === 'undefined' &&
+    hasDatabaseConfig() &&
+    !useLocalDevelopmentDatabase
+  ) {
     try {
       dbConfigs = await getConfigs();
     } catch (e) {
-      console.log(`get configs from db failed:`, e);
+      if (!isMissingLocalConfigTable(e)) {
+        console.log(`get configs from db failed:`, e);
+      }
       dbConfigs = {};
     }
   }

@@ -3,7 +3,7 @@ import { oneTap } from 'better-auth/plugins';
 import { getLocale } from 'next-intl/server';
 
 import { db } from '@/core/db';
-import { envConfigs } from '@/config';
+import { envConfigs, hasDatabaseConfig } from '@/config';
 import * as schema from '@/config/db/schema';
 import {
   getCookieFromCtx,
@@ -81,7 +81,7 @@ export async function getAuthOptions(configs: Record<string, string>) {
   return {
     ...authOptions,
     // Add database connection only when actually needed (runtime)
-    database: envConfigs.database_url
+    database: hasDatabaseConfig()
       ? drizzleAdapter(db(), {
           provider: getDatabaseProvider(envConfigs.database_provider),
           schema: schema,
@@ -252,6 +252,8 @@ export function getDatabaseProvider(
     case 'sqlite':
       return 'sqlite';
     case 'turso':
+      return 'sqlite';
+    case 'd1':
       return 'sqlite';
     case 'postgresql':
       return 'pg';
