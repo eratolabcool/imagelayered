@@ -14,7 +14,9 @@ if (envConfigs.database_auth_token) {
 export default defineConfig({
   out: envConfigs.db_migrations_out,
   schema: envConfigs.db_schema_file,
-  dialect: envConfigs.database_provider as
+  dialect: (envConfigs.database_provider === 'd1'
+    ? 'sqlite'
+    : envConfigs.database_provider) as
     | 'sqlite'
     | 'postgresql'
     | 'mysql'

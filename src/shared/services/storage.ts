@@ -1,4 +1,10 @@
-import { R2Provider, S3Provider, StorageManager } from '@/extensions/storage';
+import {
+  CloudflareR2Provider,
+  R2Provider,
+  S3Provider,
+  StorageManager,
+} from '@/extensions/storage';
+import { envConfigs } from '@/config';
 import { Configs, getAllConfigs } from '@/shared/models/config';
 
 /**
@@ -15,6 +21,10 @@ export async function getStorageServiceWithConfigs(configs: Configs) {
   if (useLocalStorage) {
     const { LocalStorageProvider } = await import('@/extensions/storage/local');
     storageManager.addProvider(new LocalStorageProvider(), true);
+  }
+
+  if (envConfigs.database_provider === 'd1') {
+    storageManager.addProvider(new CloudflareR2Provider(), true);
   }
 
   // Add R2 provider if configured

@@ -1,0 +1,54 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "imagelayered-preview",
+  "keep_names": false,
+  "compatibility_date": "2026-08-31",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "imagelayered-preview"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "imagelayered-preview-db",
+      "database_id": "91fcc2fe-18e6-4c55-80af-de139c793355",
+      "migrations_dir": "scripts/d1/migrations",
+      "remote": true
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "imagelayered-preview"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "preview.image-layered.app",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://preview.image-layered.app",
+    "AUTH_URL": "https://preview.image-layered.app",
+    "NEXT_PUBLIC_APP_NAME": "imagelayered preview",
+    "NEXT_PUBLIC_THEME": "default",
+    "NEXT_PUBLIC_APPEARANCE": "dark",
+    "DATABASE_PROVIDER": "d1",
+    "DB_SCHEMA_FILE": "./src/config/db/schema.ts",
+    "DB_SINGLETON_ENABLED": "false",
+    "DB_MAX_CONNECTIONS": "1",
+    "R2_BUCKET_NAME": "imagelayered-preview"
+  }
+}

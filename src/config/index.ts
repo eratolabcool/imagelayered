@@ -54,3 +54,8 @@ export const envConfigs: ConfigMap = {
   locale_detect_enabled:
     process.env.NEXT_PUBLIC_LOCALE_DETECT_ENABLED ?? 'false',
 };
+
+/** URL-backed databases need DATABASE_URL; D1 is supplied as a Worker binding. */
+export function hasDatabaseConfig() {
+  return envConfigs.database_provider === 'd1' || !!envConfigs.database_url;
+}

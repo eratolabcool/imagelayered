@@ -1,7 +1,7 @@
 import { revalidateTag, unstable_cache } from 'next/cache';
 
 import { db } from '@/core/db';
-import { envConfigs } from '@/config';
+import { envConfigs, hasDatabaseConfig } from '@/config';
 import { config } from '@/config/db/schema';
 import {
   getAllSettingNames,
@@ -69,7 +69,7 @@ export const getConfigs = unstable_cache(
   async (): Promise<Configs> => {
     const configs: Record<string, string> = {};
 
-    if (!envConfigs.database_url) {
+    if (!hasDatabaseConfig()) {
       return configs;
     }
 
@@ -100,7 +100,7 @@ export async function getAllConfigs(): Promise<Configs> {
   // only get configs from db in server side
   if (
     typeof window === 'undefined' &&
-    envConfigs.database_url &&
+    hasDatabaseConfig() &&
     !useLocalDevelopmentDatabase
   ) {
     try {

@@ -2,6 +2,8 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { credit } from '@/config/db/schema';
 import { db } from '@/core/db';
+import { envConfigs } from '@/config';
+import { refundStudioCreditsWithD1 } from './d1-studio-credit';
 
 const ACTIVE = 'active';
 const DELETED = 'deleted';
@@ -18,6 +20,10 @@ export async function refundStudioConsumedCredits(
   userId: string,
   reason = 'studio_ai_failed'
 ) {
+  if (envConfigs.database_provider === 'd1') {
+    return refundStudioCreditsWithD1(creditId, userId, reason);
+  }
+
   return db().transaction(async (tx: any) => {
     const [consumed] = await tx
       .update(credit)
