@@ -256,6 +256,25 @@ export class FalProvider implements AIProvider {
     });
 
     if (!resultResp.ok) {
+      if (resultResp.status === 422) {
+        const errorBody = await resultResp.json().catch(() => null);
+        const detail = Array.isArray(errorBody?.detail)
+          ? errorBody.detail[0]
+          : null;
+
+        return {
+          taskId,
+          taskStatus: AITaskStatus.FAILED,
+          taskInfo: {
+            status: 'FAILED',
+            errorCode: detail?.type || 'fal_result_unprocessable',
+            errorMessage:
+              detail?.msg || 'FAL completed without a processable result',
+            createTime: new Date(),
+          },
+          taskResult: errorBody,
+        };
+      }
       throw new Error(`request failed with status: ${resultResp.status}`);
     }
 
