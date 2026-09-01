@@ -53,6 +53,10 @@ export const envConfigs: ConfigMap = {
   version: packageJson.version,
   locale_detect_enabled:
     process.env.NEXT_PUBLIC_LOCALE_DETECT_ENABLED ?? 'false',
+  // WeChat Mini Program (server-only secrets; never exposed to clients)
+  wechat_mini_app_id: process.env.WECHAT_MINI_APP_ID ?? '',
+  wechat_mini_app_secret: process.env.WECHAT_MINI_APP_SECRET ?? '',
+  mini_program_welcome_credits: process.env.MINI_PROGRAM_WELCOME_CREDITS ?? '15',
 };
 
 /** URL-backed databases need DATABASE_URL; D1 is supplied as a Worker binding. */
