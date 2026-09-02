@@ -1,31 +1,12 @@
 import { getStudioActor } from '@/features/studio/server/identity';
-import { respData, respErr } from '@/shared/lib/resp';
 import {
-  createStudioRevisionRecord,
-  listStudioRevisions,
-  updateStudioOperationRecord,
-} from '@/shared/models/studio';
+  createRevisionForActor,
+  listRevisionsForActor,
+} from '@/features/studio/server/revisions';
+import { respData, respErr } from '@/shared/lib/resp';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-function toPayload(row: any) {
-  let snapshot: unknown = {};
-  try {
-    snapshot = JSON.parse(row.snapshot);
-  } catch {
-    snapshot = {};
-  }
-
-  return {
-    id: row.id,
-    projectId: row.projectId,
-    parentRevisionId: row.parentRevisionId || undefined,
-    operationId: row.operationId || undefined,
-    snapshot,
-    createdAt: row.createdAt.toISOString(),
-  };
-}
 
 export async function GET(
   _request: Request,
@@ -34,8 +15,8 @@ export async function GET(
   try {
     const { projectId } = await params;
     const actor = await getStudioActor();
-    const rows = await listStudioRevisions(projectId, actor.actorKey);
-    return respData(rows.map(toPayload));
+    const data = await listRevisionsForActor(actor, projectId);
+    return respData(data);
   } catch (error: any) {
     return respErr(error.message);
   }
@@ -48,32 +29,9 @@ export async function POST(
   try {
     const { projectId } = await params;
     const actor = await getStudioActor();
-    const { parentRevisionId, operationId, snapshot } = await request.json();
-
-    if (!snapshot || typeof snapshot !== 'object') {
-      throw new Error('revision snapshot is required');
-    }
-
-    const encoded = JSON.stringify(snapshot);
-    if (encoded.length > 2_000_000) {
-      throw new Error('revision snapshot is too large');
-    }
-
-    const row = await createStudioRevisionRecord({
-      projectId,
-      actorKey: actor.actorKey,
-      parentRevisionId: parentRevisionId || null,
-      operationId: operationId || null,
-      snapshot,
-    });
-
-    if (operationId) {
-      await updateStudioOperationRecord(operationId, actor.actorKey, {
-        outputRevisionId: row.id,
-      });
-    }
-
-    return respData(toPayload(row));
+    const body = await request.json();
+    const data = await createRevisionForActor(actor, projectId, body);
+    return respData(data);
   } catch (error: any) {
     return respErr(error.message);
   }
