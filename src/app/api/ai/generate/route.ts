@@ -1,12 +1,13 @@
+import {
+  getImageSceneCost,
+  hasGeneratedImages,
+  resolveImageCapability,
+} from '@/features/studio/server/ai-service';
 import { getStudioActor } from '@/features/studio/server/identity';
 
 import { envConfigs } from '@/config';
 import { AIMediaType, AITaskStatus } from '@/extensions/ai';
 import { getUuid } from '@/shared/lib/hash';
-import {
-  IMAGE_LAYERED_CAPABILITIES,
-  LEGACY_IMAGE_LAYERED_MODELS,
-} from '@/shared/lib/image-layered-capabilities';
 import { respData, respErr } from '@/shared/lib/resp';
 import { createAITask, NewAITask } from '@/shared/models/ai_task';
 import { getAllConfigs } from '@/shared/models/config';
@@ -25,30 +26,6 @@ import { getAIService } from '@/shared/services/ai';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-function hasGeneratedImages(result: any) {
-  if ((result?.taskInfo?.images?.length ?? 0) > 0) return true;
-
-  const rawTaskResult = result?.taskResult;
-  if (!rawTaskResult) return false;
-
-  try {
-    const taskResult =
-      typeof rawTaskResult === 'string'
-        ? JSON.parse(rawTaskResult)
-        : rawTaskResult;
-
-    return (
-      (Array.isArray(taskResult?.images) && taskResult.images.length > 0) ||
-      (Array.isArray(taskResult?.output) && taskResult.output.length > 0) ||
-      !!taskResult?.image?.url ||
-      !!taskResult?.image_url ||
-      !!taskResult?.url
-    );
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(request: Request) {
   try {
     let { provider, mediaType, model, prompt, options, scene, layeringMode } =
@@ -61,61 +38,15 @@ export async function POST(request: Request) {
     const aiService = await getAIService(configs);
 
     if (mediaType === AIMediaType.IMAGE) {
-      if (scene === 'image-decomposition') {
-        const configuredModel = configs.layer_decomposition_model;
-        const usePreferredCapability =
-          !configuredModel ||
-          configuredModel === LEGACY_IMAGE_LAYERED_MODELS.decompose;
-        provider =
-          provider ||
-          (usePreferredCapability
-            ? IMAGE_LAYERED_CAPABILITIES.decompose.provider
-            : configs.layer_decomposition_provider ||
-              IMAGE_LAYERED_CAPABILITIES.decompose.provider);
-        model =
-          model ||
-          (usePreferredCapability
-            ? IMAGE_LAYERED_CAPABILITIES.decompose.model
-            : configuredModel);
-      } else if (
-        [
-          'image-recolor',
-          'image-replace',
-          'image-remove',
-          'lookbook-generate',
-        ].includes(scene)
-      ) {
-        const configuredModel = configs.poster_edit_model;
-        const usePreferredCapability =
-          !configuredModel ||
-          configuredModel === LEGACY_IMAGE_LAYERED_MODELS.editLayer;
-        provider =
-          provider ||
-          (usePreferredCapability
-            ? IMAGE_LAYERED_CAPABILITIES.editLayer.provider
-            : configs.poster_edit_provider ||
-              IMAGE_LAYERED_CAPABILITIES.editLayer.provider);
-        model =
-          model ||
-          (usePreferredCapability
-            ? IMAGE_LAYERED_CAPABILITIES.editLayer.model
-            : configuredModel);
-      }
-    }
-
-    if (
-      mediaType === AIMediaType.IMAGE &&
-      scene === 'image-decomposition' &&
-      provider === IMAGE_LAYERED_CAPABILITIES.decompose.provider &&
-      model === IMAGE_LAYERED_CAPABILITIES.decompose.model &&
-      !aiService.getProvider(IMAGE_LAYERED_CAPABILITIES.decompose.provider) &&
-      aiService.getProvider('fal')
-    ) {
-      console.warn(
-        '[generate] Preferred decomposition provider is unavailable; using fallback capability'
-      );
-      provider = 'fal';
-      model = LEGACY_IMAGE_LAYERED_MODELS.decompose;
+      const resolved = resolveImageCapability({
+        scene,
+        provider,
+        model,
+        configs,
+        aiService,
+      });
+      provider = resolved.provider;
+      model = resolved.model;
     }
 
     if (!provider || !model) throw new Error('invalid params');
@@ -130,14 +61,7 @@ export async function POST(request: Request) {
     let costCredits = 2;
 
     if (mediaType === AIMediaType.IMAGE) {
-      if (scene === 'image-decomposition') costCredits = 5;
-      else if (scene === 'image-recolor') costCredits = 3;
-      else if (scene === 'image-replace') costCredits = 4;
-      else if (scene === 'image-remove') costCredits = 3;
-      else if (scene === 'lookbook-generate') costCredits = 8;
-      else if (scene === 'image-to-image') costCredits = 4;
-      else if (scene === 'text-to-image') costCredits = 2;
-      else throw new Error('invalid scene');
+      costCredits = getImageSceneCost(scene);
     } else if (mediaType === AIMediaType.VIDEO) {
       if (scene === 'text-to-video') costCredits = 6;
       else if (scene === 'image-to-video') costCredits = 8;

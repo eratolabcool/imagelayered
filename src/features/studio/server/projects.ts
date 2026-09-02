@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 import { project } from '@/config/db/schema';
 import { db } from '@/core/db';
@@ -114,6 +114,22 @@ export async function createProjectForActor(
   }
 
   return { project: studioProject, layers: [originalLayer] };
+}
+
+export async function listProjectsForActor(actor: StudioActor) {
+  if (!actor.userId) throw new Error('Authentication required');
+
+  return db()
+    .select({
+      id: project.id,
+      name: project.name,
+      previewUrl: project.previewUrl,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+    })
+    .from(project)
+    .where(eq(project.userId, actor.userId))
+    .orderBy(desc(project.createdAt));
 }
 
 export async function getProjectForActor(

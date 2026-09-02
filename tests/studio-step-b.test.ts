@@ -40,6 +40,13 @@ const guestActor = () => ({
   guestId: 'g-1',
 });
 
+function webAi(guestId: string | null = null) {
+  return operations.webAiDispatcher(
+    { baseUrl: 'http://localhost', cookie: null },
+    guestId
+  );
+}
+
 async function createUser(email: string) {
   const id = randomUUID();
   await db()
@@ -280,7 +287,7 @@ test('4. createOperation success records charged creditState once', async (t) =>
     signedActor(userId),
     projectId,
     { type: 'replace', targetLayerIds: ['layer-1'] },
-    { baseUrl: 'http://localhost', cookie: null }
+    webAi()
   );
 
   assert.equal(data.status, 'succeeded');
@@ -323,7 +330,7 @@ test('5. createOperation sync failure refunds once (idempotent)', async (t) => {
     signedActor(userId),
     randomUUID(),
     { type: 'replace', targetLayerIds: [] },
-    { baseUrl: 'http://localhost', cookie: null }
+    webAi()
   );
 
   assert.equal(data.status, 'failed');
@@ -397,14 +404,14 @@ test('6. poll async failure sets refunded creditState + errorCode', async (t) =>
     signedActor(userId),
     randomUUID(),
     { type: 'recolor', targetLayerIds: [] },
-    { baseUrl: 'http://localhost', cookie: null }
+    webAi()
   );
   assert.equal(created.status, 'queued');
 
   const polled = await operations.pollOperationForActor(
     signedActor(userId),
     created.id,
-    { baseUrl: 'http://localhost', cookie: null }
+    webAi()
   );
 
   assert.equal(polled.status, 'failed');
@@ -440,17 +447,14 @@ test('7. repeated poll short-circuits on terminal state (no double refund)', asy
     signedActor(userId),
     randomUUID(),
     { type: 'remove', targetLayerIds: [] },
-    { baseUrl: 'http://localhost', cookie: null }
+    webAi()
   );
 
-  await operations.pollOperationForActor(signedActor(userId), created.id, {
-    baseUrl: 'http://localhost',
-    cookie: null,
-  });
+  await operations.pollOperationForActor(signedActor(userId), created.id, webAi());
   const second = await operations.pollOperationForActor(
     signedActor(userId),
     created.id,
-    { baseUrl: 'http://localhost', cookie: null }
+    webAi()
   );
 
   assert.equal(queryCalls, 1);
@@ -494,7 +498,7 @@ test('9. operation type -> scene mapping unchanged', async (t) => {
       signedActor(userId),
       randomUUID(),
       { type, targetLayerIds: [] },
-      { baseUrl: 'http://localhost', cookie: null }
+      webAi()
     );
   }
 
