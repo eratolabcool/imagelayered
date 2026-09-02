@@ -1,5 +1,8 @@
-import { createOperationForActor } from '@/features/studio/server/operations';
 import { getStudioActor } from '@/features/studio/server/identity';
+import {
+  createOperationForActor,
+  webAiDispatcher,
+} from '@/features/studio/server/operations';
 import { respData, respErr } from '@/shared/lib/resp';
 
 export const dynamic = 'force-dynamic';
@@ -13,10 +16,11 @@ export async function POST(
     const { projectId } = await params;
     const actor = await getStudioActor();
     const body = await request.json();
-    const data = await createOperationForActor(actor, projectId, body, {
-      baseUrl: request.url,
-      cookie: request.headers.get('cookie'),
-    });
+    const ai = webAiDispatcher(
+      { baseUrl: request.url, cookie: request.headers.get('cookie') },
+      actor.guestId
+    );
+    const data = await createOperationForActor(actor, projectId, body, ai);
     return respData(data);
   } catch (error: any) {
     return respErr(error.message);

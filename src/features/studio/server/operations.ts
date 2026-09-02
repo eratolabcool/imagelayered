@@ -26,11 +26,33 @@ export type CreateOperationInput = {
 };
 
 /**
- * Internal HTTP context. The operation create/poll orchestration currently
- * delegates to /api/ai/generate and /api/ai/query (preserving the Web
- * cookie-driven behavior). Extracting the AI hop into a shared service is a
- * separate, larger change (see STEP B6).
+ * AI dispatch seam. Web injects an HTTP dispatcher that forwards to
+ * /api/ai/generate and /api/ai/query with the caller's cookie; Mini injects a
+ * server-side dispatcher that calls the shared AI service with a userId.
+ * The orchestration (credit state, refund, persistence, status) stays in one
+ * place here.
  */
+export type AiEnvelope = {
+  code: number;
+  data?: any;
+  message?: string;
+  error?: string;
+};
+
+export type AiDispatcher = {
+  generateAI: (body: {
+    mediaType: string;
+    scene: string;
+    prompt?: string;
+    options: Record<string, unknown>;
+    layeringMode: string;
+  }) => Promise<AiEnvelope>;
+  queryAI: (body: {
+    taskId: string;
+    model?: string;
+  }) => Promise<AiEnvelope>;
+};
+
 export type AiRequestContext = {
   baseUrl: string;
   cookie?: string | null;
@@ -108,11 +130,63 @@ function toStoredPayload(operation: any) {
   };
 }
 
+/**
+ * Web AI dispatcher: forwards to the existing /api/ai/generate + /api/ai/query
+ * routes with the caller's cookie (or a freshly-minted guest cookie). This
+ * preserves the exact Web behavior including Better Auth session resolution.
+ */
+export function webAiDispatcher(
+  ctx: AiRequestContext,
+  guestId?: string | null
+): AiDispatcher {
+  return {
+    async generateAI(body) {
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (ctx.cookie) {
+        headers.cookie = ctx.cookie;
+      } else if (guestId) {
+        headers.cookie = `${STUDIO_GUEST_COOKIE}=${encodeURIComponent(guestId)}`;
+      }
+
+      const response = await fetch(new URL('/api/ai/generate', ctx.baseUrl), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const parsed = await response.json().catch(() => null);
+        throw new Error(
+          parsed?.message || parsed?.error || 'AI operation failed'
+        );
+      }
+      return response.json();
+    },
+    async queryAI(body) {
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (ctx.cookie) headers.cookie = ctx.cookie;
+
+      const response = await fetch(new URL('/api/ai/query', ctx.baseUrl), {
+        method: 'POST',
+        headers,
+        cache: 'no-store',
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const parsed = await response.json().catch(() => null);
+        throw new Error(parsed?.message || 'Unable to query Studio operation');
+      }
+      return response.json();
+    },
+  };
+}
+
 export async function createOperationForActor(
   actor: StudioActor,
   projectId: string,
   input: CreateOperationInput,
-  ctx: AiRequestContext
+  ai: AiDispatcher
 ) {
   let operationId: string | null = null;
 
@@ -152,39 +226,24 @@ export async function createOperationForActor(
     operationId = operation.id;
 
     const scene = sceneByOperation[type as keyof typeof sceneByOperation];
-    const headers: HeadersInit = { 'Content-Type': 'application/json' };
-    if (ctx.cookie) {
-      headers.cookie = ctx.cookie;
-    } else if (actor.guestId) {
-      headers.cookie = `${STUDIO_GUEST_COOKIE}=${encodeURIComponent(actor.guestId)}`;
-    }
+    const generated = await ai.generateAI({
+      mediaType: AIMediaType.IMAGE,
+      scene,
+      prompt:
+        prompt ||
+        (type === 'decompose'
+          ? 'Decompose image into editable transparent layers'
+          : undefined),
+      options: {
+        ...options,
+        projectId,
+        baseRevisionId,
+        targetLayerIds,
+      },
+      layeringMode: 'studio',
+    });
 
-    const generateResponse = await fetch(
-      new URL('/api/ai/generate', ctx.baseUrl),
-      {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          mediaType: AIMediaType.IMAGE,
-          scene,
-          prompt:
-            prompt ||
-            (type === 'decompose'
-              ? 'Decompose image into editable transparent layers'
-              : undefined),
-          options: {
-            ...options,
-            projectId,
-            baseRevisionId,
-            targetLayerIds,
-          },
-          layeringMode: 'studio',
-        }),
-      }
-    );
-
-    const generated = await generateResponse.json();
-    if (!generateResponse.ok || generated?.code !== 0) {
+    if (generated?.code !== 0) {
       throw new Error(
         generated?.message || generated?.error || 'AI operation failed'
       );
@@ -268,7 +327,7 @@ export async function createOperationForActor(
 export async function pollOperationForActor(
   actor: StudioActor,
   operationId: string,
-  ctx: AiRequestContext
+  ai: AiDispatcher
 ) {
   const operation = await findStudioOperationForActor(
     operationId,
@@ -284,20 +343,12 @@ export async function pollOperationForActor(
     throw new Error('Studio operation has no AI task id');
   }
 
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
-  if (ctx.cookie) headers.cookie = ctx.cookie;
-
-  const response = await fetch(new URL('/api/ai/query', ctx.baseUrl), {
-    method: 'POST',
-    headers,
-    cache: 'no-store',
-    body: JSON.stringify({
-      taskId: operation.aiTaskId,
-      model: operation.model || undefined,
-    }),
+  const payload = await ai.queryAI({
+    taskId: operation.aiTaskId,
+    model: operation.model || undefined,
   });
-  const payload = await response.json();
-  if (!response.ok || payload?.code !== 0) {
+
+  if (payload?.code !== 0) {
     throw new Error(payload?.message || 'Unable to query Studio operation');
   }
 

@@ -1,5 +1,8 @@
 import { getStudioActor } from '@/features/studio/server/identity';
-import { pollOperationForActor } from '@/features/studio/server/operations';
+import {
+  pollOperationForActor,
+  webAiDispatcher,
+} from '@/features/studio/server/operations';
 import { respData, respErr } from '@/shared/lib/resp';
 
 export const dynamic = 'force-dynamic';
@@ -12,10 +15,11 @@ export async function GET(
   try {
     const { operationId } = await params;
     const actor = await getStudioActor();
-    const data = await pollOperationForActor(actor, operationId, {
+    const ai = webAiDispatcher({
       baseUrl: request.url,
       cookie: request.headers.get('cookie'),
     });
+    const data = await pollOperationForActor(actor, operationId, ai);
     return respData(data);
   } catch (error: any) {
     return respErr(error.message);
