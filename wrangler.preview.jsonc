@@ -49,6 +49,8 @@
     "DB_SCHEMA_FILE": "./src/config/db/schema.ts",
     "DB_SINGLETON_ENABLED": "false",
     "DB_MAX_CONNECTIONS": "1",
-    "R2_BUCKET_NAME": "imagelayered-preview"
+    "R2_BUCKET_NAME": "imagelayered-preview",
+    "WECHAT_MINI_APP_ID": "wx0465a2d15b9c968b",
+    "MINI_PROGRAM_WELCOME_CREDITS": "15"
   }
 }
