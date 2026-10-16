@@ -16,7 +16,8 @@ import pricing from '@/config/locale/messages/en/pages/pricing.json';
 import { getUuid } from '@/shared/lib/hash';
 import { getAllConfigs } from '@/shared/models/config';
 
-const APP_NAME = 'Image Layered';
+// app was renamed; older checkouts carry the former name
+const APP_NAMES = ['Image Layered', 'Qwen Image Layered'];
 const STRIPE = 'https://api.stripe.com/v1';
 
 async function stripeGet(key: string, path: string) {
@@ -88,7 +89,7 @@ async function claimOne(key: string, userId: string, email: string, sub: any) {
     const sessions = await stripeGet(key, `/checkout/sessions?subscription=${sub.id}&limit=1`);
     appName = sessions.data?.[0]?.metadata?.app_name;
   }
-  if (appName !== APP_NAME) return false;
+  if (!APP_NAMES.includes(appName)) return false;
 
   const item = sub.items?.data?.[0];
   const price = item?.price;
