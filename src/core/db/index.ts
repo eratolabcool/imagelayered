@@ -186,7 +186,7 @@ function withSqliteCompat<T extends object>(dbInstance: T): T {
  */
 export function db(): any {
   if (envConfigs.database_provider === 'd1') {
-    return withSqliteCompat(getD1Db() as any);
+    return withD1TransactionShim(withSqliteCompat(getD1Db() as any));
   }
 
   if (['sqlite', 'turso'].includes(envConfigs.database_provider)) {
@@ -242,4 +242,43 @@ export async function closeDb() {
     await closeMysqlDb();
     return;
   }
+}
+
+
+/**
+ * Cloudflare D1 rejects interactive transactions (drizzle issues BEGIN/COMMIT,
+ * which D1 refuses), so every `db().transaction(...)` call failed on D1 —
+ * e.g. saving admin settings, crediting paid orders, consuming credits.
+ * Run the callback against the plain D1 client instead. Statements execute
+ * sequentially without atomicity; callers already write idempotent upserts or
+ * guard on status, and D1 itself serializes writes per database.
+ */
+const d1ShimCache = new WeakMap<object, any>();
+function withD1TransactionShim<T extends object>(dbInstance: T): T {
+  const cached = d1ShimCache.get(dbInstance);
+  if (cached) return cached as T;
+  const proxied = new Proxy(dbInstance, {
+    get(target, prop, receiver) {
+      if (prop === 'transaction') {
+        return async (fn: any) => {
+          const tx = new Proxy(target as any, {
+            get(t, p, r) {
+              if (p === 'rollback') {
+                return () => {
+                  throw new Error('Transaction rollback requested (D1: no atomic rollback)');
+                };
+              }
+              const v = Reflect.get(t, p, r);
+              return typeof v === 'function' ? v.bind(t) : v;
+            },
+          });
+          return fn(tx);
+        };
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  }) as any as T;
+  d1ShimCache.set(dbInstance, proxied);
+  return proxied;
 }
