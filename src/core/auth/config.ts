@@ -14,6 +14,9 @@ import { getUuid } from '@/shared/lib/hash';
 import { getClientIp } from '@/shared/lib/ip';
 import { grantCreditsForNewUser } from '@/shared/models/credit';
 import { grantRoleForNewUser } from '@/shared/services/rbac';
+import { claimStripeSubscriptionsForUser } from '@/shared/services/stripe-claim';
+import { user as userTable } from '@/config/db/schema';
+import { eq } from 'drizzle-orm';
 
 // Best-effort dedupe to prevent sending verification emails too frequently.
 // This is especially helpful in dev/hot reload, transient network conditions,
@@ -145,6 +148,25 @@ export async function getAuthOptions(configs: Record<string, string>) {
               await grantRoleForNewUser(user);
             } catch (e) {
               console.log('grant credits or role for new user failed', e);
+            }
+          },
+        },
+      },
+      session: {
+        create: {
+          // restore Stripe subscriptions paid before the D1 migration
+          after: async (session: any) => {
+            try {
+              if (!session?.userId) return;
+              const [u] = await db()
+                .select()
+                .from(userTable)
+                .where(eq(userTable.id, session.userId));
+              if (!u?.email) return;
+              if (emailVerificationEnabled && !u.emailVerified) return;
+              await claimStripeSubscriptionsForUser(u);
+            } catch (e) {
+              console.log('[stripe-claim] on session create failed', e);
             }
           },
         },

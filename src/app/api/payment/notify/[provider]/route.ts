@@ -1,3 +1,7 @@
+import { eq } from 'drizzle-orm';
+
+import { db } from '@/core/db';
+import { order } from '@/config/db/schema';
 import {
   PaymentEventType,
   SubscriptionCycleType,
@@ -79,7 +83,21 @@ export async function POST(
               subscriptionId: session.subscriptionId,
             });
           if (!existingSubscription) {
-            throw new Error('subscription not found');
+            // unknown in D1 (pre-migration subscriber): pending until the
+            // customer signs in, then claimed from Stripe (stripe-claim.ts)
+            console.log('[stripe-claim] renewal pending for', session.subscriptionId);
+            return Response.json({ message: 'pending' });
+          }
+          const invId = session.paymentInfo?.invoiceId;
+          if (invId) {
+            const [dup] = await db()
+              .select({ id: order.id })
+              .from(order)
+              .where(eq(order.invoiceId, invId));
+            if (dup) {
+              console.log('renewal invoice already recorded', invId);
+              return Response.json({ message: 'duplicate' });
+            }
           }
 
           // handle subscription renewal payment
@@ -105,7 +123,8 @@ export async function POST(
           subscriptionId: session.subscriptionId,
         });
       if (!existingSubscription) {
-        throw new Error('subscription not found');
+        console.log('[stripe-claim] subscription event pending for', session.subscriptionId);
+        return Response.json({ message: 'pending' });
       }
 
       await handleSubscriptionUpdated({
@@ -124,7 +143,8 @@ export async function POST(
           subscriptionId: session.subscriptionId,
         });
       if (!existingSubscription) {
-        throw new Error('subscription not found');
+        console.log('[stripe-claim] subscription event pending for', session.subscriptionId);
+        return Response.json({ message: 'pending' });
       }
 
       await handleSubscriptionCanceled({
