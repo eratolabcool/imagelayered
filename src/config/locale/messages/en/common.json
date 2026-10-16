@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "AI Photoshop for Posters - AI Image Layer Editor & RGBA Decomposition Tool",
-    "description": "Upload a poster, split it into editable AI layers, edit selected objects by prompt, and export a redesigned poster. Built for product images, ads, and social visuals.",
-    "keywords": "AI Photoshop for posters, AI image editor, image layer decomposition, editable AI layers, RGBA layers, poster editor, product image editor, object replacement, text editing, background removal, image masking"
+    "title": "Image Layered — Split Images into Layers, Export PSD",
+    "description": "Turn one flat image into transparent layers, edit a selected object, and export a multi-layer PSD or PNG ZIP.",
+    "keywords": "image to layers, layered PSD, image to PSD, transparent PNG layers, AI image decomposition, object-level image editing"
   },
   "sign": {
     "sign_in_title": "Sign In",

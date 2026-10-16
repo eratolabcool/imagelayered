@@ -8,11 +8,6 @@ export function generateWebSiteSchemaData(locale: string, appUrl: string, appNam
     url: appUrl,
     description: 'AI-powered image layer decomposition and editing tool',
     inLanguage: locale,
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: `${appUrl}/search?q={search_term_string}`,
-      'query-input': 'required name=search_term_string',
-    },
   };
 }
 
@@ -26,10 +21,6 @@ export function generateOrganizationSchemaData(appUrl: string, appName: string) 
     url: appUrl,
     logo: `${appUrl}/logo.png`,
     description: 'AI-powered image editing platform',
-    sameAs: [
-      'https://github.com/QwenLM/Qwen-Image-Layered',
-      'https://modelscope.cn/models/Qwen/Qwen-Image-Layered',
-    ],
   };
 }
 
@@ -44,13 +35,8 @@ export function generateSoftwareApplicationSchemaData(appName: string) {
     operatingSystem: 'Web',
     offers: {
       '@type': 'Offer',
-      price: '0',
       priceCurrency: 'USD',
-    },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      ratingCount: '1250',
+      description: 'AI operations use credits; local upload and project setup are free.',
     },
   };
 }

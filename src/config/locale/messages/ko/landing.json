@@ -1,0 +1,181 @@
+{
+  "header": {
+    "id": "header",
+    "brand": {
+      "title": "Image Layered",
+      "logo": {
+        "src": "/logo.png",
+        "alt": "Image Layered AI 레이어 편집기",
+        "width": 100,
+        "height": 100
+      },
+      "url": "/"
+    },
+    "nav": {
+      "items": [
+        {
+          "title": "Studio",
+          "url": "/studio"
+        },
+        {
+          "title": "이미지 레이어 분리",
+          "url": "/image-to-layers"
+        },
+        {
+          "title": "이미지 PSD 변환",
+          "url": "/image-to-psd"
+        },
+        {
+          "title": "Live2D",
+          "url": "/solutions/character-into-layers"
+        },
+        {
+          "title": "사례",
+          "url": "/#examples"
+        },
+        {
+          "title": "요금제",
+          "url": "/pricing"
+        },
+        {
+          "title": "가이드",
+          "url": "/docs"
+        }
+      ]
+    },
+    "buttons": [
+      {
+        "title": "스튜디오 시작하기",
+        "url": "/studio",
+        "target": "_self"
+      }
+    ],
+    "user_nav": {
+      "show_name": true,
+      "show_credits": true,
+      "show_sign_out": true,
+      "items": [
+        {
+          "title": "결제 및 구독",
+          "url": "/settings/billing",
+          "icon": "CreditCard"
+        },
+        {
+          "title": "작업 히스토리",
+          "url": "/activity",
+          "icon": "Activity"
+        }
+      ]
+    },
+    "show_sign": true,
+    "show_theme": false,
+    "show_locale": true
+  },
+  "footer": {
+    "id": "footer",
+    "brand": {
+      "title": "Image Layered",
+      "description": "Image Layered는 단일 평면 이미지나 AI 생성 이미지를 편집 가능한 다중 레이어로 분리하고, 가려진 배경을 자동으로 채워주며, 포토샵 PSD 및 투명 PNG로 내보낼 수 있는 생성형 디자인 도구입니다.",
+      "logo": {
+        "src": "/logo.png",
+        "alt": "Image Layered AI 레이어 분리 도구",
+        "width": 1024,
+        "height": 1024
+      },
+      "url": "/"
+    },
+    "nav": {
+      "items": [
+        {
+          "title": "주요 기능",
+          "children": [
+            {
+              "title": "레이어 편집 스튜디오",
+              "url": "/studio",
+              "target": "_self"
+            },
+            {
+              "title": "AI 레이어 교체",
+              "url": "/studio?tool=replace",
+              "target": "_self"
+            },
+            {
+              "title": "AI 색상 변경 (Recolor)",
+              "url": "/studio?tool=recolor",
+              "target": "_self"
+            },
+            {
+              "title": "AI 개체 지우기",
+              "url": "/studio?tool=remove",
+              "target": "_self"
+            },
+            {
+              "title": "요금제 안내",
+              "url": "/pricing",
+              "target": "_self"
+            }
+          ]
+        },
+        {
+          "title": "추천 워크플로우",
+          "children": [
+            {
+              "title": "Live2D 캐릭터 파츠 분리",
+              "url": "/solutions/character-into-layers",
+              "target": "_self"
+            },
+            {
+              "title": "이미지를 PSD 레이어로 변환",
+              "url": "/image-to-psd",
+              "target": "_self"
+            },
+            {
+              "title": "애니메이션 & 패럴랙스 준비",
+              "url": "/solutions/animator-prep",
+              "target": "_self"
+            },
+            {
+              "title": "로고 및 아이콘 레이어 추출",
+              "url": "/solutions/logo-into-layers",
+              "target": "_self"
+            },
+            {
+              "title": "포토샵 없이 포스터 수정",
+              "url": "/seo/en/edit-poster-without-photoshop",
+              "target": "_self"
+            }
+          ]
+        },
+        {
+          "title": "리소스 & 가이드",
+          "children": [
+            {
+              "title": "블로그 & 튜토리얼",
+              "url": "/blog",
+              "target": "_self"
+            },
+            {
+              "title": "공식 문서",
+              "url": "/docs",
+              "target": "_self"
+            },
+            {
+              "title": "자주 묻는 질문 (FAQ)",
+              "url": "/pricing",
+              "target": "_self"
+            },
+            {
+              "title": "AI 어시스턴트",
+              "url": "/chat",
+              "target": "_self"
+            }
+          ]
+        }
+      ]
+    },
+    "social": {
+      "items": []
+    },
+    "copyright": "© 2026 Image Layered. All rights reserved."
+  }
+}

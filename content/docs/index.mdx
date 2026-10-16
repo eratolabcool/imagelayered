@@ -1,56 +1,41 @@
 ---
-title: Introduction
+title: How Image Layered works
+description: Turn a flat image into transparent layers, edit one object, and export PSD or PNG layers.
 ---
 
-## What is Qwen Image Layered?
+## What is Image Layered?
 
-Qwen Image Layered is a free AI image layer editor based on the Qwen vision model, supporting automatic image decomposition, RGBA layer separation, and AI editing.
+Image Layered is a browser Studio for recovering editable structure from a finished image. Upload a JPG, PNG, or WebP, generate semantic transparent layers, inspect the result, and continue the work in Photoshop, Photopea, Live2D, Spine, or After Effects.
 
-Model URL: https://modelscope.cn/models/Qwen/Qwen-Image-Layered
+The product is built around one workflow:
 
-## Overview
+**Upload → AI layer decomposition → select and lock objects → local edits → export PSD or transparent PNG ZIP.**
 
-**Qwen-Image-Layered** is a revolutionary AI image model released by Alibaba's Qwen team in December 2025. It breaks through the limitations of traditional "flat" AI image editing through advanced **image layer decomposition technology**.
+## Use it in five steps
 
-## Key Features
+1. **Upload an image** in [Studio](/studio). Local upload and arranging a project are free.
+2. **Generate layers** with the configured decomposition model. AI operations require a signed-in account and credits.
+3. **Inspect the layer stack.** Names such as Background, Main Subject, Product, Text / Graphics, Shadow, and Lighting / Effects help you find the part you need.
+4. **Lock and edit.** Lock layers that must stay unchanged, hide or move a layer, or run a focused edit on the selected object.
+5. **Export the deliverable.** Download a multi-layer raster PSD or a ZIP of transparent PNGs.
 
-### 1. Layer Decomposition
-- Automatically decomposes static images into multiple **RGBA layers** (Red, Green, Blue, Alpha channels)
-- Unlike traditional segmentation tools that only identify objects, it achieves true semantic decoupling layering
-- Each layer has independent editability, supporting precise "point and edit" functionality
+## What the PSD contains
 
-### 2. Zero-Drift Editing
-- Traditional AI image editing uses global resampling, like changing colors on wet paper where colors bleed
-- Qwen-Image-Layered achieves almost **"zero-drift"** precise editing
-- Completely solves the common detail loss problem in AI image editing
+The PSD export preserves raster layers, transparency, visibility, order, opacity, groups, masks, and supported blend modes. It does not reconstruct native fonts, vectors, smart objects, or complete edit history. Text from a flattened image remains an image layer, so check spelling and edges before delivery.
 
-### 3. Physical Understanding
-- Establishes a more accurate physical understanding of the real world through "layering" and "completion"
-- Moves AI from flat "image description" to real physical perception
+## What Image Layered is not
 
-## Technical Evolution
+It is not a single-object background remover, a vectorization tool, or a one-click Live2D model generator. Character slicing and parallax preparation are useful workflows built on top of the layer output; rigging, mesh creation, and animation still happen in your target application.
 
-The model has evolved through three stages:
-1. **Single Image Generation**: Basic image generation
-2. **Multi-Layer Generation**: Started exploring multi-layer generation
-3. **Arbitrary RGB Image Decomposition**: Finally achieved decomposing existing images into editable layers
+## Choosing the right starting point
 
-## Application Scenarios
+- [Image to Layers](/image-to-layers) for products, people, logos, and AI artwork.
+- [Poster to PSD](/poster-to-psd) for campaign graphics and text-heavy compositions.
+- [AI Image Editing](/ai-image-editing) when you need to change one object while protecting the rest.
+- [Image to PSD](/image-to-psd) when the deliverable is a Photoshop file.
 
-- Photoshop-like layered drawing and image editing
-- Fine local image editing
-- Structured understanding of image content
-- AI-assisted image content modification and re-creation
+## Credits and failures
 
-## How to Use
+One decomposition currently costs 5 credits. Selected-layer AI edits cost 3–4 credits depending on the operation. Failed provider tasks are refunded; exporting a completed project does not consume credits. If a task cannot run, Studio reports whether the provider is not configured, credits are exhausted, or the source image is difficult to decompose.
 
-1. Visit the [ModelScope Platform](https://modelscope.cn/models/Qwen/Qwen-Image-Layered)
-2. Upload your image
-3. Let AI automatically decompose it into layers
-4. Edit each layer independently
-5. Export the final result
-
-## Related Resources
-
-- [GitHub Repository](https://github.com/QwenLM/Qwen-Image-Layered)
-- [Model: Qwen-Image-Edit-2511](https://modelscope.cn/models/Qwen/Qwen-Image-Edit-2511) - Image editing model for complete workflow
+The decomposition engine can change over time. Users do not need to install a model or visit an external inference platform to use Image Layered.

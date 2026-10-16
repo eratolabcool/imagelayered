@@ -45,11 +45,6 @@ import { toast } from 'sonner';
 
 import { useSession } from '@/core/auth/client';
 import {
-  getRemainingUploads,
-  incrementUploadCount,
-  isUploadLimitReached,
-} from '@/shared/lib/guest-usage';
-import {
   DEFAULT_DECOMPOSITION_LAYER_COUNT,
   IMAGE_LAYERED_CAPABILITIES,
 } from '@/shared/lib/image-layered-capabilities';
@@ -607,7 +602,7 @@ const CrookedApp: React.FC<CrookedAppProps> = ({
   // Guest conversion modal state
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeModalType, setUpgradeModalType] = useState<
-    'save' | 'export' | 'limit' | 'login'
+    'save' | 'export' | 'login'
   >('login');
 
   // Advanced Settings State
@@ -1250,9 +1245,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({
   };
 
   const smartDecompose = async (count: number, targetLayerId?: string) => {
-    // Check guest limits before processing
-    if (!isLoggedIn && isUploadLimitReached()) {
-      setUpgradeModalType('limit');
+    if (!isLoggedIn) {
+      setUpgradeModalType('login');
       setUpgradeModalOpen(true);
       return;
     }
@@ -2073,11 +2067,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({
         count: newLayers.length,
         logged_in: isLoggedIn,
       });
-
-      // Increment usage count on success for guest users
-      if (!isLoggedIn) {
-        incrementUploadCount();
-      }
     } catch (err) {
       console.error('[smartDecompose] Error:', err);
       const errMsg = err instanceof Error ? err.message : 'Unknown error';
@@ -2117,9 +2106,8 @@ const CrookedApp: React.FC<CrookedAppProps> = ({
   };
 
   const handleEditAction = async (instruction: string) => {
-    // Check guest limits before processing
-    if (!isLoggedIn && isUploadLimitReached()) {
-      setUpgradeModalType('limit');
+    if (!isLoggedIn) {
+      setUpgradeModalType('login');
       setUpgradeModalOpen(true);
       return;
     }
@@ -2328,11 +2316,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({
           isZh ? '创建 AI 变体' : 'Create AI variation',
           variation.name
         );
-
-        // Increment usage count on success for guest users
-        if (!isLoggedIn) {
-          incrementUploadCount();
-        }
       } else {
         throw new Error('No image generated');
       }
@@ -4484,7 +4467,6 @@ const CrookedApp: React.FC<CrookedAppProps> = ({
             isOpen={upgradeModalOpen}
             onClose={() => setUpgradeModalOpen(false)}
             type={upgradeModalType}
-            remainingUploads={getRemainingUploads()}
           />
 
           {isShareModalOpen && (

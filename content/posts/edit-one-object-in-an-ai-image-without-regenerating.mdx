@@ -15,17 +15,17 @@ You got a good generation. Maybe a great one. Then someone — a client, a boss,
 
 So you re-prompt, and the model gives you a new image where the jacket is black, the face is different, the camera moved, and the fork is still there.
 
-Everyone who works with generated images hits this. The fix isn't a better prompt. It's not generating at all.
+A layer-based workflow gives you a more explicit editing target: isolate the element, then revise that layer.
 
 ## Why regeneration keeps betraying you
 
-An image generator redraws every pixel, every time. There's no mechanism inside it that says "keep these pixels, change those." Prompt all you want — the parts you liked were never guaranteed, only likely.
+Regenerating a complete image can change parts you intended to preserve. Masking and local editing can also help; separating the source into layers adds reusable assets you can inspect and adjust individually.
 
-The layer-based approach inverts this. Upload the finished image, [split it into layers](/blog/how-to-split-an-image-into-layers), and now the parts you like are literally different objects. Editing the jacket layer never sends the face through the model. It can't. It's not in the edit.
+The layer-based approach inverts this. Upload the finished image, [split it into layers](/blog/how-to-split-an-image-into-layers), and now the parts you like are literally different objects. Check that the jacket and face actually landed in separate layers before editing. If they share a layer, the face can still be affected.
 
 ## The workflow
 
-In the [editor](/qwenimagelayered), after decomposition, click the layer containing the thing you want changed. The inspector on the right shows you what's selected — position, size, opacity — so you can confirm you've got the right piece before touching anything.
+In the [editor](/studio), after decomposition, click the layer containing the thing you want changed. The inspector on the right shows you what's selected — position, size, opacity — so you can confirm you've got the right piece before touching anything.
 
 Then describe the change, plainly:
 
@@ -39,7 +39,7 @@ The edit runs against that layer only. Everything else in the stack — face, po
 
 ## Locks, for the parts that must not move
 
-There's a lock control on every layer. Locked layers get carried into the edit instruction as preserve rules — the model is told, explicitly, that these regions are off-limits.
+There's a lock control on every layer. Lock layers you want to protect from accidental workspace changes. Still review each generated variation; locks are not a guarantee that an AI edit will satisfy every instruction.
 
 Use locks for brand elements. The product in a product shot. A logo. A face you've gotten right. Lock what's approved, edit what isn't. It's a small feature that changes how confidently you can experiment, because the worst case is "the edit failed," not "the edit ruined the image."
 

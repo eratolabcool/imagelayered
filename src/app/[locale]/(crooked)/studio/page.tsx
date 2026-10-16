@@ -11,9 +11,9 @@ export const metadata: Metadata = {
     canonical: '/studio',
   },
   openGraph: {
-    title: 'Image Layered - AI Photoshop for Posters',
+    title: 'Image Layered Studio — Split Images and Export PSD',
     description:
-      'Turn flat posters into editable AI layers. Replace products, rewrite text, remove objects, and export polished designs.',
+      'Turn a flat image into transparent layers, edit one object, and export a multi-layer PSD or PNG ZIP.',
     type: 'website',
     url: '/studio',
     siteName: 'Image Layered',

@@ -1,9 +1,10 @@
+import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import React from 'react';
 
 // SEO Metadata for Quick Test Page
 export const metadata: Metadata = {
-  title: 'AI Photoshop for Posters - Free Demo | AI Image Decomposition',
+  title: 'Image Layered — Image to Layers Demo',
   description: 'Try the ultimate AI poster editor for free. Experience automatic image decomposition and professional-grade layer editing. No signup required.',
   authors: [{ name: 'Image Layered Team' }],
   robots: {
@@ -24,14 +25,14 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://your-domain.com/quicktest',
-    title: 'AI Photoshop for Posters - Free Quick Test Demo',
+    title: 'Image Layered - Free Quick Test Demo',
     description: 'Test the ultimate AI poster editor. Automatically split images into editable layers. Free online demo.',
     siteName: 'Image Layered AI',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Qwen Image Layered - Quick Test Demo',
-    description: 'Try Qwen Image Layered AI model for free. Test image decomposition and layer separation.',
+    title: 'Image Layered - Quick Test Demo',
+    description: 'Preview the Image Layered workflow. AI decomposition requires sign-in and credits.',
   },
 };
 
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'AI Photoshop for Posters Demo',
+  name: 'Image Layered Demo',
   description: 'Free demo to test the ultimate AI poster editor for automatic image decomposition and RGBA layer separation.',
   url: 'https://your-domain.com/quicktest',
   applicationCategory: 'DesignApplication',
@@ -59,6 +60,8 @@ const jsonLd = {
 };
 
 export default function QuickTestPage() {
+  redirect('/image-to-layers');
+
   return (
     <>
       <script
@@ -97,7 +100,7 @@ export default function QuickTestPage() {
           {/* Hero Section */}
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-4">
-              Test AI Photoshop for Posters
+              Test Image Layered
             </h2>
             <p className="text-gray-300 text-lg max-w-3xl mx-auto">
               Experience automatic image decomposition and RGBA layer separation powered by Qwen and Flux AI models.
@@ -167,7 +170,7 @@ export default function QuickTestPage() {
                 </div>
               </div>
               <p className="text-gray-300 mb-6">
-                Visit the official Hugging Face Space to try Qwen Image Layered directly.
+                Visit the official Hugging Face Space to try Image Layered directly.
                 Experience the raw model interface for image decomposition.
               </p>
               <div className="bg-black/30 rounded-xl p-4 mb-6">
@@ -176,7 +179,7 @@ export default function QuickTestPage() {
                 </p>
               </div>
               <a
-                href="https://huggingface.co/spaces/Qwen/Qwen-Image-Layered"
+                href="https://huggingface.co/spaces/Qwen/Image Layered"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full text-center px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-all border border-white/20"
@@ -189,7 +192,7 @@ export default function QuickTestPage() {
           {/* Features Section */}
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 mb-8">
             <h3 className="text-2xl font-bold text-white mb-6 text-center">
-              Why Choose AI Photoshop for Posters?
+              Why Choose Image Layered?
             </h3>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="text-center">
@@ -225,9 +228,9 @@ export default function QuickTestPage() {
 
           {/* Model Info Section */}
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-4">About Qwen Image Layered Model</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">About Image Layered Model</h3>
             <p className="text-gray-300 mb-4">
-              Qwen-Image-Layered is a state-of-the-art AI model from Alibaba's Qwen team that specializes in
+              Image Layered is a state-of-the-art AI model from Alibaba's Qwen team that specializes in
               automatic image decomposition and RGBA layer separation. It uses advanced computer vision and
               deep learning to identify visual components and separate them into distinct, editable layers.
             </p>
@@ -253,7 +256,7 @@ export default function QuickTestPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <a
-                href="https://huggingface.co/Qwen/Qwen-Image-Layered"
+                href="https://huggingface.co/Qwen/Image Layered"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm transition-colors"
@@ -272,7 +275,7 @@ export default function QuickTestPage() {
                 href="/studio"
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white text-sm transition-colors"
               >
-                Try Qwen Image Layered Editor
+                Try Image Layered Editor
               </a>
             </div>
           </div>

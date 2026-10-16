@@ -28,7 +28,7 @@ export const envConfigs: ConfigMap = {
   app_preview_image:
     process.env.NEXT_PUBLIC_APP_PREVIEW_IMAGE ?? '/preview.png',
   theme: process.env.NEXT_PUBLIC_THEME ?? 'default',
-  appearance: process.env.NEXT_PUBLIC_APPEARANCE ?? 'system',
+  appearance: process.env.NEXT_PUBLIC_APPEARANCE ?? 'dark',
   locale: process.env.NEXT_PUBLIC_DEFAULT_LOCALE ?? 'en',
   database_url: process.env.DATABASE_URL ?? '',
   database_auth_token: process.env.DATABASE_AUTH_TOKEN ?? '',
@@ -53,6 +53,10 @@ export const envConfigs: ConfigMap = {
   version: packageJson.version,
   locale_detect_enabled:
     process.env.NEXT_PUBLIC_LOCALE_DETECT_ENABLED ?? 'false',
+  // WeChat Mini Program (server-only secrets; never exposed to clients)
+  wechat_mini_app_id: process.env.WECHAT_MINI_APP_ID ?? '',
+  wechat_mini_app_secret: process.env.WECHAT_MINI_APP_SECRET ?? '',
+  mini_program_welcome_credits: process.env.MINI_PROGRAM_WELCOME_CREDITS ?? '15',
 };
 
 /** URL-backed databases need DATABASE_URL; D1 is supplied as a Worker binding. */

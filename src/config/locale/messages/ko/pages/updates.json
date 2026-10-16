@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "title": "업데이트 소식",
+    "description": "신규 기능 추가 및 성능 개선 사항 등 제품의 최신 업데이트 내역을 확인하세요."
+  },
+  "page": {
+    "sections": {
+      "updates": {
+        "id": "updates",
+        "title": "업데이트 내역",
+        "description": "신규 기능 추가 및 성능 개선 사항 등 제품의 최신 업데이트 내역을 확인하세요."
+      }
+    }
+  }
+}

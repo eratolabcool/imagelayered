@@ -819,7 +819,7 @@ export async function getSettings() {
       placeholder: 'seedream/5-pro-layer-decomposition',
       group: 'kie',
       tab: 'ai',
-      tip: 'Model used to split posters into editable layers',
+      tip: 'Model used to split images into editable layers',
     },
     {
       name: 'poster_edit_provider',

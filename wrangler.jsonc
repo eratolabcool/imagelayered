@@ -24,7 +24,8 @@
 	},
 	"vars": {
 		"NEXT_PUBLIC_APP_URL": "https://image-layered.app",
-		"NEXT_PUBLIC_APP_NAME": "imagelayered",
+		"WECHAT_MINI_APP_ID": "wx0465a2d15b9c968b",
+		"NEXT_PUBLIC_APP_NAME": "Image Layered",
 		"NEXT_PUBLIC_THEME": "default",
 		"NEXT_PUBLIC_APPEARANCE": "dark",
 		"DATABASE_PROVIDER": "turso",

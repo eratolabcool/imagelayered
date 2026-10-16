@@ -1,0 +1,182 @@
+{
+  "page": {
+    "slug": "qwenimagelayered",
+    "title": "Image Layered - AI 포스터 & 그래픽 레이어 편집기",
+    "description": "포스터나 평면 이미지를 업로드하면 AI가 자동으로 편집 가능한 다중 레이어로 분리하고, 개별 요소를 수정하여 새로운 디자인으로 내보낼 수 있습니다.",
+    "keywords": "AI 포스터 편집기, 이미지 레이어 분리, 편집 가능한 AI 레이어, 레이어 분해, 상품 상세페이지 편집, 이미지 마스킹, 포토샵 레이어"
+  },
+  "tool": {
+    "brand": {
+      "title": "Image Layered",
+      "tagline": "AI 포스터 & 그래픽 레이어 편집기",
+      "backHome": "홈으로 돌아가기"
+    },
+    "workflow": {
+      "upload": "이미지 업로드",
+      "decompose": "AI 자동 레이어 분리",
+      "edit": "프롬프트 편집",
+      "editingEngine": "자동 레이어 분리 및 선택적 정밀 편집",
+      "maskReady": "마스크 준비 완료",
+      "noMask": "마스크 없음"
+    },
+    "buttons": {
+      "changeImage": "이미지 변경",
+      "exportProject": "프로젝트 내보내기",
+      "guestQuota": "{count}/3회 무료",
+      "resetView": "뷰 초기화",
+      "fitToScreen": "화면 맞춤",
+      "showLayers": "레이어 표시",
+      "hideLayers": "레이어 숨기기",
+      "processing": "처리 중...",
+      "execute": "실행하기",
+      "processingOverlayTitle": "AI 레이어 분리 엔진 실행 중",
+      "processingOverlaySubtitle": "이미지를 다중 레이어로 분해하고 배경을 복원하는 중입니다..."
+    },
+    "empty": {
+      "title": "편집할 이미지를 업로드하세요",
+      "subtitle": "레이어로 자동 분리하고, 원하는 요소를 선택한 뒤 프롬프트로 자유롭게 편집하세요",
+      "cta": "이미지 업로드"
+    },
+    "zoom": {
+      "reset": "뷰 초기화"
+    },
+    "workspace": {
+      "preview": "작업 공간 미리보기",
+      "uploadHint": "포스터나 그래픽 이미지를 업로드하여 편집 가능한 레이어 스택을 만드세요."
+    },
+    "sidebar": {
+      "expand": "사이드바 펼치기",
+      "collapse": "사이드바 접기",
+      "expandPrompt": "프롬프트 입력을 위해 펼치기",
+      "selectTool": "선택 도구",
+      "recolorTool": "색상/텍스트 변경 도구",
+      "replaceTool": "오브젝트 교체 도구",
+      "removeTool": "오브젝트 지우기 도구",
+      "show": "표시",
+      "hide": "숨기기"
+    },
+    "toolbar": {
+      "selection": "요소 선택",
+      "panView": "화면 이동(손 도구)",
+      "recolor": "색상 변경 / 텍스트 수정",
+      "aiReplace": "오브젝트 교체",
+      "removeObject": "오브젝트 지우기",
+      "layerCountPlaceholder": "레이어 수",
+      "numberOfLayers": "자동 레이어",
+      "manualDecompose": "수동 분리",
+      "autoDecompose": "AI 자동 분리",
+      "lightMode": "라이트 모드",
+      "darkMode": "다크 모드",
+      "switchToLight": "라이트 모드로 전환",
+      "switchToDark": "다크 모드로 전환",
+      "advancedSettings": "고급 설정",
+      "decomposeCallToAction": "레이어 분리 ({count}개 레이어)",
+      "processing": "처리 중..."
+    },
+    "advanced": {
+      "title": "고급 설정",
+      "aiModel": "AI 모델",
+      "standard": "표준 모델",
+      "lora": "LoRA 모델",
+      "standardDesc": "범용 레이어 분리에 최적화된 표준 모델",
+      "loraDesc": "특정 화풍 및 커스텀 스타일에 최적화된 LoRA 모델",
+      "prompt": "프롬프트 (선택 사항)",
+      "promptPlaceholder": "분리 추출할 특정 요소 입력...",
+      "negativePrompt": "네거티브 프롬프트 (선택 사항)",
+      "negativePromptPlaceholder": "분리에서 제외할 요소 입력...",
+      "randomizeSeed": "시드 무작위 생성",
+      "guidanceScale": "가이던스 스케일 (CFG)",
+      "inferenceSteps": "추론 스텝 수",
+      "cfgNormalization": "CFG 정규화",
+      "languageToggle": "언어: {lang}",
+      "switch": "전환",
+      "apply": "적용",
+      "sidebarSettings": "설정",
+      "supportedFormats": "PNG, JPG, WEBP 지원"
+    },
+    "layerPanel": {
+      "title": "레이어",
+      "nodeCount": "{count}개 레이어 노드",
+      "layersLabel": "레이어 목록",
+      "split": "선택 레이어 분할",
+      "deep": "정밀 심층 분해",
+      "visibility": "표시/숨기기 토글",
+      "remove": "레이어 삭제",
+      "lock": "레이어 잠금",
+      "unlock": "레이어 잠금 해제",
+      "duplicate": "레이어 복제",
+      "opacity": "불투명도",
+      "moveUp": "앞으로 가져오기",
+      "moveDown": "뒤로 보내기",
+      "editTools": "편집 도구",
+      "prompt": "프롬프트",
+      "generate": "생성"
+    },
+    "exportModal": {
+      "title": "이미지 내보내기",
+      "originalSize": "원본 크기 유지 ({width}x{height})",
+      "originalSizeSelected": "✓ 원본 크기 ({width}x{height})",
+      "width": "가로 (PX)",
+      "height": "세로 (PX)",
+      "aiUpscale": "AI 초해상도 업스케일 (4K)",
+      "aiUpscaleSub": "고해상도 인쇄 및 포스터 제작에 적합한 선명한 화질로 개선",
+      "resolutionPro": "PRO",
+      "start": "내보내기 시작",
+      "processing": "고해상도 내보내기 처리 중...",
+      "disclaimer": "단일 합성 PNG 내보내기는 로컬 브라우저에서 처리되며 크레딧이 차감되지 않습니다.",
+      "learnBilling": "요금제 안내 보기"
+    },
+    "upgrade": {
+      "viewPackages": "크레딧 플랜 둘러보기",
+      "notNow": "나중에 하기",
+      "badges": {
+        "secure": "안전한 결제",
+        "payAsYouGo": "사용한 만큼 충전",
+        "cancelAnytime": "언제든 구독 해지 가능"
+      },
+      "save": {
+        "title": "작업 내용 저장하기",
+        "message": "로그인하면 진행 중인 작업을 안전하게 저장하고 언제든 다시 이어서 작업할 수 있습니다!",
+        "cta": "지금 로그인하기",
+        "subtext": "무료 체험 · 신용카드 등록 불필요"
+      },
+      "export": {
+        "title": "워터마크 없는 초고해상도 내보내기",
+        "message": "로그인 후 크레딧을 사용하여 워터마크 없는 고해상도 다중 레이어 파일 및 PSD를 내보내세요.",
+        "cta": "크레딧 충전하기",
+        "subtext": "레이어 분해 1회당 5 크레딧"
+      },
+      "limit": {
+        "title": "체험 횟수 한도 도달",
+        "message": "무료 체험 횟수({used}/3회)를 모두 사용하셨습니다. 가입 후 무료 크레딧을 추가로 받아보세요!",
+        "cta": "지금 회원가입하기",
+        "subtext": "신규 가입 시 10 크레딧 즉시 지급"
+      },
+      "login": {
+        "title": "계속하려면 로그인하세요",
+        "message": "로그인하면 저장, 내보내기, 무제한 AI 레이어 분리 등 모든 기능을 이용하실 수 있습니다.",
+        "cta": "지금 로그인하기",
+        "subtext": "Google 및 GitHub 간편 로그인 지원"
+      },
+      "default": {
+        "title": "프로 플랜으로 업그레이드",
+        "message": "더 다양한 고급 기능과 무제한 AI 레이어 분리 도구를 경험해보세요.",
+        "cta": "자세히 알아보기",
+        "subtext": ""
+      }
+    },
+    "editBar": {
+      "recolorPlaceholder": "텍스트 수정 또는 색상 변경 (예: 자동차 색상을 메탈릭 레드로 변경, 'SALE'을 'OFF'로 수정)...",
+      "replacePlaceholder": "어떤 오브젝트로 교체하시겠습니까? (예: 고급스러운 향수병으로 변경)...",
+      "removePlaceholder": "포스터에서 이 오브젝트를 자연스럽게 지우고 가려진 배경을 복원합니다...",
+      "defaultPlaceholder": "선택한 요소를 어떻게 편집할지 설명해주세요..."
+    },
+    "notifications": {
+      "loadImageFail": "이미지를 불러오지 못했습니다. 다른 이미지로 다시 시도해주세요.",
+      "decomposeFail": "레이어 분리에 실패했습니다: {reason}",
+      "editFail": "편집에 실패했습니다. 잠시 후 다시 시도해주세요.",
+      "exportFail": "내보내기에 실패했습니다. 잠시 후 다시 시도해주세요.",
+      "noVisibleLayers": "내보낼 수 있는 표시된 레이어가 없습니다."
+    }
+  }
+}

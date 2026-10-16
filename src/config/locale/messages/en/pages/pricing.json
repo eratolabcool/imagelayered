@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "Pricing - Image Layered AI Poster Editor",
-    "description": "Plans for real creative output: layered projects, controlled object edits, production exports, and repeatable campaign work.",
-    "keywords": "AI poster editor pricing, editable AI layers pricing, image layer decomposition cost, GPT image editing credits, Pro subscription"
+    "title": "Pricing — Image Layered Layer Separation and PSD Export",
+    "description": "Understand credits, layer decomposition, object edits, PSD export, and batch production before you choose a plan.",
+    "keywords": "image to layers pricing, PSD export pricing, AI image decomposition credits, transparent PNG export"
   },
   "page": {
     "title": "Simple, Transparent Pricing",
@@ -10,7 +10,7 @@
       "pricing": {
         "id": "pricing",
         "title": "Choose Your Plan",
-        "description": "Choose the amount of layered production you need. Usage is shown as projects and results; credits remain behind the scenes for processing.",
+        "description": "See every plan at a glance. One decomposition costs 5 credits; selected-layer edits cost 3–4 credits. On Creator Monthly, that is about $0.17 per decomposition and $0.10–$0.14 per edit. Upload, layer arrangement, and PSD or PNG ZIP exports from a completed project are free. Failed provider tasks are refunded.",
         "groups": [
           {
             "name": "one-time",
@@ -34,11 +34,11 @@
             "description": "A one-time pack for occasional product, poster, and campaign revisions.",
             "features_title": "Production capacity",
             "features": [
-              "About 20 layer generations",
+              "About 20 decompositions (100 credits)",
               "Professional layer canvas and inspector",
               "AI Replace, Remove, Recolor, and Restyle actions",
               "Project save and version history",
-              "4K high-resolution export",
+              "High-resolution PSD and PNG export",
               "No watermarks",
               "Commercial use license",
               "Basic support"
@@ -52,7 +52,7 @@
             "is_featured": false,
             "tip": "Best for occasional projects. Included usage never expires.",
             "button": {
-              "title": "Start a Project",
+              "title": "Get 100 Credits Pack",
               "url": "/studio",
               "icon": "RiFlashlightFill"
             },
@@ -68,12 +68,12 @@
             "label": "Popular",
             "features_title": "Monthly production capacity",
             "features": [
-              "Up to 100 layer generations",
+              "About 100 decompositions (500 credits)",
               "Layer editing and object-level AI actions",
               "Project save, history, and recoverable variations",
               "Brand-critical layer locks",
               "Priority processing queue",
-              "4K high-resolution export",
+              "High-resolution PSD and PNG export",
               "No watermarks",
               "Commercial use license",
               "Priority support"
@@ -87,7 +87,7 @@
             "is_featured": true,
             "tip": "Built for regular creative work. Cancel anytime.",
             "button": {
-              "title": "Choose Creator",
+              "title": "Subscribe Monthly",
               "url": "/studio",
               "icon": "RiFlashlightFill"
             },
@@ -104,13 +104,13 @@
             "label": "Best Value",
             "features_title": "Annual production capacity",
             "features": [
-              "Up to 1200 layer generations per year",
+              "About 1,200 decompositions per year (6,000 credits)",
               "Layer editing and object-level AI actions",
               "Project save, history, and recoverable variations",
               "Brand-critical layer locks",
               "Maximum included usage rollover",
               "Priority processing queue",
-              "4K high-resolution export",
+              "High-resolution PSD and PNG export",
               "No watermarks",
               "Commercial use license",
               "Dedicated priority support",
@@ -125,7 +125,7 @@
             "is_featured": true,
             "tip": "Billed annually. Best value for production teams.",
             "button": {
-              "title": "Choose Studio",
+              "title": "Subscribe Yearly (Save 40%)",
               "url": "/studio",
               "icon": "RiFlashlightFill"
             },

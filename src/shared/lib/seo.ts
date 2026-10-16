@@ -74,20 +74,22 @@ export function getMetadata(
     }
 
     // Build alternates with hreflang
-    const alternates: Record<string, string> = {
-      canonical: canonicalUrl,
-    };
+    const languages: Record<string, string> = {};
 
     // Add language alternates for SEO
     for (const loc of locales) {
       const localeUrl = await getCanonicalUrl(options.canonicalUrl || '', loc);
-      alternates[loc === defaultLocale ? 'x-default' : loc] = localeUrl;
+      languages[loc] = localeUrl;
     }
+    languages['x-default'] = await getCanonicalUrl(
+      options.canonicalUrl || '',
+      defaultLocale
+    );
 
     return {
       title,
       description,
-      alternates,
+      alternates: { canonical: canonicalUrl, languages },
 
       // Explicit meta tags for better SEO
       metadataBase: new URL(envConfigs.app_url),
@@ -114,16 +116,20 @@ export function getMetadata(
         title,
         description,
         images: [imageUrl.toString()],
-        site: envConfigs.app_url,
+        site: '@imagelayered',
         creator: '@' + appName.toLowerCase().replace(/\s+/g, ''),
       },
 
       robots: {
         index: options.noIndex ? false : true,
-        follow: options.noFollow !== undefined ? options.noFollow : !options.noIndex,
+        follow:
+          options.noFollow !== undefined ? options.noFollow : !options.noIndex,
         googleBot: {
           index: options.noIndex ? false : true,
-          follow: options.noFollow !== undefined ? options.noFollow : !options.noIndex,
+          follow:
+            options.noFollow !== undefined
+              ? options.noFollow
+              : !options.noIndex,
           'max-video-preview': -1,
           'max-image-preview': 'large',
           'max-snippet': -1,

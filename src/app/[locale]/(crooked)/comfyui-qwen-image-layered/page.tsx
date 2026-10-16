@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -9,10 +10,10 @@ export const metadata: Metadata = {
   publisher: 'Image Layered Workflow',
   category: 'Tutorial',
   robots: {
-    index: true,
+    index: false,
     follow: true,
     googleBot: {
-      index: true,
+      index: false,
       follow: true,
       'max-video-preview': -1,
       'max-image-preview': 'large',
@@ -95,6 +96,8 @@ const faqJsonLd = {
 };
 
 export default function ComfyUITutorialPage() {
+  redirect('/image-to-layers');
+
   return (
     <>
       <script

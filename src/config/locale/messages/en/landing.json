@@ -5,7 +5,7 @@
       "title": "Image Layered",
       "logo": {
         "src": "/logo.png",
-        "alt": "Image Layered AI Poster Editor",
+        "alt": "Image Layered AI Layered Image Tool",
         "width": 100,
         "height": 100
       },
@@ -14,67 +14,42 @@
     "nav": {
       "items": [
         {
-          "title": "Features",
-          "url": "/#features",
-          "icon": "Sparkles"
+          "title": "Studio",
+          "url": "/studio"
+        },
+        {
+          "title": "Image to Layers",
+          "url": "/image-to-layers"
+        },
+        {
+          "title": "Image to PSD",
+          "url": "/image-to-psd"
+        },
+        {
+          "title": "Live2D",
+          "url": "/solutions/character-into-layers"
+        },
+        {
+          "title": "Examples",
+          "url": "/#examples"
         },
         {
           "title": "Pricing",
-          "url": "/pricing",
-          "icon": "DollarSign"
+          "url": "/pricing"
         },
         {
-          "title": "Studio",
-          "icon": "RiRobot2Line",
-          "children": [
-            {
-              "title": "Layer Editor",
-              "description": "Split any image into editable layers",
-              "url": "/studio",
-              "icon": "RiImage2Line"
-            }
-          ]
-        },
-        {
-          "title": "Experiments",
-          "icon": "FlaskConical",
-          "children": [
-            {
-              "title": "AI Lookbook",
-              "description": "Experimental personal fashion generator",
-              "url": "/ai-lookbook",
-              "icon": "RiShirtLine"
-            }
-          ]
-        },
-        {
-          "title": "Content",
-          "icon": "FileText",
-          "children": [
-            {
-              "title": "Blog",
-              "description": "Read Blog Posts",
-              "url": "/blog",
-              "icon": "Newspaper"
-            },
-            {
-              "title": "Updates",
-              "description": "Read Update Logs",
-              "url": "/updates",
-              "icon": "Clock"
-            },
-            {
-              "title": "Docs",
-              "description": "Read Documentation",
-              "url": "/docs",
-              "target": "_blank",
-              "icon": "BookOpenText"
-            }
-          ]
+          "title": "Guides",
+          "url": "/docs"
         }
       ]
     },
-    "buttons": [],
+    "buttons": [
+      {
+        "title": "Open Studio",
+        "url": "/studio",
+        "target": "_self"
+      }
+    ],
     "user_nav": {
       "show_name": true,
       "show_credits": true,
@@ -93,20 +68,17 @@
       ]
     },
     "show_sign": true,
-    "show_theme": true,
-    "show_locale": true,
-    "topbanner": {
-      "text": "Turn flat posters into <span class='text-blue-300 font-bold'>editable AI layers</span>. Decompose, replace products, rewrite text, and export polished visuals."
-    }
+    "show_theme": false,
+    "show_locale": true
   },
   "footer": {
     "id": "footer",
     "brand": {
       "title": "Image Layered",
-      "description": "Image Layered turns flat posters and product images into editable AI layers, then lets you edit selected objects by prompt.",
+      "description": "Image Layered turns flat images and product photos into editable AI layers, then lets you edit selected objects by prompt.",
       "logo": {
         "src": "/logo.png",
-        "alt": "Image Layered AI Poster Editor",
+        "alt": "Image Layered AI Layered Image Tool",
         "width": 1024,
         "height": 1024
       },
@@ -148,23 +120,28 @@
           "title": "Solutions",
           "children": [
             {
-              "title": "Change product photo background",
-              "url": "/seo/en/change-background-of-ai-product-image",
+              "title": "Live2D Character Slicing",
+              "url": "/solutions/character-into-layers",
               "target": "_self"
             },
             {
-              "title": "Edit AI product photos",
-              "url": "/seo/en/edit-ai-product-photos",
+              "title": "Convert Image to PSD",
+              "url": "/image-to-psd",
+              "target": "_self"
+            },
+            {
+              "title": "Animator Prep (Parallax)",
+              "url": "/solutions/animator-prep",
+              "target": "_self"
+            },
+            {
+              "title": "Convert Logo into Layers",
+              "url": "/solutions/logo-into-layers",
               "target": "_self"
             },
             {
               "title": "Edit poster without Photoshop",
               "url": "/seo/en/edit-poster-without-photoshop",
-              "target": "_self"
-            },
-            {
-              "title": "Edit Midjourney images",
-              "url": "/seo/en/modify-ai-character-without-changing-face",
               "target": "_self"
             }
           ]
@@ -199,12 +176,6 @@
     "social": {
       "items": [
         {
-          "title": "Github",
-          "icon": "Github",
-          "url": "https://github.com/QwenLM/Qwen-Image-Layered",
-          "target": "_blank"
-        },
-        {
           "title": "Email",
           "icon": "Mail",
           "url": "mailto:support@image-layered.app",
@@ -224,7 +195,7 @@
         }
       ]
     },
-    "show_theme": true,
+    "show_theme": false,
     "show_locale": true
   }
 }

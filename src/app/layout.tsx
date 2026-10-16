@@ -151,12 +151,9 @@ export default async function RootLayout({
 
         {/* Performance hints */}
         <meta name="format-detection" content="telephone=no" />
-        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#0b090d" />
 
         {/* DNS prefetch for external domains */}
-        <link rel="dns-prefetch" href="https://modelscope.cn" />
-        <link rel="dns-prefetch" href="https://github.com" />
 
         {/* inject locales */}
         {locales ? (

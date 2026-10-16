@@ -1,5 +1,3 @@
-import { nanoid } from 'nanoid';
-
 import { getUuid } from '@/shared/lib/hash';
 
 import { saveFiles } from '.';
@@ -41,6 +39,85 @@ export class KieProvider implements AIProvider {
   // init provider
   constructor(configs: KieConfigs) {
     this.configs = configs;
+  }
+
+  private async parseResponse(response: Response, action: string) {
+    const raw = await response.text();
+    let payload: any = null;
+    try {
+      payload = raw ? JSON.parse(raw) : null;
+    } catch {
+      // Keep the raw response below when the provider returns non-JSON text.
+    }
+
+    if (!response.ok) {
+      const detail = payload?.msg || payload?.message || payload?.error || raw;
+      throw new Error(
+        `${action} failed (${response.status})${detail ? `: ${String(detail).slice(0, 500)}` : ''}`
+      );
+    }
+    return payload;
+  }
+
+  /**
+   * Kie's layer endpoint fetches image_url from its own network. Uploading the
+   * source through Kie's temporary file API avoids failures with private or
+   * signed storage URLs and gives the model a stable public URL.
+   */
+  private async prepareLayerInputUrl(sourceUrl: string) {
+    if (sourceUrl.startsWith('data:image/')) return sourceUrl;
+
+    let sourceResponse: Response;
+    try {
+      sourceResponse = await fetch(sourceUrl, {
+        redirect: 'follow',
+        signal: AbortSignal.timeout(30_000),
+        headers: { Accept: 'image/avif,image/webp,image/png,image/jpeg,image/gif' },
+      });
+    } catch (error) {
+      throw new Error(
+        `Unable to fetch the source image for Kie: ${error instanceof Error ? error.message : 'network error'}`
+      );
+    }
+    if (!sourceResponse.ok) {
+      throw new Error(`Unable to fetch the source image (${sourceResponse.status})`);
+    }
+
+    const sourceBytes = new Uint8Array(await sourceResponse.arrayBuffer());
+    if (sourceBytes.byteLength === 0) {
+      throw new Error('The source image is empty. Please upload it again.');
+    }
+    if (sourceBytes.byteLength > 30 * 1024 * 1024) {
+      throw new Error('The source image exceeds Kie\'s 30 MB limit.');
+    }
+
+    const contentType =
+      sourceResponse.headers.get('content-type')?.split(';')[0].trim() ||
+      'image/png';
+    const extension = contentType === 'image/jpeg' ? 'jpg' : 'png';
+    const form = new FormData();
+    form.append(
+      'file',
+      new Blob([sourceBytes], { type: contentType }),
+      `image-layered-source.${extension}`
+    );
+    form.append('uploadPath', 'images/image-layered');
+
+    const uploadResponse = await fetch(
+      'https://kieai.redpandaai.co/api/file-stream-upload',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${this.configs.apiKey}` },
+        body: form,
+        signal: AbortSignal.timeout(30_000),
+      }
+    );
+    const upload = await this.parseResponse(uploadResponse, 'Kie image upload');
+    const uploadedUrl = upload?.data?.downloadUrl || upload?.data?.fileUrl;
+    if (typeof uploadedUrl !== 'string' || !uploadedUrl.startsWith('http')) {
+      throw new Error('Kie image upload returned no usable image URL.');
+    }
+    return uploadedUrl;
   }
 
   async generateMusic({
@@ -103,11 +180,7 @@ export class KieProvider implements AIProvider {
       headers,
       body: JSON.stringify(payload),
     });
-    if (!resp.ok) {
-      throw new Error(`request failed with status: ${resp.status}`);
-    }
-
-    const { code, msg, data } = await resp.json();
+    const { code, msg, data } = await this.parseResponse(resp, 'Kie layer task status');
 
     if (code !== 200) {
       throw new Error(`generate music failed: ${msg}`);
@@ -157,14 +230,17 @@ export class KieProvider implements AIProvider {
       }
 
       const input: Record<string, unknown> = {
-        image_url: sourceUrls[0],
+        image_url: await this.prepareLayerInputUrl(sourceUrls[0]),
         prompt: params.prompt,
         output_format: 'png',
       };
 
-      // map fal-style size hints onto kie size levels
-      if (options.image_size === 'auto_2K' || options.size === '2K') {
+      // Kie documents `auto` as the default for this model. The Studio's
+      // legacy auto_2K hint should not force a provider-specific resolution.
+      if (options.size === '2K') {
         input.size = '2K';
+      } else if (options.image_size === 'auto_2K') {
+        input.size = 'auto';
       } else if (typeof options.size === 'string') {
         input.size = options.size;
       }
@@ -174,12 +250,9 @@ export class KieProvider implements AIProvider {
         headers,
         body: JSON.stringify({ model: params.model, callBackUrl: params.callbackUrl, input }),
       });
-      if (!resp.ok) {
-        throw new Error(`request failed with status: ${resp.status}`);
-      }
-      const { code, msg, data } = await resp.json();
+      const { code, msg, data } = await this.parseResponse(resp, 'Kie layer task');
       if (code !== 200) {
-        throw new Error(`generate image failed: ${msg}`);
+        throw new Error(`Kie layer task rejected: ${msg || 'unknown provider error'}`);
       }
       if (!data || !data.taskId) {
         throw new Error(`generate image failed: no taskId`);
@@ -222,11 +295,7 @@ export class KieProvider implements AIProvider {
       headers,
       body: JSON.stringify(payload),
     });
-    if (!resp.ok) {
-      throw new Error(`request failed with status: ${resp.status}`);
-    }
-
-    const { code, msg, data } = await resp.json();
+    const { code, msg, data } = await this.parseResponse(resp, 'Kie image task');
 
     if (code !== 200) {
       throw new Error(`generate image failed: ${msg}`);
@@ -300,11 +369,7 @@ export class KieProvider implements AIProvider {
       headers,
       body: JSON.stringify(payload),
     });
-    if (!resp.ok) {
-      throw new Error(`request failed with status: ${resp.status}`);
-    }
-
-    const { code, msg, data } = await resp.json();
+    const { code, msg, data } = await this.parseResponse(resp, 'Kie image task status');
 
     if (code !== 200) {
       throw new Error(`generate video failed: ${msg}`);
@@ -358,11 +423,7 @@ export class KieProvider implements AIProvider {
       method: 'GET',
       headers,
     });
-    if (!resp.ok) {
-      throw new Error(`request failed with status: ${resp.status}`);
-    }
-
-    const { code, msg, data } = await resp.json();
+    const { code, msg, data } = await this.parseResponse(resp, 'Kie layer task status');
 
     if (code !== 200) {
       throw new Error(msg);
@@ -372,17 +433,35 @@ export class KieProvider implements AIProvider {
       throw new Error(`query failed`);
     }
 
-    let images: AIImage[] | undefined = undefined;
-
+    let images: AIImage[] | undefined;
     if (data.resultJson) {
-      const resultJson = JSON.parse(data.resultJson);
-      const resultUrls = resultJson.resultUrls;
-      if (Array.isArray(resultUrls)) {
-        images = resultUrls.map((image: any) => ({
-          id: '',
-          createTime: new Date(data.createTime),
-          imageUrl: image,
-        }));
+      let resultJson: any = data.resultJson;
+      if (typeof resultJson === 'string') {
+        try {
+          resultJson = JSON.parse(resultJson);
+        } catch {
+          resultJson = null;
+        }
+      }
+      const resultUrls = [
+        ...(Array.isArray(resultJson?.resultUrls) ? resultJson.resultUrls : []),
+        ...(Array.isArray(resultJson?.result_urls) ? resultJson.result_urls : []),
+        ...(Array.isArray(resultJson?.images) ? resultJson.images : []),
+        ...(Array.isArray(resultJson?.output) ? resultJson.output : []),
+      ];
+      if (resultUrls.length > 0) {
+        images = resultUrls
+          .map((image: any) =>
+            typeof image === 'string'
+              ? image
+              : image?.imageUrl || image?.url || image?.downloadUrl
+          )
+          .filter((image): image is string => typeof image === 'string' && image.length > 0)
+          .map((image) => ({
+            id: '',
+            createTime: new Date(data.createTime),
+            imageUrl: image,
+          }));
       }
     }
 
@@ -452,7 +531,7 @@ export class KieProvider implements AIProvider {
       throw new Error(`request failed with status: ${resp.status}`);
     }
 
-    const { code, msg, data } = await resp.json();
+    const { code, msg, data } = await this.parseResponse(resp, 'Kie video task status');
 
     if (code !== 200) {
       throw new Error(msg);
@@ -656,16 +735,25 @@ export class KieProvider implements AIProvider {
 
   // map image task status
   private mapImageStatus(status: string): AITaskStatus {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'waiting':
+      case 'pending':
         return AITaskStatus.PENDING;
       case 'queuing':
+      case 'queued':
         return AITaskStatus.PENDING;
       case 'generating':
+      case 'processing':
+      case 'running':
         return AITaskStatus.PROCESSING;
       case 'success':
+      case 'succeeded':
+      case 'completed':
+      case 'complete':
         return AITaskStatus.SUCCESS;
       case 'fail':
+      case 'failed':
+      case 'error':
         return AITaskStatus.FAILED;
       default:
         throw new Error(`unknown status: ${status}`);

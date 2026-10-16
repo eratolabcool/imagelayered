@@ -64,6 +64,8 @@ src/config/db/migrations*
 !scripts/turso-project-schema.sql
 !scripts/d1/
 !scripts/d1/**/*.sql
+!scripts/migrations/
+!scripts/migrations/**/*.sql
 .source
 
 .chats

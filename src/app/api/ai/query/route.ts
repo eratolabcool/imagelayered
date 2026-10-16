@@ -1,14 +1,10 @@
-import {
-  IMAGE_LAYERED_CAPABILITIES,
-  LEGACY_IMAGE_LAYERED_MODELS,
-} from '@/shared/lib/image-layered-capabilities';
 import { respData, respErr } from '@/shared/lib/resp';
+import { AITaskStatus } from '@/extensions/ai';
 import {
   findAITaskById,
   UpdateAITask,
   updateAITaskById,
 } from '@/shared/models/ai_task';
-import { refundStudioConsumedCredits } from '@/shared/models/studio-credit';
 import { getUserInfo } from '@/shared/models/user';
 import { getAIService } from '@/shared/services/ai';
 
@@ -22,30 +18,6 @@ import { getAIService } from '@/shared/services/ai';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const GUEST_IMAGE_MODELS = new Set<string>([
-  IMAGE_LAYERED_CAPABILITIES.decompose.model,
-  IMAGE_LAYERED_CAPABILITIES.editLayer.model,
-  LEGACY_IMAGE_LAYERED_MODELS.decompose,
-  LEGACY_IMAGE_LAYERED_MODELS.editLayer,
-]);
-
-const STUDIO_SCENES = new Set([
-  'image-decomposition',
-  'image-recolor',
-  'image-replace',
-  'image-remove',
-]);
-
-function isFailureStatus(status?: string | null) {
-  const value = status?.toLowerCase();
-  return (
-    value === 'failed' ||
-    value === 'error' ||
-    value === 'cancelled' ||
-    value === 'canceled'
-  );
-}
-
 export async function POST(req: Request) {
   try {
     const { taskId, model } = await req.json();
@@ -54,53 +26,8 @@ export async function POST(req: Request) {
     }
 
     const user = await getUserInfo();
-    const isGuestTask = taskId.startsWith('guest-');
-
-    if (!user && !isGuestTask) {
+    if (!user) {
       return respErr('no auth, please sign in');
-    }
-
-    if (isGuestTask) {
-      const parts = taskId.split('-');
-      if (parts.length < 3) return respErr('invalid guest task id');
-
-      const provider = parts[1];
-      const providerTaskId = parts.slice(2).join('-');
-
-      const aiService = await getAIService();
-      const aiProvider = aiService.getProvider(provider);
-      if (!aiProvider) return respErr('invalid ai provider');
-
-      let requestedModel =
-        typeof model === 'string' && GUEST_IMAGE_MODELS.has(model)
-          ? model
-          : IMAGE_LAYERED_CAPABILITIES.decompose.model;
-
-      if (
-        provider === 'fal' &&
-        requestedModel === IMAGE_LAYERED_CAPABILITIES.decompose.model
-      ) {
-        requestedModel = LEGACY_IMAGE_LAYERED_MODELS.decompose;
-      }
-
-      const result = await aiProvider?.query?.({
-        taskId: providerTaskId,
-        mediaType: 'image',
-        model: requestedModel,
-      });
-
-      if (!result?.taskStatus) return respErr('query ai task failed');
-
-      return respData({
-        id: taskId,
-        provider,
-        model: requestedModel,
-        status: result.taskStatus,
-        taskInfo: result.taskInfo ? JSON.stringify(result.taskInfo) : null,
-        taskResult: result.taskResult
-          ? JSON.stringify(result.taskResult)
-          : null,
-      });
     }
 
     const task = await findAITaskById(taskId);
@@ -110,6 +37,14 @@ export async function POST(req: Request) {
 
     if (!user || task.userId !== user.id) {
       return respErr('no permission');
+    }
+
+    if (
+      [AITaskStatus.SUCCESS, AITaskStatus.FAILED, AITaskStatus.CANCELED].includes(
+        task.status as AITaskStatus
+      )
+    ) {
+      return respData(task);
     }
 
     const aiService = await getAIService();
@@ -134,18 +69,6 @@ export async function POST(req: Request) {
       taskResult: result.taskResult ? JSON.stringify(result.taskResult) : null,
       creditId: task.creditId,
     };
-
-    if (
-      task.creditId &&
-      STUDIO_SCENES.has(task.scene) &&
-      isFailureStatus(result.taskStatus)
-    ) {
-      await refundStudioConsumedCredits(
-        task.creditId,
-        task.userId,
-        `studio_${task.scene}_failed`
-      );
-    }
 
     if (
       updateAITask.taskInfo !== task.taskInfo ||

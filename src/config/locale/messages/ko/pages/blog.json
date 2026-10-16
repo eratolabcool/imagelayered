@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "title": "블로그",
+    "description": "이미지 레이어 분리 기술, 크리에이티브 워크플로우 및 최신 업데이트 소식을 확인하세요."
+  },
+  "page": {
+    "title": "Image Layered 블로그",
+    "sections": {
+      "blog": {
+        "id": "blog",
+        "title": "블로그",
+        "description": "이미지 레이어 분리 기술, 크리에이티브 워크플로우 및 최신 업데이트 소식을 확인하세요."
+      }
+    }
+  },
+  "messages": {
+    "all": "전체",
+    "no_content": "게시물이 없습니다",
+    "crumb": "블로그",
+    "toc": "목차"
+  }
+}

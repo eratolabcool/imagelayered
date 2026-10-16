@@ -3,9 +3,10 @@ import { envConfigs } from '..';
 export const localeNames: any = {
   en: 'English',
   zh: '中文',
+  ko: '한국어',
 };
 
-export const locales = ['en', 'zh'];
+export const locales = ['en', 'zh', 'ko'];
 
 export const defaultLocale = envConfigs.locale;
 

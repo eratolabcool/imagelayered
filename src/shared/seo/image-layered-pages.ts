@@ -720,7 +720,7 @@ export const imageLayeredSeoPages: ImageLayeredSeoPage[] = [
     workflowTitle: 'Fluxo recomendado',
     workflow: [
       'Carregue JPG, PNG ou WEBP.',
-      'Use Qwen Image Layered para separar personagem, texto, produto, fundo e sombra.',
+      'Use Image Layered para separar personagem, texto, produto, fundo e sombra.',
       'Selecione a camada que precisa de revisao.',
       'Digite uma instrucao curta e exporte a composicao final.',
     ],

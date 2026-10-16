@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "AI Photoshop for Posters - 海报级 AI 图层编辑",
-    "description": "上传海报，自动拆成可编辑 AI 图层，选中任意元素用提示词修改，并导出重新设计后的海报。适合商品图、广告图和社交媒体视觉。",
-    "keywords": "AI Photoshop, 海报编辑器, AI图像编辑器, 图像图层分解, 可编辑AI图层, RGBA图层, 商品图编辑, 物体替换, 文字编辑, 背景移除, 图像蒙版"
+    "title": "Image Layered — 把图片拆成图层，导出 PSD",
+    "description": "将一张平面图片拆成带透明度的独立图层，编辑选中的对象，并导出多图层 PSD 或 PNG ZIP。",
+    "keywords": "图片分层, 图片转 PSD, 透明 PNG 图层, AI 图像分解, 局部图像编辑"
   },
   "sign": {
     "sign_in_title": "登录",

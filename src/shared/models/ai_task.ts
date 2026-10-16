@@ -60,6 +60,17 @@ export async function findAITaskById(id: string) {
   return result;
 }
 
+export async function findAITaskByProviderTaskId(
+  provider: string,
+  taskId: string
+) {
+  const [result] = await db()
+    .select()
+    .from(aiTask)
+    .where(and(eq(aiTask.provider, provider), eq(aiTask.taskId, taskId)));
+  return result;
+}
+
 export async function updateAITaskById(id: string, updateAITask: UpdateAITask) {
   if (envConfigs.database_provider === 'd1') {
     const [existing] = await db()
