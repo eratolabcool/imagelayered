@@ -1,11 +1,11 @@
 import { AIMediaType } from '@/extensions/ai';
 import { IMAGE_LAYERED_CAPABILITIES } from '@/shared/lib/image-layered-capabilities';
-import { refundStudioConsumedCredits } from '@/shared/models/studio-credit';
 import {
   createStudioOperationRecord,
   findStudioOperationForActor,
   updateStudioOperationRecord,
 } from '@/shared/models/studio';
+import { refundStudioConsumedCredits } from '@/shared/models/studio-credit';
 
 import { STUDIO_GUEST_COOKIE, type StudioActor } from './identity';
 import { persistStudioResultImages } from './persist-result';
@@ -47,10 +47,7 @@ export type AiDispatcher = {
     options: Record<string, unknown>;
     layeringMode: string;
   }) => Promise<AiEnvelope>;
-  queryAI: (body: {
-    taskId: string;
-    model?: string;
-  }) => Promise<AiEnvelope>;
+  queryAI: (body: { taskId: string; model?: string }) => Promise<AiEnvelope>;
 };
 
 export type AiRequestContext = {
@@ -70,7 +67,9 @@ function parseJson(value: unknown) {
 function extractImages(taskInfo: any, taskResult: any): string[] {
   const candidates = [
     ...(Array.isArray(taskInfo?.images)
-      ? taskInfo.images.map((image: any) => image?.imageUrl || image?.url || image)
+      ? taskInfo.images.map(
+          (image: any) => image?.imageUrl || image?.url || image
+        )
       : []),
     ...(Array.isArray(taskResult?.images) ? taskResult.images : []),
     ...(Array.isArray(taskResult?.output) ? taskResult.output : []),
@@ -80,6 +79,35 @@ function extractImages(taskInfo: any, taskResult: any): string[] {
   return [
     ...new Set(
       candidates.filter((value): value is string => typeof value === 'string')
+    ),
+  ];
+}
+
+function extractLayerNames(taskInfo: any, taskResult: any): string[] {
+  const values: unknown[] = [];
+  const collect = (value: any) => {
+    if (!value || typeof value !== 'object') return;
+    for (const key of ['layerNames', 'layer_names', 'names', 'labels']) {
+      if (Array.isArray(value[key])) values.push(...value[key]);
+    }
+    if (Array.isArray(value.layers)) {
+      values.push(
+        ...value.layers.map(
+          (layer: any) => layer?.name || layer?.label || layer?.title
+        )
+      );
+    }
+  };
+  collect(taskInfo);
+  collect(taskResult);
+  return [
+    ...new Set(
+      values
+        .filter(
+          (value): value is string =>
+            typeof value === 'string' && value.trim().length > 0
+        )
+        .map((value) => value.trim())
     ),
   ];
 }
@@ -139,8 +167,29 @@ export function webAiDispatcher(
   ctx: AiRequestContext,
   guestId?: string | null
 ): AiDispatcher {
+  const normalizeImageOptions = (options: Record<string, unknown>) => {
+    const next = { ...options };
+    for (const key of ['image_urls', 'image_input']) {
+      const value = next[key];
+      if (!Array.isArray(value)) continue;
+      next[key] = value.map((item) => {
+        if (typeof item !== 'string' || item.startsWith('data:')) return item;
+        try {
+          return new URL(item, ctx.baseUrl).toString();
+        } catch {
+          return item;
+        }
+      });
+    }
+    return next;
+  };
+
   return {
     async generateAI(body) {
+      const normalizedBody = {
+        ...body,
+        options: normalizeImageOptions(body.options),
+      };
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (ctx.cookie) {
         headers.cookie = ctx.cookie;
@@ -151,7 +200,7 @@ export function webAiDispatcher(
       const response = await fetch(new URL('/api/ai/generate', ctx.baseUrl), {
         method: 'POST',
         headers,
-        body: JSON.stringify(body),
+        body: JSON.stringify(normalizedBody),
       });
 
       if (!response.ok) {
@@ -191,6 +240,12 @@ export async function createOperationForActor(
   let operationId: string | null = null;
 
   try {
+    if (!actor.userId) {
+      throw new Error(
+        'Please sign in and purchase credits to use AI layer features.'
+      );
+    }
+
     const {
       type,
       targetLayerIds = [],
@@ -270,7 +325,12 @@ export async function createOperationForActor(
       status === 'succeeded' && rawImages.length
         ? await persistStudioResultImages(rawImages)
         : rawImages;
-    const result = { images, taskInfo, taskResult };
+    const result = {
+      images,
+      layerNames: extractLayerNames(taskInfo, taskResult),
+      taskInfo,
+      taskResult,
+    };
     const creditState = actor.userId
       ? status === 'failed'
         ? 'refunded'
@@ -361,7 +421,12 @@ export async function pollOperationForActor(
     status === 'succeeded' && rawImages.length
       ? await persistStudioResultImages(rawImages)
       : rawImages;
-  const result = { images, taskInfo, taskResult };
+  const result = {
+    images,
+    layerNames: extractLayerNames(taskInfo, taskResult),
+    taskInfo,
+    taskResult,
+  };
   const completedAt =
     status === 'succeeded' || status === 'failed' ? new Date() : null;
   const creditState = actor.userId

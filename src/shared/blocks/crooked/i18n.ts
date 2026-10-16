@@ -27,11 +27,11 @@ const getWithFallback = (
 const fallbackCopy = {
   brand: {
     title: 'Image Layered',
-    tagline: 'AI Photoshop for posters',
+    tagline: 'Split images into editable layers',
     backHome: 'Back to Home',
   },
   workflow: {
-    upload: 'Upload poster',
+    upload: 'Upload image',
     decompose: 'Auto layers',
     edit: 'Prompt edit',
     editingEngine: 'Automatic layering and focused editing',
@@ -41,7 +41,7 @@ const fallbackCopy = {
   buttons: {
     changeImage: 'Change Image',
     exportProject: 'Export Project',
-    guestQuota: '{count}/3 FREE',
+    guestQuota: 'Sign in + credits required',
     resetView: 'Reset View',
     fitToScreen: 'Fit to Screen',
     showLayers: 'Show Layers',
@@ -168,18 +168,18 @@ const fallbackCopy = {
       subtext: '5 credits per layer decomposition',
     },
     limit: {
-      title: 'Trial Limit Reached',
+      title: 'Credits Required',
       message:
-        'You have used your free trials ({used}/3). Log in to get more free credits!',
-      cta: 'Sign Up Now',
-      subtext: 'Get 10 credits upon registration',
+        'AI layer decomposition and editing require a signed-in account with credits. Sign in and purchase credits to continue.',
+      cta: 'Sign In Now',
+      subtext: 'Credit packages are available after sign-in',
     },
     login: {
       title: 'Log In to Continue',
       message:
-        'Log in to access full features including save, export, and unlimited AI layering.',
+        'Sign in and purchase credits to use AI layer decomposition and editing.',
       cta: 'Log In Now',
-      subtext: 'Supports Google / GitHub Quick Login',
+      subtext: 'Credit packages are available after sign-in',
     },
     default: {
       title: 'Upgrade Your Experience',

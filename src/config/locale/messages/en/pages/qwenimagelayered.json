@@ -1,18 +1,18 @@
 {
   "page": {
     "slug": "qwenimagelayered",
-    "title": "Image Layered - AI Photoshop for Posters",
-    "description": "Upload any poster, automatically create editable AI layers, revise selected objects, and export a redesigned poster.",
-    "keywords": "AI Photoshop for posters, poster editor, editable AI layers, layer decomposition, product image editor, image masking"
+    "title": "Image Layered — AI Image to Layers and PSD Export",
+    "description": "Upload a flat image, inspect transparent semantic layers, edit one object, and export PSD or PNG layers.",
+    "keywords": "image to layers, image to PSD, transparent PNG layers, semantic layer decomposition, object-level image editing"
   },
   "tool": {
     "brand": {
       "title": "Image Layered",
-      "tagline": "AI Photoshop for posters",
+      "tagline": "Split images into editable layers",
       "backHome": "Back to Home"
     },
     "workflow": {
-      "upload": "Upload poster",
+      "upload": "Upload image",
       "decompose": "Auto layers",
       "edit": "Prompt edit",
       "editingEngine": "Automatic layering and focused editing",
@@ -22,7 +22,7 @@
     "buttons": {
       "changeImage": "Change Image",
       "exportProject": "Export Project",
-      "guestQuota": "{count}/3 FREE",
+      "guestQuota": "Sign in + credits required",
       "resetView": "Reset View",
       "fitToScreen": "Fit to Screen",
       "showLayers": "Show Layers",
@@ -33,8 +33,8 @@
       "processingOverlaySubtitle": "Decomposing Image into Layers..."
     },
     "empty": {
-      "title": "Upload a poster to edit",
-      "subtitle": "Split it into layers, select any element, then edit by prompt",
+      "title": "Upload an image to build layers",
+      "subtitle": "Split it into layers, select an object, then export or edit it by prompt",
       "cta": "Upload Image"
     },
     "zoom": {
@@ -42,7 +42,7 @@
     },
     "workspace": {
       "preview": "Workspace preview",
-      "uploadHint": "Upload a poster to begin building the editable layer stack."
+      "uploadHint": "Upload an image to begin building the editable layer stack."
     },
     "sidebar": {
       "expand": "Expand sidebar",
@@ -113,7 +113,7 @@
       "generate": "Go"
     },
     "exportModal": {
-      "title": "Export Image",
+      "title": "Export layered files",
       "originalSize": "Use original size ({width}x{height})",
       "originalSizeSelected": "✓ Original size ({width}x{height})",
       "width": "Width (PX)",
@@ -147,16 +147,16 @@
         "subtext": "5 credits per layer decomposition"
       },
       "limit": {
-        "title": "Trial Limit Reached",
-        "message": "You have used your free trials ({used}/3). Log in to get more free credits!",
-        "cta": "Sign Up Now",
-        "subtext": "Get 10 credits upon registration"
+        "title": "Credits Required",
+        "message": "AI layer decomposition and editing require a signed-in account with credits. Sign in and purchase credits to continue.",
+        "cta": "Sign In Now",
+        "subtext": "Credit packages are available after sign-in"
       },
       "login": {
         "title": "Log In to Continue",
-        "message": "Log in to access full features including save, export, and unlimited AI layering.",
+        "message": "Sign in and purchase credits to use AI layer decomposition and editing.",
         "cta": "Log In Now",
-        "subtext": "Supports Google / GitHub Quick Login"
+        "subtext": "Credit packages are available after sign-in"
       },
       "default": {
         "title": "Upgrade Your Experience",

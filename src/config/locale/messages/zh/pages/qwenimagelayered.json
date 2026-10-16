@@ -1,18 +1,18 @@
 {
   "page": {
     "slug": "qwenimagelayered",
-    "title": "Image Layered - 海报级 AI Photoshop",
-    "description": "上传任意海报，自动创建可编辑 AI 图层，修改选中元素，并导出重新设计后的海报。",
-    "keywords": "AI Photoshop, 海报编辑器, 可编辑AI图层, 图层分解, 商品图编辑, 图像蒙版"
+    "title": "Image Layered — AI 图片分层与 PSD 导出",
+    "description": "上传平面图片，检查带透明度的语义图层，修改一个对象，并导出 PSD 或 PNG 图层。",
+    "keywords": "图片分层, 图片转 PSD, 透明 PNG 图层, 语义图层分解, 局部图像编辑"
   },
   "tool": {
     "brand": {
       "title": "Image Layered",
-      "tagline": "海报级 AI Photoshop",
+      "tagline": "把图片拆成可编辑图层",
       "backHome": "返回首页"
     },
     "workflow": {
-      "upload": "上传海报",
+      "upload": "上传图片",
       "decompose": "自动分层",
       "edit": "提示词编辑",
       "editingEngine": "自动分层与选中元素编辑",
@@ -22,7 +22,7 @@
     "buttons": {
       "changeImage": "更换图片",
       "exportProject": "导出工程",
-      "guestQuota": "{count}/3 次免费",
+      "guestQuota": "登录并购买积分后使用",
       "resetView": "重置视图",
       "fitToScreen": "适配屏幕",
       "showLayers": "展开图层",
@@ -33,8 +33,8 @@
       "processingOverlaySubtitle": "正在将图像分解为图层..."
     },
     "empty": {
-      "title": "上传海报开始编辑",
-      "subtitle": "先自动拆层，再选中任意元素用提示词修改",
+      "title": "上传图片，开始建立图层",
+      "subtitle": "拆成图层后选择对象，继续编辑或导出",
       "cta": "上传图片"
     },
     "zoom": {
@@ -42,7 +42,7 @@
     },
     "workspace": {
       "preview": "工作区预览",
-      "uploadHint": "上传图片开始构建图层"
+      "uploadHint": "上传图片，开始建立可编辑的图层栈。"
     },
     "sidebar": {
       "expand": "展开侧边栏",
@@ -113,7 +113,7 @@
       "generate": "生成"
     },
     "exportModal": {
-      "title": "导出图片",
+      "title": "导出分层文件",
       "originalSize": "使用原始尺寸（{width}x{height}）",
       "originalSizeSelected": "✓ 原始尺寸（{width}x{height}）",
       "width": "宽度 (PX)",
@@ -147,16 +147,16 @@
         "subtext": "单次分层仅需 5 积分"
       },
       "limit": {
-        "title": "试用次数已用完",
-        "message": "你已用完免费试用（{used}/3）。登录即可获得更多免费额度！",
-        "cta": "立即注册",
-        "subtext": "注册即送 10 积分"
+        "title": "需要购买积分",
+        "message": "AI 图像分层和编辑需要登录并购买积分。登录后选择积分套餐即可继续。",
+        "cta": "立即登录",
+        "subtext": "登录后可购买积分套餐"
       },
       "login": {
         "title": "登录以继续",
-        "message": "登录后即可使用保存、导出和无限次 AI 分层等完整功能。",
+        "message": "登录并购买积分后即可使用 AI 图像分层和编辑。",
         "cta": "立即登录",
-        "subtext": "支持 Google / GitHub 登录"
+        "subtext": "登录后可购买积分套餐"
       },
       "default": {
         "title": "升级体验",

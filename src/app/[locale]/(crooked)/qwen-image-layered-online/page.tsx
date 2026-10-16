@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getSeoPagesByMarket } from '@/shared/seo/image-layered-pages';
@@ -5,27 +6,27 @@ import { getSeoPagesByMarket } from '@/shared/seo/image-layered-pages';
 /**
  * [INPUT]: EN market entries from src/shared/seo/image-layered-pages for
  *   keyword-anchored cross-links; envConfigs-free static metadata
- * [OUTPUT]: /qwen-image-layered-online landing page for the model-word
- *   cluster (qwen image layered online / demo / no install)
- * [POS]: (crooked) sibling of /comfyui-qwen-image-layered; captures the
+ * [OUTPUT]: /image-to-layers-online landing page for the model-word
+ *   cluster (image to layers online / demo / no install)
+ * [POS]: (crooked) sibling of /comfyui-image-to-layers; captures the
  *   "run it in a browser now" intent GSC shows at positions 4-9 on
  *   /quicktest with zero clicks, and feeds authority to /seo/en/ pages
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
 export const metadata: Metadata = {
-  title: 'Qwen Image Layered Online — Free Demo, No Install | Image Layered',
+  title: 'Image Layered — Image to Layers — Free Demo, No Install | Image Layered',
   description:
-    'Run Qwen Image Layered online in your browser: upload an image, get editable transparent layers, edit one object, export PNG. Free first run, no ComfyUI, no sign-up.',
+    'Run Image Layered online in your browser: upload an image, get editable transparent layers, edit one object, export PNG. No ComfyUI required; AI operations require sign-in and credits.',
   keywords: [
-    'qwen image layered online',
-    'qwen image layered demo',
-    'qwen-image-layered online',
-    'qwen image layered free',
-    'run qwen image layered in browser',
+    'image to layers online',
+    'image to layers demo',
+    'image-to-layers online',
+    'image to layers free',
+    'run image to layers in browser',
   ],
   robots: {
-    index: true,
+    index: false,
     follow: true,
     googleBot: {
       index: true,
@@ -36,15 +37,15 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: '/qwen-image-layered-online',
+    canonical: '/image-to-layers-online',
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: '/qwen-image-layered-online',
-    title: 'Qwen Image Layered Online — Free Browser Demo',
+    url: '/image-to-layers-online',
+    title: 'Image Layered — Image to Layers — Free Browser Demo',
     description:
-      'Upload an image, get a stack of editable layers. Qwen Image Layered running online, no install.',
+      'Upload an image, get a stack of editable layers. Image Layered running online, no install.',
     siteName: 'Image Layered',
   },
 };
@@ -52,7 +53,7 @@ export const metadata: Metadata = {
 const appJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'Image Layered — Qwen Image Layered Online',
+  name: 'Image Layered — Image Layered — Image to Layers',
   applicationCategory: 'DesignApplication',
   operatingSystem: 'Web',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
@@ -61,10 +62,10 @@ const appJsonLd = {
 const howtoJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'HowTo',
-  name: 'How to run Qwen Image Layered online',
+  name: 'How to run Image Layered online',
   step: [
     { '@type': 'HowToStep', position: 1, name: 'Upload an image', text: 'Open the editor and drop in any JPG, PNG, or WEBP — a poster, product shot, or AI-generated image.' },
-    { '@type': 'HowToStep', position: 2, name: 'Decompose into layers', text: 'The Qwen Image Layered model separates the image into transparent layers: subject, text, background, shadow.' },
+    { '@type': 'HowToStep', position: 2, name: 'Decompose into layers', text: 'The Image Layered model separates the image into transparent layers: subject, text, background, shadow.' },
     { '@type': 'HowToStep', position: 3, name: 'Edit one layer', text: 'Select the layer that needs work and describe the change. Unselected layers keep their pixels.' },
     { '@type': 'HowToStep', position: 4, name: 'Export', text: 'Download the recomposed PNG or individual layers as transparent assets.' },
   ],
@@ -76,15 +77,15 @@ const faqJsonLd = {
   mainEntity: [
     {
       '@type': 'Question',
-      name: 'Can I try Qwen Image Layered online for free?',
+      name: 'Can I try Image Layered online for free?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes. The editor runs Qwen Image Layered in the browser and your first layered decompositions are free, with no sign-up required. Open the editor, upload an image, and the layer stack generates in one click.',
+        text: 'Yes. The editor runs Image Layered in the browser and your AI decompositions require sign-in and credits. Open the editor, upload an image, and the layer stack generates in one click.',
       },
     },
     {
       '@type': 'Question',
-      name: 'Do I need ComfyUI or a GPU to use Qwen Image Layered online?',
+      name: 'Do I need ComfyUI or a GPU to use Image Layered online?',
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'No. This page runs the model as a hosted online demo, so there is nothing to install and no local GPU. If you prefer self-hosting the workflow in nodes, the ComfyUI guide on this site covers that path separately.',
@@ -92,7 +93,7 @@ const faqJsonLd = {
     },
     {
       '@type': 'Question',
-      name: 'What does Qwen Image Layered actually do?',
+      name: 'What does Image Layered actually do?',
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'It decomposes a flat image into a stack of transparent RGBA layers — subject, product, text, background, shadow — so you can edit or export one element without regenerating the rest of the image.',
@@ -108,10 +109,10 @@ const faqJsonLd = {
     },
     {
       '@type': 'Question',
-      name: 'Is this the official Qwen Image Layered model?',
+      name: 'Is this the official Image Layered model?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes, the online editor runs the same Qwen Image Layered decomposition model released by the Qwen team, wrapped in a layer-canvas workspace with selection, locks, versions, and export.',
+        text: "Yes, the online editor runs Image Layered's configured decomposition model, wrapped in a layer-canvas workspace with selection, locks, versions, and export.",
       },
     },
   ],
@@ -124,7 +125,7 @@ const steps = [
   },
   {
     title: 'Decompose into editable layers',
-    text: 'Qwen Image Layered separates subject, text, background, shadow, and effects into transparent RGBA layers.',
+    text: 'Image Layered separates subject, text, background, shadow, and effects into transparent RGBA layers.',
   },
   {
     title: 'Edit one object, keep the rest',
@@ -138,15 +139,15 @@ const steps = [
 
 const faqs = [
   {
-    q: 'Can I try Qwen Image Layered online for free?',
-    a: 'Yes. The editor runs Qwen Image Layered in the browser and your first layered decompositions are free, with no sign-up required. Open the editor, upload an image, and the layer stack generates in one click.',
+    q: 'Can I try Image Layered online for free?',
+    a: 'Yes. The editor runs Image Layered in the browser and your AI decompositions require sign-in and credits. Open the editor, upload an image, and the layer stack generates in one click.',
   },
   {
     q: 'Do I need ComfyUI or a GPU to use it online?',
     a: 'No. This page runs the model as a hosted online demo — nothing to install, no local GPU. If you prefer wiring the workflow yourself in nodes, the ComfyUI guide covers that path.',
   },
   {
-    q: 'What does Qwen Image Layered actually do?',
+    q: 'What does Image Layered actually do?',
     a: 'It decomposes a flat image into a stack of transparent RGBA layers — subject, product, text, background, shadow — so you can edit or export one element without regenerating the rest.',
   },
   {
@@ -155,11 +156,13 @@ const faqs = [
   },
   {
     q: 'Is this the official model?',
-    a: 'Yes — the online editor runs the same Qwen Image Layered decomposition model released by the Qwen team, wrapped in a layer-canvas workspace with selection, locks, versions, and export.',
+    a: "Yes — the online editor runs Image Layered's configured decomposition model, wrapped in a layer-canvas workspace with selection, locks, versions, and export.",
   },
 ];
 
 export default function QwenImageLayeredOnlinePage() {
+  redirect('/image-to-layers');
+
   const seoPages = getSeoPagesByMarket('en');
 
   return (
@@ -182,7 +185,7 @@ export default function QwenImageLayeredOnlinePage() {
             <h1 className="mb-6 max-w-4xl text-4xl font-black tracking-tight md:text-6xl">
               Run{' '}
               <span className="bg-gradient-to-r from-teal-300 to-blue-400 bg-clip-text text-transparent">
-                Qwen Image Layered
+                Image Layered
               </span>{' '}
               online
             </h1>
@@ -199,7 +202,7 @@ export default function QwenImageLayeredOnlinePage() {
                 Open the editor — first layers free
               </Link>
               <Link
-                href="/comfyui-qwen-image-layered"
+                href="/comfyui-image-to-layers"
                 className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/20 px-6 py-3 text-sm font-black text-white transition hover:border-white/50"
               >
                 Prefer ComfyUI nodes?
@@ -236,13 +239,13 @@ export default function QwenImageLayeredOnlinePage() {
                 Online editor or ComfyUI workflow?
               </h2>
               <p className="mt-4 leading-7 text-gray-400">
-                The same Qwen Image Layered model, two ways to run it. The online editor is the
+                The same Image Layered model, two ways to run it. The online editor is the
                 fastest path from image to edited result: upload, decompose, edit, export — with
                 layer locks, version history, and PNG export built in. The ComfyUI route fits
                 pipelines that already live in node graphs and local automation.
               </p>
               <Link
-                href="/comfyui-qwen-image-layered"
+                href="/comfyui-image-to-layers"
                 className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-teal-300 hover:underline"
               >
                 Read the ComfyUI workflow guide →
@@ -304,7 +307,7 @@ export default function QwenImageLayeredOnlinePage() {
               Your image, in layers, in about a minute
             </h2>
             <p className="mx-auto mt-4 max-w-2xl leading-7 text-gray-400">
-              Open the editor and drop in an image. The first layered decompositions are free — see
+              Open the editor and drop in an image. AI decomposition requires credits — see
               the layer stack before you decide anything.
             </p>
             <Link

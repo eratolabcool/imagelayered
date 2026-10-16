@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 
 import { SmartIcon } from '@/shared/blocks/common';
 import { PaymentModal } from '@/shared/blocks/payment/payment-modal';
-import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import {
   Card,
@@ -23,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { useAppContext } from '@/shared/contexts/app';
 import { getCookie } from '@/shared/lib/cookie';
 import { cn } from '@/shared/lib/utils';
@@ -90,25 +88,10 @@ export function Pricing({
 
   const {
     user,
-    isShowPaymentModal,
     setIsShowSignModal,
     setIsShowPaymentModal,
     configs,
   } = useAppContext();
-
-  const [group, setGroup] = useState(() => {
-    // find current pricing item
-    const currentItem = section.items?.find(
-      (i) => i.product_id === currentSubscription?.productId
-    );
-
-    // First look for a group with is_featured set to true
-    const featuredGroup = section.groups?.find((g) => g.is_featured);
-    // If no featured group exists, fall back to the first group
-    return (
-      currentItem?.group || featuredGroup?.name || section.groups?.[0]?.name
-    );
-  });
 
   // current pricing item
   const [pricingItem, setPricingItem] = useState<PricingItem | null>(null);
@@ -342,36 +325,8 @@ export function Pricing({
       </div>
 
       <div className="container">
-        {section.groups && section.groups.length > 0 && (
-          <div className="mx-auto mt-8 mb-16 flex w-full justify-center md:max-w-lg">
-            <Tabs value={group} onValueChange={setGroup} className="">
-              <TabsList>
-                {section.groups.map((item, i) => {
-                  return (
-                    <TabsTrigger key={i} value={item.name || ''}>
-                      {item.title}
-                      {item.label && (
-                        <Badge className="ml-2">{item.label}</Badge>
-                      )}
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-            </Tabs>
-          </div>
-        )}
-
-        <div
-          className={`mx-auto mt-0 grid w-full gap-6 md:grid-cols-${
-            section.items?.filter((item) => !item.group || item.group === group)
-              ?.length
-          }`}
-        >
+        <div className="mx-auto mt-0 grid w-full gap-6 md:grid-cols-3">
           {section.items?.map((item: PricingItem, idx) => {
-            if (item.group && item.group !== group) {
-              return null;
-            }
-
             let isCurrentPlan = false;
             if (
               currentSubscription &&

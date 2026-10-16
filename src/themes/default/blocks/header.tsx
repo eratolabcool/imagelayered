@@ -266,7 +266,7 @@ export function Header({ header }: { header: HeaderType }) {
                 {header.brand && <BrandLogo brand={header.brand} />}
 
                 {/* Desktop Navigation Menu */}
-                {isLarge && <NavMenu />}
+                <NavMenu />
                 {/* Hamburger menu button for mobile navigation */}
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

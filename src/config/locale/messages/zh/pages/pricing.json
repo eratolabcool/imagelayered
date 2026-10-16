@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "价格方案 - Image Layered AI 海报编辑器",
-    "description": "按实际创作成果选择方案：分层项目、对象级修改、生产导出和可重复的活动素材制作。",
-    "keywords": "AI海报编辑器价格, 可编辑AI图层价格, 图像分层费用, GPT图像编辑积分, Pro订阅"
+    "title": "价格方案 — Image Layered 图片分层与 PSD 导出",
+    "description": "了解图层分解、局部编辑、PSD 导出和批量制作的额度规则，再选择适合你的方案。",
+    "keywords": "图片分层价格, PSD 导出价格, AI 图像分解额度, 透明 PNG 导出"
   },
   "page": {
     "title": "简单透明的定价",
@@ -10,7 +10,7 @@
       "pricing": {
         "id": "pricing",
         "title": "选择您的方案",
-        "description": "根据需要处理的项目和结果选择方案。积分仅在后台用于计算处理成本，不再作为主要购买语言。",
+        "description": "三档方案直接展开对比：一次 AI 分层消耗 5 积分，选中图层编辑消耗 3–4 积分。按 Creator 月度方案计算，每次分层约 $0.17，每次编辑约 $0.10–$0.14。上传、图层整理，以及完成项目后的 PSD 和 PNG ZIP 导出均免费；供应商失败的任务会退回额度。",
         "groups": [
           {
             "name": "one-time",
@@ -38,7 +38,7 @@
               "专业 Canvas 与 Layer Inspector",
               "AI 替换、移除、改色和重塑",
               "项目保存与版本历史",
-              "4K 高清导出",
+              "高分辨率 PSD 与 PNG 导出",
               "无水印",
               "商业使用授权",
               "基础支持"
@@ -52,7 +52,7 @@
             "is_featured": false,
             "tip": "适合偶尔处理项目，包含的使用量永不过期。",
             "button": {
-              "title": "开始项目",
+              "title": "获取 100 积分包",
               "url": "/studio",
               "icon": "RiFlashlightFill"
             },
@@ -73,7 +73,7 @@
               "项目保存、历史和可恢复变体",
               "品牌关键图层锁定",
               "优先处理队列",
-              "4K 高清导出",
+              "高分辨率 PSD 与 PNG 导出",
               "无水印",
               "商业使用授权",
               "优先支持"
@@ -87,7 +87,7 @@
             "is_featured": true,
             "tip": "适合稳定的创作工作，可随时取消。",
             "button": {
-              "title": "选择 Creator",
+              "title": "订阅 Creator 月度",
               "url": "/studio",
               "icon": "RiFlashlightFill"
             },
@@ -110,7 +110,7 @@
               "品牌关键图层锁定",
               "最大包含使用量累积额度",
               "优先处理队列",
-              "4K 高清导出",
+              "高分辨率 PSD 与 PNG 导出",
               "无水印",
               "商业使用授权",
               "专属优先支持",
@@ -125,7 +125,7 @@
             "is_featured": true,
             "tip": "按年计费，适合持续生产的团队。",
             "button": {
-              "title": "选择 Studio",
+              "title": "订阅 Studio 年度 (省40%)",
               "url": "/studio",
               "icon": "RiFlashlightFill"
             },
@@ -147,7 +147,7 @@
     "billed_yearly": "按年计费（立省 40%）",
     "cancel_anytime": "随时取消",
     "credits_never_expire": "积分永不过期",
-    "per_decomposition": "积分/次分层",
-    "decompositions_per_pack": "次分层/包"
+    "per_decomposition": "每次分层消耗 credits",
+    "decompositions_per_pack": "每包可分层次数"
   }
 }

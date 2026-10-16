@@ -1,7 +1,8 @@
-import { respData, respErr } from '@/shared/lib/resp';
+import { respData } from '@/shared/lib/resp';
 import {
   authenticateWechatCode,
   MiniAuthError,
+  MINI_ERROR,
   miniErrorResponse,
 } from '@/shared/models/mini-identity';
 
@@ -25,6 +26,12 @@ export async function POST(request: Request) {
       return miniErrorResponse(error);
     }
     console.error('[mini] wechat auth failed', error);
-    return respErr(error?.message || 'wechat auth failed');
+    return miniErrorResponse(
+      new MiniAuthError(
+        MINI_ERROR.WECHAT_API_ERROR,
+        502,
+        'wechat authentication service unavailable'
+      )
+    );
   }
 }

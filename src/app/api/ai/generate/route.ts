@@ -3,7 +3,6 @@ import {
   hasGeneratedImages,
   resolveImageCapability,
 } from '@/features/studio/server/ai-service';
-import { getStudioActor } from '@/features/studio/server/identity';
 
 import { envConfigs } from '@/config';
 import { AIMediaType, AITaskStatus } from '@/extensions/ai';
@@ -12,7 +11,6 @@ import { respData, respErr } from '@/shared/lib/resp';
 import { createAITask, NewAITask } from '@/shared/models/ai_task';
 import { getAllConfigs } from '@/shared/models/config';
 import { getRemainingCredits } from '@/shared/models/credit';
-import { consumeStudioGuestAIQuota } from '@/shared/models/studio';
 import { getUserInfo } from '@/shared/models/user';
 import { getAIService } from '@/shared/services/ai';
 
@@ -34,6 +32,13 @@ export async function POST(request: Request) {
     if (!mediaType) throw new Error('invalid params');
     if (!prompt && !options) throw new Error('prompt or options is required');
 
+    const user = await getUserInfo();
+    if (!user) {
+      throw new Error(
+        'Please sign in and purchase credits to use AI features.'
+      );
+    }
+
     const configs = await getAllConfigs();
     const aiService = await getAIService(configs);
 
@@ -43,7 +48,6 @@ export async function POST(request: Request) {
         provider,
         model,
         configs,
-        aiService,
       });
       provider = resolved.provider;
       model = resolved.model;
@@ -55,9 +59,16 @@ export async function POST(request: Request) {
     }
 
     const aiProvider = aiService.getProvider(provider);
-    if (!aiProvider) throw new Error('invalid provider');
+    if (!aiProvider) {
+      throw new Error(
+        scene === 'image-decomposition' && provider === 'kie'
+          ? 'Kie is not configured for Seedream layer decomposition. Add KIE_API_KEY or set the Kie API key in Admin → Settings → AI.'
+          : scene === 'image-decomposition' && provider === 'fal'
+            ? 'Fal is not configured for fallback layer decomposition. Add FAL_API_KEY or set the Fal API key in Admin → Settings → AI.'
+            : 'The selected AI provider is not configured. Check Admin → Settings → AI.'
+      );
+    }
 
-    const user = await getUserInfo();
     let costCredits = 2;
 
     if (mediaType === AIMediaType.IMAGE) {
@@ -74,58 +85,19 @@ export async function POST(request: Request) {
       throw new Error('invalid mediaType');
     }
 
-    if (!user) {
-      if (
-        scene !== 'image-decomposition' &&
-        scene !== 'image-recolor' &&
-        scene !== 'image-replace' &&
-        scene !== 'image-remove'
-      ) {
-        throw new Error('no auth, please sign in');
-      }
-
-      // Cost protection lives at the generation boundary so direct calls to
-      // the legacy AI endpoint cannot bypass Studio's anonymous quota.
-      const actor = await getStudioActor();
-      await consumeStudioGuestAIQuota(actor.actorKey);
-
-      const callbackUrl = `${envConfigs.app_url}/api/ai/notify/${provider}`;
-      const params: any = {
-        mediaType,
-        model,
-        prompt,
-        callbackUrl,
-        options: { ...options, scene, layeringMode },
-      };
-
-      const result = await aiProvider.generate({ params });
-      if (!result?.taskId) {
-        throw new Error(
-          `ai generate failed, mediaType: ${mediaType}, provider: ${provider}`
-        );
-      }
-
-      return respData({
-        id: `guest-${provider}-${result.taskId}`,
-        provider,
-        model,
-        status: result.taskStatus,
-        taskId: result.taskId,
-        taskInfo: result.taskInfo ? JSON.stringify(result.taskInfo) : null,
-        taskResult: result.taskResult
-          ? JSON.stringify(result.taskResult)
-          : null,
-      });
-    }
-
     const remainingCredits = await getRemainingCredits(user.id);
     if (remainingCredits < costCredits) throw new Error('insufficient credits');
 
     const callbackUrl = `${envConfigs.app_url}/api/ai/notify/${provider}`;
+    const effectivePrompt =
+      prompt ||
+      (scene === 'image-decomposition'
+        ? 'Separate the image into editable semantic layers: background, subject, product, text, shadows, and lighting effects.'
+        : prompt);
     const params: any = {
       mediaType,
       model,
-      prompt,
+      prompt: effectivePrompt,
       callbackUrl,
       options: { ...options, scene, layeringMode },
     };

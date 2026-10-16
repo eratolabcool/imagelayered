@@ -1,10 +1,10 @@
 import { envConfigs } from '@/config';
-import { AIMediaType, AITaskStatus, type AIManager } from '@/extensions/ai';
+import { AIMediaType, AITaskStatus } from '@/extensions/ai';
+import { getUuid } from '@/shared/lib/hash';
 import {
   IMAGE_LAYERED_CAPABILITIES,
   LEGACY_IMAGE_LAYERED_MODELS,
 } from '@/shared/lib/image-layered-capabilities';
-import { getUuid } from '@/shared/lib/hash';
 import {
   createAITask,
   findAITaskById,
@@ -41,37 +41,50 @@ export function resolveImageCapability({
   provider,
   model,
   configs,
-  aiService,
 }: {
   scene: string;
   provider?: string;
   model?: string;
   configs: Configs;
-  aiService: AIManager;
 }): { provider?: string; model?: string } {
   let resolvedProvider = provider;
   let resolvedModel = model;
 
   if (scene === 'image-decomposition') {
     const configuredModel = configs.layer_decomposition_model;
-    const usePreferredCapability =
+    const configuredProvider = configs.layer_decomposition_provider;
+    const hasKie = Boolean(configs.kie_api_key);
+    const hasFal = Boolean(configs.fal_api_key);
+    const isLegacyOrFalConfig =
       !configuredModel ||
-      configuredModel === LEGACY_IMAGE_LAYERED_MODELS.decompose;
-    resolvedProvider =
-      resolvedProvider ||
-      (usePreferredCapability
+      configuredModel === LEGACY_IMAGE_LAYERED_MODELS.decompose ||
+      configuredProvider === 'fal' ||
+      configuredModel.startsWith('fal-ai/');
+
+    // Kie/Seedream is the preferred decomposition path. Preview and older
+    // installations may still have only Fal configured, so use the known
+    // legacy model as a controlled fallback instead of failing every upload.
+    if (hasKie) {
+      resolvedProvider = isLegacyOrFalConfig
         ? IMAGE_LAYERED_CAPABILITIES.decompose.provider
-        : configs.layer_decomposition_provider ||
-          IMAGE_LAYERED_CAPABILITIES.decompose.provider);
-    resolvedModel =
-      resolvedModel ||
-      (usePreferredCapability
+        : configuredProvider || IMAGE_LAYERED_CAPABILITIES.decompose.provider;
+      resolvedModel = isLegacyOrFalConfig
         ? IMAGE_LAYERED_CAPABILITIES.decompose.model
-        : configuredModel);
+        : configuredModel;
+    } else if (hasFal) {
+      resolvedProvider = 'fal';
+      resolvedModel = LEGACY_IMAGE_LAYERED_MODELS.decompose;
+    } else {
+      resolvedProvider = IMAGE_LAYERED_CAPABILITIES.decompose.provider;
+      resolvedModel = IMAGE_LAYERED_CAPABILITIES.decompose.model;
+    }
   } else if (
-    ['image-recolor', 'image-replace', 'image-remove', 'lookbook-generate'].includes(
-      scene
-    )
+    [
+      'image-recolor',
+      'image-replace',
+      'image-remove',
+      'lookbook-generate',
+    ].includes(scene)
   ) {
     const configuredModel = configs.poster_edit_model;
     const usePreferredCapability =
@@ -88,21 +101,6 @@ export function resolveImageCapability({
       (usePreferredCapability
         ? IMAGE_LAYERED_CAPABILITIES.editLayer.model
         : configuredModel);
-  }
-
-  // Preferred decomposition provider unavailable -> verified FAL fallback.
-  if (
-    scene === 'image-decomposition' &&
-    resolvedProvider === IMAGE_LAYERED_CAPABILITIES.decompose.provider &&
-    resolvedModel === IMAGE_LAYERED_CAPABILITIES.decompose.model &&
-    !aiService.getProvider(IMAGE_LAYERED_CAPABILITIES.decompose.provider) &&
-    aiService.getProvider('fal')
-  ) {
-    resolvedProvider = 'fal';
-    resolvedModel = LEGACY_IMAGE_LAYERED_MODELS.decompose;
-    console.warn(
-      '[generate] Preferred decomposition provider is unavailable; using fallback capability'
-    );
   }
 
   return { provider: resolvedProvider, model: resolvedModel };
@@ -171,7 +169,6 @@ export async function generateStudioAiTask({
   const { provider, model } = resolveImageCapability({
     scene,
     configs,
-    aiService,
   });
 
   if (!provider || !model) throw new Error('invalid params');
@@ -180,7 +177,15 @@ export async function generateStudioAiTask({
   }
 
   const aiProvider = aiService.getProvider(provider);
-  if (!aiProvider) throw new Error('invalid provider');
+  if (!aiProvider) {
+    throw new Error(
+      scene === 'image-decomposition' && provider === 'kie'
+        ? 'Kie is not configured for Seedream layer decomposition. Add KIE_API_KEY or set the Kie API key in Admin → Settings → AI.'
+        : scene === 'image-decomposition' && provider === 'fal'
+          ? 'Fal is not configured for fallback layer decomposition. Add FAL_API_KEY or set the Fal API key in Admin → Settings → AI.'
+          : 'The selected AI provider is not configured. Check Admin → Settings → AI.'
+    );
+  }
 
   const costCredits = getImageSceneCost(scene);
 
@@ -188,10 +193,15 @@ export async function generateStudioAiTask({
   if (remainingCredits < costCredits) throw new Error('insufficient credits');
 
   const callbackUrl = `${envConfigs.app_url}/api/ai/notify/${provider}`;
+  const effectivePrompt =
+    prompt ||
+    (scene === 'image-decomposition'
+      ? 'Separate the image into editable semantic layers: background, subject, product, text, shadows, and lighting effects.'
+      : prompt);
   const params: any = {
     mediaType: AIMediaType.IMAGE,
     model,
-    prompt,
+    prompt: effectivePrompt,
     callbackUrl,
     options: { ...options, scene, layeringMode },
   };
@@ -209,7 +219,9 @@ export async function generateStudioAiTask({
       !hasGeneratedImages(result) &&
       result.taskStatus === AITaskStatus.SUCCESS
     ) {
-      throw new Error(`Image editing failed: no image generated for scene ${scene}`);
+      throw new Error(
+        `Image editing failed: no image generated for scene ${scene}`
+      );
     }
   }
 
@@ -259,7 +271,15 @@ export async function queryStudioAiTask({
 
   const aiService = await getAIService();
   const aiProvider = aiService.getProvider(task.provider);
-  if (!aiProvider) throw new Error('invalid ai provider');
+  if (!aiProvider) {
+    throw new Error(
+      task.scene === 'image-decomposition' && task.provider === 'kie'
+        ? 'Kie is not configured for Seedream layer decomposition. Add KIE_API_KEY or set the Kie API key in Admin → Settings → AI.'
+        : task.scene === 'image-decomposition' && task.provider === 'fal'
+          ? 'Fal is not configured for fallback layer decomposition. Add FAL_API_KEY or set the Fal API key in Admin → Settings → AI.'
+          : 'The selected AI provider is not configured. Check Admin → Settings → AI.'
+    );
+  }
 
   const result = await aiProvider?.query?.({
     taskId: task.taskId,

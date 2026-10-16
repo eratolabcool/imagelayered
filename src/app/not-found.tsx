@@ -5,6 +5,11 @@ import { envConfigs } from '@/config';
 import { SmartIcon } from '@/shared/blocks/common/smart-icon';
 import { Button } from '@/shared/components/ui/button';
 
+export const metadata = {
+  title: 'Page not found — Image Layered',
+  description: 'The Image Layered page you requested could not be found.',
+};
+
 export default function NotFoundPage() {
   return (
     <div className="flex h-screen flex-col items-center justify-center gap-4">

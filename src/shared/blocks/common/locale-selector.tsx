@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Check, Globe, Languages } from 'lucide-react';
 import { useLocale } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
 
 import { usePathname, useRouter } from '@/core/i18n/navigation';
 import { localeNames } from '@/config/locale';
@@ -47,6 +47,7 @@ export function LocaleSelector({
   if (!mounted) {
     return (
       <Button
+        aria-label={currentLocale === 'zh' ? '切换语言' : 'Change language'}
         variant={type === 'icon' ? 'ghost' : 'outline'}
         size={type === 'icon' ? 'icon' : 'sm'}
         className={
@@ -70,7 +71,12 @@ export function LocaleSelector({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {type === 'icon' ? (
-          <Button variant="ghost" size="icon" className="h-auto w-auto p-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-11"
+            aria-label={currentLocale === 'zh' ? '切换语言' : 'Change language'}
+          >
             <Languages size={18} />
           </Button>
         ) : (

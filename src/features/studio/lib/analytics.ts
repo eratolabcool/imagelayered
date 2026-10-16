@@ -1,4 +1,9 @@
 export const STUDIO_EVENTS = {
+  landingUploadClicked: 'landing_upload_clicked',
+  landingUploadStarted: 'landing_upload_started',
+  landingUploadFailed: 'landing_upload_failed',
+  landingSampleSelected: 'landing_sample_selected',
+  landingEditorOpened: 'landing_editor_opened',
   view: 'studio_view',
   demoOpened: 'studio_demo_opened',
   uploadStarted: 'studio_upload_started',
@@ -29,7 +34,8 @@ export const STUDIO_EVENTS = {
   checkoutCompleted: 'studio_checkout_completed',
 } as const;
 
-export type StudioEventName = (typeof STUDIO_EVENTS)[keyof typeof STUDIO_EVENTS];
+export type StudioEventName =
+  (typeof STUDIO_EVENTS)[keyof typeof STUDIO_EVENTS];
 export type StudioEventProperties = Record<
   string,
   string | number | boolean | null | undefined
@@ -58,8 +64,12 @@ export function trackStudioEvent(
   );
   const analyticsWindow = window as AnalyticsWindow;
 
-  analyticsWindow.dataLayer?.push({ event, ...cleanProperties });
-  analyticsWindow.gtag?.('event', event, cleanProperties);
+  // gtag writes to dataLayer itself; sending both can double-count a GTM event.
+  if (analyticsWindow.gtag) {
+    analyticsWindow.gtag('event', event, cleanProperties);
+  } else {
+    analyticsWindow.dataLayer?.push({ event, ...cleanProperties });
+  }
   analyticsWindow.plausible?.(event, { props: cleanProperties });
   analyticsWindow.openpanel?.track?.(event, cleanProperties);
   analyticsWindow.op?.(event, cleanProperties);

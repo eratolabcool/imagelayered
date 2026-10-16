@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "Edit Any Image Without Regenerating - AI Layer Image Editor",
-    "description": "Layer any product photo, poster, AI image, or social creative. Edit selected objects, text, backgrounds, clothing, and products without changing the whole composition.",
-    "keywords": "edit AI image without regenerating, edit midjourney image, modify AI generated product photos, change background of AI product image, AI image revision tool, edit poster without Photoshop, consistent character editing, separate text from image AI, keep same composition AI editing"
+    "title": "Image to Layers — Split Any Image and Export PSD | Image Layered",
+    "description": "Split a flat image into transparent layers, select one object to edit, and export a multi-layer PSD or PNG ZIP. Upload and arrange layers free; AI operations use credits.",
+    "keywords": "image to layers, image to PSD, split image into layers, transparent PNG layers, AI image decomposition"
   },
   "page": {
     "show_sections": [
@@ -11,34 +11,33 @@
       "usage",
       "features",
       "stats",
-
       "faq",
       "cta"
     ],
     "sections": {
       "hero": {
         "id": "hero",
-        "title": "Upload any poster. Edit every object like layers.",
-        "highlight_text": "Edit every object like layers",
-        "description": "Image Layered turns flat images into editable layers, so you can change text, replace products, remove objects, and redesign posters with AI.",
+        "title": "Split any image into layers. Export PSD or transparent PNGs.",
+        "highlight_text": "Export PSD or transparent PNGs.",
+        "description": "Turn one finished image into independent transparent layers. Inspect the stack, lock what must stay, edit one object, and continue in Photoshop, Photopea, Live2D, or After Effects.",
         "announcement": {
           "badge": "NEW",
-          "title": "✨ Turn Any Poster into Editable AI Layers",
+          "title": "✨ Turn Any Image into Editable Layers",
           "url": "/studio"
         },
-        "tip": "Trusted by creators for poster edits, product swaps, and editable AI layers",
+        "tip": "For designers, AI image creators, product teams, and motion artists.",
         "buttons": [
           {
-            "title": "Try It Free",
+            "title": "Open Studio",
             "icon": "Zap",
             "url": "/studio",
             "target": "_self",
             "variant": "default"
           },
           {
-            "title": "See Examples",
+            "title": "See layer examples",
             "icon": "BookOpenText",
-            "url": "/quicktest",
+            "url": "/image-to-layers",
             "target": "_self",
             "variant": "outline"
           }
@@ -49,7 +48,7 @@
       },
       "logos": {
         "id": "logos",
-        "title": "Automatic layer decomposition and focused poster editing",
+        "title": "Automatic layer decomposition and focused object editing",
         "items": [
           {
             "title": "Next.js",
@@ -91,9 +90,9 @@
       "introduce": {
         "block": "features-list",
         "id": "introduce",
-        "title": "Turn Flat Images into Editable PSD-like Layers",
+        "title": "Turn Flat Images into Editable Layers",
         "label": "Core Features",
-        "description": "Image Layered uses a dedicated layer-decomposition model to split flat images into transparent RGBA layers, then sends selected elements to high-quality image editing models for prompt-based poster redesign.",
+        "description": "Image Layered separates a finished image into transparent raster layers, then lets you inspect and edit the selected object before exporting PSD or PNG layers.",
         "image": {
           "src": "/imgs/features/001.jpeg",
           "alt": "introduce"
@@ -146,8 +145,8 @@
         "description": "Save money, save time, save effort. One person equals an entire design team - handle e-commerce product images, design assets, and social media content effortlessly.",
         "items": [
           {
-            "title": "Completely Free, No Hidden Fees",
-            "description": "Get 10 free credits upon registration, earn more daily through check-ins. Most features are free to use. Paid features cost 100x less than hiring a designer.",
+            "title": "Clear pricing for controlled edits",
+            "description": "Upload and arrange layers free. Decomposition costs 5 credits, selected-layer edits cost 3–4 credits, and PSD or PNG ZIP exports from a completed project do not consume credits.",
             "icon": "RiNextjsFill",
             "image": {
               "src": "/imgs/features/1.png",
@@ -345,8 +344,8 @@
         "description": "Everything you need to know about usage, pricing, and capabilities",
         "items": [
           {
-            "question": "Is this tool really free? Are there hidden charges?",
-            "answer": "Basic features are completely free! You get 10 credits upon registration (enough for 2 images), and can earn more daily through check-ins. Most users are fine with the free tier. If you need high-frequency usage, credit packs are available with transparent pricing - no hidden fees."
+            "question": "What is free and what uses credits?",
+            "answer": "Uploading an image, arranging layers, and exporting PSD or PNG ZIP files from a completed project are free. AI decomposition costs 5 credits and selected-layer edits cost 3–4 credits. Failed provider tasks are refunded."
           },
           {
             "question": "I don't know design - can I use this tool?",
@@ -354,11 +353,11 @@
           },
           {
             "question": "How accurate is the layering? Can it handle complex images?",
-            "answer": "Our AI uses Qwen's latest vision model with high accuracy. Product photos, portraits, design assets - all handled well. For especially complex images, use the \"Deep Decompose\" feature for more detailed analysis."
+            "answer": "Seedream 5.0 Pro creates a semantic layer approximation from the source image. Product photos, portraits, posters, and AI artwork can work well, while fine hair, transparency, overlaps, and small text may need cleanup."
           },
           {
             "question": "How long does it take to process one image?",
-            "answer": "Typically 3-5 seconds to complete layering. Actual time depends on image size and complexity, but rarely exceeds 10 seconds. Much faster than manual Photoshop work."
+            "answer": "Processing time depends on image size, complexity, and provider queue. Studio shows the task state while the result is being prepared."
           },
           {
             "question": "What formats are supported? Any size limits?",
@@ -366,7 +365,7 @@
           },
           {
             "question": "What resolutions can I export?",
-            "answer": "Support 1K, 2K, 4K resolution export. Free users can export at original resolution. Paid users can use AI-enhanced HD export for e-commerce, print, and other high-quality needs."
+            "answer": "The project keeps the source canvas dimensions. Completed projects can export multi-layer PSD files, transparent PNG ZIP layers, or a flattened composite without an extra export credit charge."
           },
           {
             "question": "Can I use this for commercial purposes?",
@@ -381,10 +380,10 @@
       "cta": {
         "id": "cta",
         "title": "Get Started Now - Professional Image Editing in 3 Steps",
-        "description": "10 free credits upon registration - enough to experience all features. No credit card needed, cancel anytime.",
+        "description": "Upload and inspect the workflow free. Buy credits when you are ready to run AI decomposition or local edits; completed-project PSD and PNG ZIP exports stay free.",
         "buttons": [
           {
-            "title": "Try It Free",
+            "title": "Open Studio",
             "url": "/studio",
             "target": "_self",
             "icon": "Zap"
@@ -414,6 +413,9 @@
         },
         "className": "bg-muted"
       }
-    }
+    },
+    "title": "Image to Layers — Split Any Image and Export PSD | Image Layered",
+    "description": "Split a flat image into transparent layers, select one object to edit, and export a multi-layer PSD or PNG ZIP. Upload and arrange layers free; AI operations use credits.",
+    "keywords": "image to layers, image to PSD, split image into layers, transparent PNG layers, AI image decomposition"
   }
 }

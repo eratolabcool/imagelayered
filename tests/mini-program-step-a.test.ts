@@ -37,6 +37,7 @@ let meRoute: any;
 let creditsRoute: any;
 let miniUploadRoute: any;
 let webUploadRoute: any;
+let logoutRoute: any;
 
 const FIRST_OPENID = 'openid-unit-1';
 let firstAuth: any = null;
@@ -59,6 +60,7 @@ before(async () => {
   models = await import('@/shared/models/mini-identity');
   meRoute = await import('@/app/api/mini/me/route');
   creditsRoute = await import('@/app/api/mini/credits/route');
+  logoutRoute = await import('@/app/api/mini/auth/logout/route');
   miniUploadRoute = await import('@/app/api/mini/uploads/route');
   webUploadRoute = await import('@/app/api/storage/upload-image/route');
 
@@ -273,7 +275,34 @@ test('6. revoked token is rejected', async () => {
   );
 });
 
-test('7. /api/mini/me does not expose openid, unionid or session_key', async () => {
+test('7. /api/mini/auth/logout revokes the bearer session and is idempotent', async () => {
+  const identity = await models.findMiniIdentity(
+    envConfigs.wechat_mini_app_id,
+    FIRST_OPENID
+  );
+  const { token } = await models.createMiniSession({
+    userId: identity.userId,
+    identityId: identity.id,
+  });
+
+  const resp = await logoutRoute.POST(
+    bearerRequest('http://localhost/api/mini/auth/logout', token, { method: 'POST' })
+  );
+  assert.equal(resp.status, 200);
+  assert.equal((await resp.json()).code, 0);
+  await assert.rejects(
+    () => models.verifyMiniToken(token),
+    (error: any) => error.code === 40002
+  );
+
+  const second = await logoutRoute.POST(
+    new Request('http://localhost/api/mini/auth/logout', { method: 'POST' })
+  );
+  assert.equal(second.status, 200);
+  assert.equal((await second.json()).code, 0);
+});
+
+test('8. /api/mini/me does not expose openid, unionid or session_key', async () => {
   const resp = await meRoute.GET(
     bearerRequest('http://localhost/api/mini/me', firstAuth.token)
   );
@@ -291,7 +320,7 @@ test('7. /api/mini/me does not expose openid, unionid or session_key', async () 
   assert.equal(body.data.welcomeGranted, true);
 });
 
-test('8. /api/mini/credits reads the existing credit ledger', async () => {
+test('9. /api/mini/credits reads the existing credit ledger', async () => {
   const resp = await creditsRoute.GET(
     bearerRequest('http://localhost/api/mini/credits', firstAuth.token)
   );
@@ -324,7 +353,7 @@ test('8. /api/mini/credits reads the existing credit ledger', async () => {
   );
 });
 
-test('9. mini upload without token returns 401', async () => {
+test('10. mini upload without token returns 401', async () => {
   const formData = new FormData();
   formData.append(
     'files',

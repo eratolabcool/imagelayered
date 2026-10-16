@@ -133,38 +133,6 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
 
       <div className="h-px bg-white/10 mx-2" />
 
-      {/* Theme Toggle Button */}
-      <button
-        onClick={() => setIsLightTheme(!isLightTheme)}
-        className={`p-3 rounded-xl transition-all duration-200 group relative border border-transparent ${
-          isLightTheme
-            ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
-            : 'text-gray-500 hover:text-white hover:bg-white/5'
-        }`}
-        title={isLightTheme ? tb.switchToDark : tb.switchToLight}
-      >
-        {isLightTheme ? (
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="5"/>
-            <line x1="12" y1="1" x2="12" y2="3"/>
-            <line x1="12" y1="21" x2="12" y2="23"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-            <line x1="1" y1="12" x2="3" y2="12"/>
-            <line x1="21" y1="12" x2="23" y2="12"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-          </svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-        )}
-        <span className="absolute left-full ml-4 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">
-          {isLightTheme ? tb.lightMode : tb.darkMode}
-        </span>
-      </button>
-
       {/* Settings Button */}
       <button
         onClick={() => setShowAdvanced(!showAdvanced)}
@@ -210,11 +178,11 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
               <label className={`text-[10px] font-bold uppercase tracking-wider ${
                 isLightTheme ? 'text-gray-700' : 'text-gray-500'
               }`}>{adv.aiModel}</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <button
-                  onClick={() => updateConfig({ model: 'fal-ai/qwen-image-layered' })}
+                  onClick={() => updateConfig({ model: 'seedream/5-pro-layer-decomposition' })}
                   className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                    advancedConfig.model === 'fal-ai/qwen-image-layered'
+                    advancedConfig.model === 'seedream/5-pro-layer-decomposition'
                       ? isLightTheme
                         ? 'bg-blue-100 text-blue-700 border-blue-300'
                         : 'bg-blue-600/20 text-blue-400 border-blue-500/50'
@@ -223,27 +191,11 @@ const CrookedToolbar: React.FC<ToolbarProps> = ({
                         : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
                   }`}
                 >
-                  {adv.standard}
-                </button>
-                <button
-                  onClick={() => updateConfig({ model: 'fal-ai/qwen-image-layered/lora' })}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                    advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
-                      ? isLightTheme
-                        ? 'bg-purple-100 text-purple-700 border-purple-300'
-                        : 'bg-purple-600/20 text-purple-400 border-purple-500/50'
-                      : isLightTheme
-                        ? 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'
-                        : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10'
-                  }`}
-                >
-                  {adv.lora}
+                  Seedream 5 Pro
                 </button>
               </div>
               <p className={`text-[9px] ${isLightTheme ? 'text-gray-600' : 'text-gray-600'}`}>
-                {advancedConfig.model === 'fal-ai/qwen-image-layered/lora'
-                  ? adv.loraDesc
-                  : adv.standardDesc}
+                Kie semantic layer decomposition for transparent PSD and PNG exports.
               </p>
             </div>
 

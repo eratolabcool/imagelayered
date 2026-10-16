@@ -1,141 +1,63 @@
-import { MetadataRoute } from 'next';
+import type { MetadataRoute } from 'next';
 
+import { postsSource } from '@/core/docs/source';
 import { envConfigs } from '@/config';
 import { defaultLocale, locales } from '@/config/locale';
 import { imageLayeredSeoPages } from '@/shared/seo/image-layered-pages';
 
-/**
- * Generate dynamic sitemap for SEO
- */
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const appUrl = envConfigs.app_url;
-  const currentDate = new Date();
-
-  // Static routes with their priorities and update frequencies
-  const staticRoutes = [
-    {
-      url: '',
-      lastModified: currentDate,
-      changeFrequency: 'daily' as const,
-      priority: 1,
-    },
-    {
-      url: '/features',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.9,
-    },
-    {
-      url: '/pricing',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: '/docs',
-      lastModified: currentDate,
-      changeFrequency: 'daily' as const,
-      priority: 0.9,
-    },
-    {
-      url: '/blog',
-      lastModified: currentDate,
-      changeFrequency: 'daily' as const,
-      priority: 0.8,
-    },
-    {
-      url: '/seo',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.85,
-    },
-    {
-      url: '/updates',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.6,
-    },
-    {
-      url: '/privacy-policy',
-      lastModified: currentDate,
-      changeFrequency: 'monthly' as const,
-      priority: 0.3,
-    },
-    {
-      url: '/terms-of-service',
-      lastModified: currentDate,
-      changeFrequency: 'monthly' as const,
-      priority: 0.3,
-    },
-    // AI tools pages
-    {
-      url: '/studio',
-      lastModified: currentDate,
-      changeFrequency: 'daily' as const,
-      priority: 0.95,
-    },
-    {
-      url: '/qwen-image-layered-online',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.9,
-    },
-    {
-      url: '/ai-lookbook',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.9,
-    },
-    {
-      url: '/activity',
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    },
+export default function sitemap(): MetadataRoute.Sitemap {
+  const appUrl = envConfigs.app_url.replace(/\/$/, '');
+  const localizedUrl = (path: string, locale: string) =>
+    `${appUrl}${locale === defaultLocale ? '' : `/${locale}`}${path}`;
+  // Only public, canonical routes. Omit lastModified when no reliable date exists.
+  const routes = [
+    '',
+    '/pricing',
+    '/docs',
+    '/blog',
+    '/seo',
+    '/updates',
+    '/privacy-policy',
+    '/terms-of-service',
+    '/studio',
+    '/studio/guide',
+    '/studio/workflows',
+    '/image-to-psd',
+    '/image-to-layers',
+    '/poster-to-psd',
+    '/ai-image-editing',
+    '/solutions/character-into-layers',
+    '/solutions/animator-prep',
+    '/solutions/logo-into-layers',
   ];
-
-  // Generate URLs for all locales
-  const sitemapEntries: MetadataRoute.Sitemap = [];
-
-  for (const locale of locales) {
-    const localePrefix = locale === defaultLocale ? '' : `/${locale}`;
-
-    for (const route of staticRoutes) {
-      const url = `${appUrl}${localePrefix}${route.url}`;
-      sitemapEntries.push({
-        url: url,
-        lastModified: route.lastModified,
-        changeFrequency: route.changeFrequency,
-        priority: route.priority,
-        alternates: {
-          languages: Object.fromEntries(
-            locales.map(loc => [
-              loc,
-              `${appUrl}${loc === defaultLocale ? '' : `/${loc}`}${route.url}`,
-            ])
-          ),
-        },
+  const entries: MetadataRoute.Sitemap = [];
+  for (const path of routes) {
+    const languages = Object.fromEntries(
+      locales.map((locale) => [locale, localizedUrl(path, locale)])
+    );
+    languages['x-default'] = localizedUrl(path, defaultLocale);
+    for (const locale of locales) {
+      entries.push({
+        url: localizedUrl(path, locale),
+        alternates: { languages },
       });
     }
   }
-
+  // The MDX source knows which translations actually exist; don't invent /zh copies.
+  for (const locale of locales) {
+    for (const post of postsSource.getPages(locale)) {
+      entries.push({
+        url: localizedUrl(`/blog/${post.slugs.join('/')}`, locale),
+      });
+    }
+  }
   for (const page of imageLayeredSeoPages) {
-    sitemapEntries.push({
-      url: `${appUrl}/seo/${page.market}/${page.slug}`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 0.72,
-    });
+    entries.push({ url: `${appUrl}/seo/${page.market}/${page.slug}` });
   }
-
-  for (const market of ['en', 'pt', 'ja', 'ru', 'es']) {
-    sitemapEntries.push({
-      url: `${appUrl}/seo/${market}`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: market === 'en' ? 0.82 : 0.78,
-    });
+  for (const market of new Set(
+    imageLayeredSeoPages.map((page) => page.market)
+  )) {
+    entries.push({ url: `${appUrl}/seo/${market}` });
   }
-
-  return sitemapEntries;
+  return entries;
 }

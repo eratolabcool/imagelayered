@@ -23,14 +23,25 @@ import {
   RotateCw,
   Sparkles,
   Trash2,
+  X,
+  Zap,
 } from 'lucide-react';
+
+import { useSession } from '@/core/auth/client';
+import { useAppContext } from '@/shared/contexts/app';
+import { SignModal } from '@/shared/blocks/sign/sign-modal';
 
 import {
   pickStudioLayerAtPoint,
   pointerToProjectPoint,
 } from '../lib/alpha-hit-test';
 import { STUDIO_EVENTS, trackStudioEvent } from '../lib/analytics';
-import { exportStudioComposite, exportStudioLayer } from '../lib/export';
+import {
+  exportStudioComposite,
+  exportStudioLayer,
+  exportStudioPsd,
+  exportStudioZip,
+} from '../lib/export';
 import {
   createStudioOperation,
   createStudioRevision,
@@ -105,14 +116,37 @@ function normalizedZ(layers: StudioLayer[]) {
 function createLayerFromImage(
   project: StudioProject,
   imageUrl: string,
-  index: number
+  index: number,
+  layerName?: string
 ): StudioLayer {
+  const fallbackNames = [
+    'Background',
+    'Main Subject',
+    'Product',
+    'Text / Graphics',
+    'Shadow',
+    'Lighting / Effects',
+  ];
+  const name = layerName?.trim() || fallbackNames[index] || `Layer ${index + 1}`;
+  const semanticType = /background/i.test(name)
+    ? 'background'
+    : /product/i.test(name)
+      ? 'product'
+      : /text|logo|graphic/i.test(name)
+        ? 'text'
+        : /shadow/i.test(name)
+          ? 'shadow'
+          : /light|effect/i.test(name)
+            ? 'effect'
+            : index === 0
+              ? 'background'
+              : 'subject';
   return {
     id: crypto.randomUUID(),
     projectId: project.id,
-    name: `Layer ${index + 1}`,
+    name,
     type: 'raster',
-    semanticType: index === 0 ? 'background' : 'unknown',
+    semanticType,
     assetId: imageUrl,
     x: 0,
     y: 0,
@@ -166,15 +200,66 @@ export function StudioShell({ projectId }: Props) {
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState<'project' | 'layer' | null>(null);
+  const [exporting, setExporting] = useState<
+    'project' | 'psd' | 'zip' | 'layer' | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [operation, setOperation] = useState<StudioOperation | null>(null);
   const [past, setPast] = useState<Snapshot[]>([]);
   const [future, setFuture] = useState<Snapshot[]>([]);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [quotaReason, setQuotaReason] = useState('');
+  const [comparePosition, setComparePosition] = useState(50);
+  const [compareMode, setCompareMode] = useState(false);
   const hydratedRef = useRef(false);
   const transformRef = useRef<TransformState | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const pollingCancelledRef = useRef(false);
+
+  const {
+    user,
+    setUser,
+    fetchUserInfo,
+    fetchUserCredits,
+    setIsShowSignModal,
+  } = useAppContext();
+  const { data: session, isPending: isAuthPending } = useSession();
+  const sessionUser = session?.user ?? null;
+
+  // Studio does not render the marketing header, so it must hydrate the
+  // shared app user state itself. Without this bridge an already signed-in
+  // visitor is treated as a guest and the local sign-in button has no modal
+  // mounted to open.
+  useEffect(() => {
+    if (isAuthPending) return;
+    if (sessionUser) {
+      if (user?.id !== sessionUser.id) {
+        setUser(sessionUser as typeof user);
+        void fetchUserInfo();
+      }
+      return;
+    }
+    if (user) setUser(null);
+  }, [fetchUserInfo, isAuthPending, sessionUser, setUser, user]);
+
+  function handleAIQuotaError(errorMsg: string) {
+    const isGuestLimit = /guest.*limit|sign in/i.test(errorMsg);
+    const isCreditLimit = /credit|insufficient|balance/i.test(errorMsg);
+    if (isGuestLimit || isCreditLimit) {
+      setQuotaReason(
+        isGuestLimit
+          ? 'AI layer decomposition and editing require a signed-in account with purchased credits. Sign in, then choose a credit package to continue.'
+          : 'You have run out of generation credits. Top up or upgrade your plan to continue using AI layer editing and auto-decomposition.'
+      );
+      setUpgradeModalOpen(true);
+    }
+  }
+
+  useEffect(() => {
+    if (user?.id) {
+      void fetchUserCredits?.();
+    }
+  }, [user?.id, fetchUserCredits]);
 
   const selectedLayer = useMemo(
     () => layers.find((layer) => layer.id === selectedLayerId) ?? null,
@@ -216,10 +301,13 @@ export function StudioShell({ projectId }: Props) {
             layers: StudioLayer[];
           };
           if (cancelled) return;
-          const revisions = await listStudioRevisions(projectId).catch(() => []);
+          const revisions = await listStudioRevisions(projectId).catch(
+            () => []
+          );
           setProject({
             ...payload.project,
-            activeRevisionId: revisions[0]?.id ?? payload.project.activeRevisionId,
+            activeRevisionId:
+              revisions[0]?.id ?? payload.project.activeRevisionId,
           });
           setLayers(payload.layers);
           setSelectedLayerId(payload.layers.at(-1)?.id ?? null);
@@ -363,31 +451,49 @@ export function StudioShell({ projectId }: Props) {
     let current = initial;
     setOperation(current);
     for (let attempt = 0; attempt < 120; attempt += 1) {
-      if (pollingCancelledRef.current) throw new Error('AI operation cancelled.');
+      if (pollingCancelledRef.current)
+        throw new Error('AI operation cancelled.');
       if (current.status === 'succeeded' || current.status === 'failed') break;
       await new Promise((resolve) => window.setTimeout(resolve, 1500));
       current = await getStudioOperation(current);
       setOperation(current);
     }
     if (current.status === 'failed') {
-      throw new Error(current.errorCode || 'AI operation failed. Please try again.');
+      throw new Error(
+        current.errorCode || 'AI operation failed. Please try again.'
+      );
     }
-    if (current.status !== 'succeeded') throw new Error('AI operation timed out.');
+    if (current.status !== 'succeeded')
+      throw new Error('AI operation timed out.');
     return current;
   }
 
   async function decompose() {
-    if (!project || operation?.status === 'running' || operation?.status === 'queued') {
+    if (
+      !project ||
+      operation?.status === 'running' ||
+      operation?.status === 'queued'
+    ) {
       return;
     }
-    const source = layers.find((layer) => layer.source === 'original') || layers[0];
+    if (!user) {
+      setQuotaReason(
+        'AI layer decomposition requires a signed-in account with purchased credits.'
+      );
+      setUpgradeModalOpen(true);
+      return;
+    }
+    const source =
+      layers.find((layer) => layer.source === 'original') || layers[0];
     if (!source?.assetId) return setError('The source image is missing.');
 
     setError(null);
     setProject((current) =>
       current ? { ...current, status: 'decomposing' } : current
     );
-    trackStudioEvent(STUDIO_EVENTS.decomposeStarted, { project_id: project.id });
+    trackStudioEvent(STUDIO_EVENTS.decomposeStarted, {
+      project_id: project.id,
+    });
 
     try {
       const initial = await createStudioOperation(project.id, {
@@ -402,10 +508,12 @@ export function StudioShell({ projectId }: Props) {
       const completed = await pollOperation(initial);
       const images = completed.result?.images || [];
       if (images.length < 2) {
-        throw new Error('Decomposition completed without multiple layer images.');
+        throw new Error(
+          'Decomposition completed without multiple layer images.'
+        );
       }
       const next = images.map((url, index) =>
-        createLayerFromImage(project, url, index)
+        createLayerFromImage(project, url, index, completed.result?.layerNames?.[index])
       );
       commitLayers(next);
       selectLayer(next.at(-1)?.id ?? null);
@@ -413,6 +521,7 @@ export function StudioShell({ projectId }: Props) {
       setProject((current) =>
         current ? { ...current, status: 'ready' } : current
       );
+      void fetchUserCredits?.();
       trackStudioEvent(STUDIO_EVENTS.decomposeCompleted, {
         project_id: project.id,
         layer_count: next.length,
@@ -421,13 +530,25 @@ export function StudioShell({ projectId }: Props) {
       setProject((current) =>
         current ? { ...current, status: 'error' } : current
       );
-      setError(cause instanceof Error ? cause.message : 'Unable to decompose image.');
-      trackStudioEvent(STUDIO_EVENTS.decomposeFailed, { project_id: project.id });
+      const msg =
+        cause instanceof Error ? cause.message : 'Unable to decompose image.';
+      setError(msg);
+      handleAIQuotaError(msg);
+      trackStudioEvent(STUDIO_EVENTS.decomposeFailed, {
+        project_id: project.id,
+      });
     }
   }
 
   async function editSelectedLayer() {
     if (!project || !selectedLayer || !prompt.trim()) return;
+    if (!user) {
+      setQuotaReason(
+        'AI layer editing requires a signed-in account with purchased credits.'
+      );
+      setUpgradeModalOpen(true);
+      return;
+    }
     setError(null);
     setProject((current) =>
       current ? { ...current, status: 'editing' } : current
@@ -451,7 +572,8 @@ export function StudioShell({ projectId }: Props) {
       });
       const completed = await pollOperation(initial);
       const resultUrl = completed.result?.images?.[0];
-      if (!resultUrl) throw new Error('The edit completed without an image result.');
+      if (!resultUrl)
+        throw new Error('The edit completed without an image result.');
       const next = layers.map((layer) =>
         layer.id === selectedLayer.id
           ? { ...layer, assetId: resultUrl, source: 'ai-edit' as const }
@@ -463,6 +585,7 @@ export function StudioShell({ projectId }: Props) {
       setProject((current) =>
         current ? { ...current, status: 'ready' } : current
       );
+      void fetchUserCredits?.();
       trackStudioEvent(STUDIO_EVENTS.aiEditCompleted, {
         project_id: project.id,
         layer_id: selectedLayer.id,
@@ -475,7 +598,10 @@ export function StudioShell({ projectId }: Props) {
       setProject((current) =>
         current ? { ...current, status: 'error' } : current
       );
-      setError(cause instanceof Error ? cause.message : 'Unable to edit the layer.');
+      const msg =
+        cause instanceof Error ? cause.message : 'Unable to edit the layer.';
+      setError(msg);
+      handleAIQuotaError(msg);
       trackStudioEvent(STUDIO_EVENTS.aiEditFailed, { project_id: project.id });
     }
   }
@@ -483,7 +609,11 @@ export function StudioShell({ projectId }: Props) {
   function canvasScale() {
     if (!project || !canvasRef.current) return null;
     const rect = canvasRef.current.getBoundingClientRect();
-    return { rect, x: project.width / rect.width, y: project.height / rect.height };
+    return {
+      rect,
+      x: project.width / rect.width,
+      y: project.height / rect.height,
+    };
   }
 
   async function beginCanvasMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -595,7 +725,10 @@ export function StudioShell({ projectId }: Props) {
       setLayers((current) =>
         current.map((layer) =>
           layer.id === transform.layerId
-            ? { ...layer, rotation: Math.round(transform.startRotation + delta) }
+            ? {
+                ...layer,
+                rotation: Math.round(transform.startRotation + delta),
+              }
             : layer
         )
       );
@@ -624,7 +757,9 @@ export function StudioShell({ projectId }: Props) {
     }
     setLayers((current) =>
       current.map((layer) =>
-        layer.id === transform.layerId ? { ...layer, x, y, width, height } : layer
+        layer.id === transform.layerId
+          ? { ...layer, x, y, width, height }
+          : layer
       )
     );
   }
@@ -662,7 +797,55 @@ export function StudioShell({ projectId }: Props) {
         kind: 'composite',
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to export project.');
+      setError(
+        cause instanceof Error ? cause.message : 'Unable to export project.'
+      );
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function exportPsd() {
+    if (!project || exporting) return;
+    setExporting('psd');
+    setError(null);
+    trackStudioEvent(STUDIO_EVENTS.exportOpened, {
+      project_id: project.id,
+      kind: 'psd',
+    });
+    try {
+      await exportStudioPsd(project, layers);
+      trackStudioEvent(STUDIO_EVENTS.exportCompleted, {
+        project_id: project.id,
+        kind: 'psd',
+      });
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'Unable to export PSD.'
+      );
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function exportZip() {
+    if (!project || exporting) return;
+    setExporting('zip');
+    setError(null);
+    trackStudioEvent(STUDIO_EVENTS.exportOpened, {
+      project_id: project.id,
+      kind: 'zip',
+    });
+    try {
+      await exportStudioZip(project, layers);
+      trackStudioEvent(STUDIO_EVENTS.exportCompleted, {
+        project_id: project.id,
+        kind: 'zip',
+      });
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'Unable to export ZIP.'
+      );
     } finally {
       setExporting(null);
     }
@@ -679,7 +862,9 @@ export function StudioShell({ projectId }: Props) {
         kind: 'layer',
       });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to export layer.');
+      setError(
+        cause instanceof Error ? cause.message : 'Unable to export layer.'
+      );
     } finally {
       setExporting(null);
     }
@@ -697,9 +882,14 @@ export function StudioShell({ projectId }: Props) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-300">
         <div className="max-w-md text-center">
-          <h1 className="text-xl font-semibold text-white">Unable to open project</h1>
+          <h1 className="text-xl font-semibold text-white">
+            Unable to open project
+          </h1>
           <p className="mt-3 text-sm text-zinc-500">{error}</p>
-          <a href="/studio" className="mt-6 inline-block rounded-lg bg-white px-4 py-2 text-sm font-medium text-black">
+          <a
+            href="/studio"
+            className="mt-6 inline-block rounded-lg bg-white px-4 py-2 text-sm font-medium text-black"
+          >
             Start a new project
           </a>
         </div>
@@ -708,7 +898,8 @@ export function StudioShell({ projectId }: Props) {
   }
 
   const canvasAspect = `${project.width} / ${project.height}`;
-  const operationBusy = operation?.status === 'running' || operation?.status === 'queued';
+  const operationBusy =
+    operation?.status === 'running' || operation?.status === 'queued';
   const handles: Array<[ResizeCorner, string]> = [
     ['nw', '-left-1.5 -top-1.5 cursor-nwse-resize'],
     ['ne', '-right-1.5 -top-1.5 cursor-nesw-resize'],
@@ -718,44 +909,203 @@ export function StudioShell({ projectId }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
+      <SignModal callbackUrl={`/studio/${projectId}`} />
       <header className="flex h-14 items-center justify-between border-b border-zinc-800 px-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="font-semibold">Image Layered Studio</div>
-          <span className="max-w-60 truncate text-xs text-zinc-500">{project.title}</span>
+          <a href="/" className="font-semibold transition hover:text-white">
+            Image Layered Studio
+          </a>
+          <span className="max-w-60 truncate text-xs text-zinc-500">
+            {project.title}
+          </span>
         </div>
-        <div className="flex items-center gap-1 text-sm text-zinc-400">
-          <button disabled={!past.length} onClick={undo} className="rounded-md px-3 py-2 hover:bg-zinc-900 disabled:opacity-30">Undo</button>
-          <button disabled={!future.length} onClick={redo} className="rounded-md px-3 py-2 hover:bg-zinc-900 disabled:opacity-30">Redo</button>
-          <button disabled={!!exporting} onClick={() => void exportProject()} className="ml-2 flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-2 disabled:opacity-40">
-            {exporting === 'project' ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />} Export PNG
-          </button>
+
+        <div className="flex items-center gap-3">
+          {/* User Status / Credits / Upgrade */}
+          {user ? (
+            <div className="flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-300">
+              <Sparkles className="size-3.5 text-amber-400" />
+              <span>{user.credits?.remainingCredits ?? 0} Credits</span>
+              <a
+                href="/pricing"
+                className="ml-1 rounded bg-amber-400/20 px-1.5 py-0.5 text-[11px] font-bold text-amber-200 hover:bg-amber-400/30"
+              >
+                Top Up
+              </a>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="hidden text-xs text-zinc-400 sm:inline-block">
+                Sign in + credits required for AI
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsShowSignModal(true)}
+                className="rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-200 hover:bg-zinc-700 hover:text-white"
+              >
+                Sign In
+              </button>
+              <a
+                href="/pricing"
+                className="flex items-center gap-1.5 rounded-md bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-xs font-bold text-white shadow-sm hover:opacity-90"
+              >
+                <Zap className="size-3.5 fill-current" />
+                Upgrade
+              </a>
+            </div>
+          )}
+
+          <div className="hidden h-5 w-px bg-zinc-800 sm:block" />
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-1 text-sm text-zinc-400">
+            <button
+              disabled={!past.length}
+              onClick={undo}
+              className="rounded-md px-3 py-2 hover:bg-zinc-900 disabled:opacity-30"
+            >
+              Undo
+            </button>
+            <button
+              disabled={!future.length}
+              onClick={redo}
+              className="rounded-md px-3 py-2 hover:bg-zinc-900 disabled:opacity-30"
+            >
+              Redo
+            </button>
+            <div className="ml-2 flex items-center gap-1.5">
+              <button
+                disabled={!!exporting}
+                onClick={() => void exportPsd()}
+                className="flex items-center gap-1.5 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40"
+                title="Export multi-layer PSD file for Photoshop, Clip Studio, and Live2D"
+              >
+                {exporting === 'psd' ? (
+                  <LoaderCircle className="size-3.5 animate-spin" />
+                ) : (
+                  <Download className="size-3.5" />
+                )}
+                Export PSD
+              </button>
+              <button
+                disabled={!!exporting}
+                onClick={() => void exportZip()}
+                className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/80 px-2.5 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-800 hover:text-white disabled:opacity-40"
+                title="Export all individual transparent PNG layers as a ZIP"
+              >
+                {exporting === 'zip' ? (
+                  <LoaderCircle className="size-3.5 animate-spin" />
+                ) : (
+                  <Download className="size-3.5" />
+                )}
+                ZIP
+              </button>
+              <button
+                disabled={!!exporting}
+                onClick={() => void exportProject()}
+                className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900/60 px-2.5 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-40"
+                title="Export flattened composite PNG"
+              >
+                {exporting === 'project' ? (
+                  <LoaderCircle className="size-3.5 animate-spin" />
+                ) : (
+                  <Download className="size-3.5" />
+                )}
+                PNG
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
-      {error ? <div className="border-b border-red-950 bg-red-950/30 px-4 py-2 text-center text-xs text-red-300">{error}</div> : null}
+      {error ? (
+        <div className="flex items-center justify-center gap-2 border-b border-red-950 bg-red-950/30 px-4 py-2 text-center text-xs text-red-300">
+          <span>{error}</span>
+          {/guest|credit|limit|insufficient/i.test(error) && (
+            <a
+              href="/pricing"
+              className="ml-2 font-bold text-white underline hover:text-pink-300"
+            >
+              Upgrade Plan →
+            </a>
+          )}
+        </div>
+      ) : null}
 
       <div className="grid flex-1 grid-cols-[250px_minmax(0,1fr)_300px] overflow-hidden">
         <aside className="border-r border-zinc-800 p-3">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-medium">Layers</h2><span className="text-xs text-zinc-500">{layers.length}</span></div>
-          <button type="button" disabled={operationBusy} onClick={() => void decompose()} className="mb-3 flex w-full items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-black disabled:opacity-50">
-            {operationBusy && operation?.type === 'decompose' ? <LoaderCircle className="size-4 animate-spin" /> : <Layers3 className="size-4" />} Auto layers
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium">Layers</h2>
+            <span className="text-xs text-zinc-500">{layers.length}</span>
+          </div>
+          <button
+            type="button"
+            disabled={operationBusy}
+            onClick={() => void decompose()}
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-black disabled:opacity-50"
+          >
+            {operationBusy && operation?.type === 'decompose' ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <Layers3 className="size-4" />
+            )}{' '}
+            Auto layers
           </button>
           <div className="space-y-1">
-            {[...layers].sort((a, b) => b.zIndex - a.zIndex).map((layer) => (
-              <button key={layer.id} onClick={() => selectLayer(layer.id)} className={`flex w-full items-center gap-2 rounded-md border px-2 py-2 text-left text-sm ${selectedLayerId === layer.id ? 'border-zinc-600 bg-zinc-800' : 'border-transparent hover:bg-zinc-900'}`}>
-                <span className="size-8 overflow-hidden rounded bg-zinc-800">
-                  {isRenderableAsset(layer.assetId) ? <img src={layer.assetId} alt="" className="size-full object-cover" /> : null}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{layer.name}</span>
-                {layer.locked ? <Lock className="size-3.5 text-zinc-500" /> : null}
-              </button>
-            ))}
+            {[...layers]
+              .sort((a, b) => b.zIndex - a.zIndex)
+              .map((layer) => (
+                <button
+                  key={layer.id}
+                  onClick={() => selectLayer(layer.id)}
+                  className={`flex w-full items-center gap-2 rounded-md border px-2 py-2 text-left text-sm ${selectedLayerId === layer.id ? 'border-zinc-600 bg-zinc-800' : 'border-transparent hover:bg-zinc-900'}`}
+                >
+                  <span className="size-8 overflow-hidden rounded bg-zinc-800">
+                    {isRenderableAsset(layer.assetId) ? (
+                      <img
+                        src={layer.assetId}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    ) : null}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{layer.name}</span>
+                  {layer.locked ? (
+                    <Lock className="size-3.5 text-zinc-500" />
+                  ) : null}
+                </button>
+              ))}
           </div>
         </aside>
 
         <main className="relative flex min-w-0 items-center justify-center overflow-hidden bg-zinc-900 p-8">
-          <div className="absolute left-4 top-4 z-50 rounded-lg border border-zinc-700 bg-zinc-950/90 p-1">
-            <button className="rounded-md bg-zinc-800 p-2" title="Alpha-aware select"><MousePointer2 className="size-4" /></button>
+          <div className="absolute top-4 left-4 z-50 rounded-lg border border-zinc-700 bg-zinc-950/90 p-1">
+            <button
+              className="rounded-md bg-zinc-800 p-2"
+              title="Alpha-aware select"
+            >
+              <MousePointer2 className="size-4" />
+            </button>
+          </div>
+          <div className="absolute right-4 top-4 z-50 flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950/90 px-3 py-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setCompareMode((value) => !value)}
+              className={`rounded px-2 py-1 ${compareMode ? 'bg-white text-zinc-950' : 'bg-zinc-800 text-zinc-300'}`}
+            >
+              Compare
+            </button>
+            {compareMode ? (
+              <input
+                aria-label="Original image comparison position"
+                type="range"
+                min="0"
+                max="100"
+                value={comparePosition}
+                onChange={(event) => setComparePosition(Number(event.target.value))}
+                className="w-24 accent-white"
+              />
+            ) : null}
           </div>
           <div
             ref={canvasRef}
@@ -764,26 +1114,92 @@ export function StudioShell({ projectId }: Props) {
             onPointerUp={endTransform}
             onPointerCancel={endTransform}
             className="relative max-h-[78vh] max-w-full touch-none overflow-visible border border-zinc-700 bg-[linear-gradient(45deg,#18181b_25%,transparent_25%),linear-gradient(-45deg,#18181b_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#18181b_75%),linear-gradient(-45deg,transparent_75%,#18181b_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] shadow-2xl"
-            style={{ aspectRatio: canvasAspect, width: project.width >= project.height ? 'min(80vw, 960px)' : 'auto', height: project.height > project.width ? 'min(78vh, 900px)' : 'auto' }}
+            style={{
+              aspectRatio: canvasAspect,
+              width:
+                project.width >= project.height ? 'min(80vw, 960px)' : 'auto',
+              height:
+                project.height > project.width ? 'min(78vh, 900px)' : 'auto',
+            }}
           >
-            {[...layers].sort((a, b) => a.zIndex - b.zIndex).map((layer) => {
-              if (!layer.visible) return null;
-              const selected = layer.id === selectedLayerId;
+            {[...layers]
+              .sort((a, b) => a.zIndex - b.zIndex)
+              .map((layer) => {
+                if (!layer.visible) return null;
+                const selected = layer.id === selectedLayerId;
+                return (
+                  <div
+                    key={layer.id}
+                    className={`pointer-events-none absolute ${selected ? 'outline outline-2 outline-offset-1 outline-white/90' : ''}`}
+                    style={{
+                      left: `${(layer.x / project.width) * 100}%`,
+                      top: `${(layer.y / project.height) * 100}%`,
+                      width: `${(layer.width / project.width) * 100}%`,
+                      height: `${(layer.height / project.height) * 100}%`,
+                      opacity: layer.opacity,
+                      zIndex: layer.zIndex,
+                      transform: `scale(${layer.scaleX}, ${layer.scaleY}) rotate(${layer.rotation}deg)`,
+                      transformOrigin: 'center',
+                    }}
+                  >
+                    {isRenderableAsset(layer.assetId) ? (
+                      <img
+                        draggable={false}
+                        src={layer.assetId}
+                        alt={layer.name}
+                        className="size-full object-contain"
+                      />
+                    ) : null}
+                    {selected && !layer.locked ? (
+                      <>
+                        <button
+                          type="button"
+                          aria-label="Rotate layer"
+                          onPointerDown={(event) => beginRotate(event, layer)}
+                          onPointerMove={moveTransform}
+                          onPointerUp={endTransform}
+                          onPointerCancel={endTransform}
+                          className="pointer-events-auto absolute -top-8 left-1/2 size-4 -translate-x-1/2 cursor-grab rounded-full border-2 border-zinc-950 bg-white shadow"
+                        />
+                        <div className="absolute -top-5 left-1/2 h-5 w-px -translate-x-1/2 bg-white" />
+                        {handles.map(([corner, className]) => (
+                          <button
+                            key={corner}
+                            type="button"
+                            aria-label={`Resize ${corner}`}
+                            onPointerDown={(event) =>
+                              beginResize(event, layer, corner)
+                            }
+                            onPointerMove={moveTransform}
+                            onPointerUp={endTransform}
+                            onPointerCancel={endTransform}
+                            className={`pointer-events-auto absolute size-3 rounded-sm border border-zinc-950 bg-white shadow ${className}`}
+                          />
+                        ))}
+                      </>
+                    ) : null}
+                  </div>
+                );
+              })}
+            {compareMode && (() => {
+              const original = layers.find((layer) => layer.source === 'original');
+              if (!original || !isRenderableAsset(original.assetId)) return null;
               return (
-                <div key={layer.id} className={`pointer-events-none absolute ${selected ? 'outline outline-2 outline-offset-1 outline-white/90' : ''}`} style={{ left: `${(layer.x / project.width) * 100}%`, top: `${(layer.y / project.height) * 100}%`, width: `${(layer.width / project.width) * 100}%`, height: `${(layer.height / project.height) * 100}%`, opacity: layer.opacity, zIndex: layer.zIndex, transform: `scale(${layer.scaleX}, ${layer.scaleY}) rotate(${layer.rotation}deg)`, transformOrigin: 'center' }}>
-                  {isRenderableAsset(layer.assetId) ? <img draggable={false} src={layer.assetId} alt={layer.name} className="size-full object-contain" /> : null}
-                  {selected && !layer.locked ? (
-                    <>
-                      <button type="button" aria-label="Rotate layer" onPointerDown={(event) => beginRotate(event, layer)} onPointerMove={moveTransform} onPointerUp={endTransform} onPointerCancel={endTransform} className="pointer-events-auto absolute left-1/2 -top-8 size-4 -translate-x-1/2 cursor-grab rounded-full border-2 border-zinc-950 bg-white shadow" />
-                      <div className="absolute left-1/2 -top-5 h-5 w-px -translate-x-1/2 bg-white" />
-                      {handles.map(([corner, className]) => (
-                        <button key={corner} type="button" aria-label={`Resize ${corner}`} onPointerDown={(event) => beginResize(event, layer, corner)} onPointerMove={moveTransform} onPointerUp={endTransform} onPointerCancel={endTransform} className={`pointer-events-auto absolute size-3 rounded-sm border border-zinc-950 bg-white shadow ${className}`} />
-                      ))}
-                    </>
-                  ) : null}
+                <div
+                  className="pointer-events-none absolute inset-0 z-[100] overflow-hidden border-r-2 border-white/90"
+                  style={{ clipPath: `inset(0 ${100 - comparePosition}% 0 0)` }}
+                >
+                  <img
+                    src={original.assetId}
+                    alt="Original image comparison"
+                    className="size-full object-contain"
+                  />
+                  <span className="absolute left-2 top-2 rounded bg-black/70 px-2 py-1 text-[10px] uppercase tracking-wider text-white">
+                    Original
+                  </span>
                 </div>
               );
-            })}
+            })()}
           </div>
         </main>
 
@@ -791,34 +1207,236 @@ export function StudioShell({ projectId }: Props) {
           <h2 className="mb-4 text-sm font-medium">Inspector</h2>
           {selectedLayer ? (
             <div className="space-y-5">
-              <div><div className="text-sm font-medium">{selectedLayer.name}</div><div className="text-xs text-zinc-500">{selectedLayer.semanticType}</div></div>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => { patchLayer(selectedLayer.id, { visible: !selectedLayer.visible }); trackStudioEvent(STUDIO_EVENTS.layerHidden, { project_id: projectId }); }} className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs hover:bg-zinc-900">{selectedLayer.visible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}{selectedLayer.visible ? 'Visible' : 'Hidden'}</button>
-                <button onClick={() => { patchLayer(selectedLayer.id, { locked: !selectedLayer.locked }); trackStudioEvent(STUDIO_EVENTS.layerLocked, { project_id: projectId }); }} className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs hover:bg-zinc-900">{selectedLayer.locked ? <Lock className="size-4" /> : <LockOpen className="size-4" />}{selectedLayer.locked ? 'Locked' : 'Unlocked'}</button>
+              <div>
+                <div className="text-sm font-medium">{selectedLayer.name}</div>
+                <div className="text-xs text-zinc-500">
+                  {selectedLayer.semanticType}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={duplicateSelected} className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs"><Copy className="size-4" />Duplicate</button>
-                <button disabled={layers.length <= 1} onClick={deleteSelected} className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs text-red-300 disabled:opacity-30"><Trash2 className="size-4" />Delete</button>
-                <button onClick={() => reorderSelected(1)} className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs"><ChevronUp className="size-4" />Forward</button>
-                <button onClick={() => reorderSelected(-1)} className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs"><ChevronDown className="size-4" />Backward</button>
+                <button
+                  onClick={() => {
+                    patchLayer(selectedLayer.id, {
+                      visible: !selectedLayer.visible,
+                    });
+                    trackStudioEvent(STUDIO_EVENTS.layerHidden, {
+                      project_id: projectId,
+                    });
+                  }}
+                  className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs hover:bg-zinc-900"
+                >
+                  {selectedLayer.visible ? (
+                    <Eye className="size-4" />
+                  ) : (
+                    <EyeOff className="size-4" />
+                  )}
+                  {selectedLayer.visible ? 'Visible' : 'Hidden'}
+                </button>
+                <button
+                  onClick={() => {
+                    patchLayer(selectedLayer.id, {
+                      locked: !selectedLayer.locked,
+                    });
+                    trackStudioEvent(STUDIO_EVENTS.layerLocked, {
+                      project_id: projectId,
+                    });
+                  }}
+                  className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs hover:bg-zinc-900"
+                >
+                  {selectedLayer.locked ? (
+                    <Lock className="size-4" />
+                  ) : (
+                    <LockOpen className="size-4" />
+                  )}
+                  {selectedLayer.locked ? 'Locked' : 'Unlocked'}
+                </button>
               </div>
-              <label className="block text-xs text-zinc-400">Opacity<input className="mt-2 w-full" type="range" min="0" max="1" step="0.01" value={selectedLayer.opacity} onChange={(event) => patchLayer(selectedLayer.id, { opacity: Number(event.target.value) })} /></label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={duplicateSelected}
+                  className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs"
+                >
+                  <Copy className="size-4" />
+                  Duplicate
+                </button>
+                <button
+                  disabled={layers.length <= 1}
+                  onClick={deleteSelected}
+                  className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs text-red-300 disabled:opacity-30"
+                >
+                  <Trash2 className="size-4" />
+                  Delete
+                </button>
+                <button
+                  onClick={() => reorderSelected(1)}
+                  className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs"
+                >
+                  <ChevronUp className="size-4" />
+                  Forward
+                </button>
+                <button
+                  onClick={() => reorderSelected(-1)}
+                  className="flex items-center justify-center gap-2 rounded-md border border-zinc-800 px-3 py-2 text-xs"
+                >
+                  <ChevronDown className="size-4" />
+                  Backward
+                </button>
+              </div>
+              <label className="block text-xs text-zinc-400">
+                Opacity
+                <input
+                  className="mt-2 w-full"
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={selectedLayer.opacity}
+                  onChange={(event) =>
+                    patchLayer(selectedLayer.id, {
+                      opacity: Number(event.target.value),
+                    })
+                  }
+                />
+              </label>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                {([['X', 'x'], ['Y', 'y'], ['W', 'width'], ['H', 'height']] as const).map(([label, key]) => (
-                  <label key={key} className="rounded-md border border-zinc-800 p-2 text-zinc-500">{label}<input type="number" value={Math.round(selectedLayer[key])} onChange={(event) => patchLayer(selectedLayer.id, { [key]: Number(event.target.value) } as Partial<StudioLayer>)} className="mt-1 w-full bg-transparent text-zinc-100 outline-none" /></label>
+                {(
+                  [
+                    ['X', 'x'],
+                    ['Y', 'y'],
+                    ['W', 'width'],
+                    ['H', 'height'],
+                  ] as const
+                ).map(([label, key]) => (
+                  <label
+                    key={key}
+                    className="rounded-md border border-zinc-800 p-2 text-zinc-500"
+                  >
+                    {label}
+                    <input
+                      type="number"
+                      value={Math.round(selectedLayer[key])}
+                      onChange={(event) =>
+                        patchLayer(selectedLayer.id, {
+                          [key]: Number(event.target.value),
+                        } as Partial<StudioLayer>)
+                      }
+                      className="mt-1 w-full bg-transparent text-zinc-100 outline-none"
+                    />
+                  </label>
                 ))}
               </div>
-              <label className="block text-xs text-zinc-400"><span className="flex items-center gap-2"><RotateCw className="size-3.5" /> Rotation · {Math.round(selectedLayer.rotation)}°</span><input className="mt-2 w-full" type="range" min="-180" max="180" step="1" value={selectedLayer.rotation} onChange={(event) => patchLayer(selectedLayer.id, { rotation: Number(event.target.value) })} /></label>
-              <button disabled={!!exporting} onClick={() => void exportSelected()} className="flex w-full items-center justify-center gap-2 rounded-md border border-zinc-700 px-3 py-2 text-sm disabled:opacity-40">{exporting === 'layer' ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}Export selected layer</button>
+              <label className="block text-xs text-zinc-400">
+                <span className="flex items-center gap-2">
+                  <RotateCw className="size-3.5" /> Rotation ·{' '}
+                  {Math.round(selectedLayer.rotation)}°
+                </span>
+                <input
+                  className="mt-2 w-full"
+                  type="range"
+                  min="-180"
+                  max="180"
+                  step="1"
+                  value={selectedLayer.rotation}
+                  onChange={(event) =>
+                    patchLayer(selectedLayer.id, {
+                      rotation: Number(event.target.value),
+                    })
+                  }
+                />
+              </label>
+              <button
+                disabled={!!exporting}
+                onClick={() => void exportSelected()}
+                className="flex w-full items-center justify-center gap-2 rounded-md border border-zinc-700 px-3 py-2 text-sm disabled:opacity-40"
+              >
+                {exporting === 'layer' ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <Download className="size-4" />
+                )}
+                Export selected layer
+              </button>
               <div className="border-t border-zinc-800 pt-4">
-                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500"><Sparkles className="size-3.5" /> AI edit selected layer</div>
-                <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="e.g. make this bottle matte black" className="min-h-24 w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 p-3 text-sm outline-none" />
-                <button disabled={!prompt.trim() || operationBusy} onClick={() => void editSelectedLayer()} className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-black disabled:opacity-40">{operationBusy && operation?.type !== 'decompose' ? <LoaderCircle className="size-4 animate-spin" /> : null}Edit selected layer</button>
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium tracking-wide text-zinc-500 uppercase">
+                  <Sparkles className="size-3.5" /> AI edit selected layer
+                </div>
+                <textarea
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  placeholder="e.g. make this bottle matte black"
+                  className="min-h-24 w-full resize-none rounded-md border border-zinc-800 bg-zinc-900 p-3 text-sm outline-none"
+                />
+                <button
+                  disabled={!prompt.trim() || operationBusy}
+                  onClick={() => void editSelectedLayer()}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-black disabled:opacity-40"
+                >
+                  {operationBusy && operation?.type !== 'decompose' ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : null}
+                  Edit selected layer
+                </button>
               </div>
             </div>
-          ) : <p className="text-sm text-zinc-500">Select a visible object on the canvas or choose a layer.</p>}
+          ) : (
+            <p className="text-sm text-zinc-500">
+              Select a visible object on the canvas or choose a layer.
+            </p>
+          )}
         </aside>
       </div>
+
+      {/* Upgrade & Quota Modal */}
+      {upgradeModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
+            <button
+              onClick={() => setUpgradeModalOpen(false)}
+              className="absolute top-4 right-4 rounded-lg p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            >
+              <X className="size-5" />
+            </button>
+            <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-pink-500/10 text-pink-400">
+              <Sparkles className="size-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white">
+              Unlock Unlimited Layer Edits
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-zinc-300">
+              {quotaReason ||
+                'You have reached the usage limit. Upgrade your account or top up credits to continue decomposing and editing layers.'}
+            </p>
+            <div className="mt-6 flex flex-col gap-2.5">
+              <a
+                href="/pricing"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-sm font-bold text-white shadow-lg transition hover:brightness-110"
+              >
+                <Zap className="size-4 fill-current" />
+                View Plans & Upgrade
+              </a>
+              {!user ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUpgradeModalOpen(false);
+                    setIsShowSignModal(true);
+                  }}
+                  className="flex h-11 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800/80 text-sm font-semibold text-zinc-200 hover:bg-zinc-800 hover:text-white"
+                >
+                  Sign In to Continue
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setUpgradeModalOpen(false)}
+                className="pt-1 text-xs font-medium text-zinc-500 hover:text-zinc-400"
+              >
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

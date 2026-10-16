@@ -24,6 +24,25 @@ export type StudioLayerSource =
   | 'duplicate'
   | 'user';
 
+export type StudioBlendMode =
+  | 'pass through'
+  | 'normal'
+  | 'multiply'
+  | 'screen'
+  | 'overlay'
+  | 'soft light'
+  | 'hard light'
+  | 'darken'
+  | 'lighten'
+  | 'color dodge'
+  | 'color burn'
+  | 'difference'
+  | 'exclusion'
+  | 'hue'
+  | 'saturation'
+  | 'color'
+  | 'luminosity';
+
 export type StudioOperationType =
   | 'decompose'
   | 'replace'
@@ -91,6 +110,7 @@ export interface StudioLayer {
   scaleY: number;
   rotation: number;
   opacity: number;
+  blendMode?: StudioBlendMode;
   visible: boolean;
   locked: boolean;
   zIndex: number;
@@ -130,6 +150,7 @@ export interface StudioRevision {
 
 export interface StudioOperationResult {
   images?: string[];
+  layerNames?: string[];
   taskInfo?: unknown;
   taskResult?: unknown;
 }

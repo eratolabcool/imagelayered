@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "不用重生成，也能修改任意图片 - AI 图层图片编辑器",
-    "description": "将商品图、海报、AI 图片和自媒体封面自动拆成可编辑图层，只修改选中的物体、文字、背景、衣服或产品，同时保持整体构图不变。",
-    "keywords": "不用重生成修改AI图片, 修改Midjourney图片, AI商品图修改, AI商品图换背景, AI图片二次编辑工具, 不用Photoshop修改海报, 角色一致性编辑, AI分离图片文字, 保持构图不变的AI编辑"
+    "title": "图片转图层 — 拆图层并导出 PSD | Image Layered",
+    "description": "把一张平面图片拆成带透明度的图层，选中对象进行修改，再导出多图层 PSD 或 PNG ZIP。上传和整理图层免费，AI 操作按积分计费。",
+    "keywords": "图片转图层, 图片转 PSD, 图片拆层, 透明 PNG 图层, AI 图像分解"
   },
   "page": {
     "show_sections": [
@@ -11,34 +11,33 @@
       "usage",
       "features",
       "stats",
-
       "faq",
       "cta"
     ],
     "sections": {
       "hero": {
         "id": "hero",
-        "title": "上传一张海报，每个元素都能像图层一样编辑",
-        "highlight_text": "每个元素都能像图层一样编辑",
-        "description": "Image Layered 将平面图片转换为可编辑图层，让你用 AI 修改文字、替换产品、移除物体，并重新设计海报。",
+        "title": "把一张图拆成图层，导出 PSD 和透明 PNG。",
+        "highlight_text": "导出 PSD 和透明 PNG。",
+        "description": "把成品图变成独立的透明图层。检查图层栈、锁定需要保留的内容、局部修改，再交给 Photoshop、Photopea、Live2D 或 After Effects。",
         "announcement": {
           "badge": "NEW",
-          "title": "✨ 将任何海报转换为可编辑的 AI 图层",
+          "title": "✨ 将任何图片转换为可编辑图层",
           "url": "/studio"
         },
-        "tip": "为创作者提供海报改图、商品替换和可编辑 AI 图层",
+        "tip": "适合设计师、AI 图片创作者、电商视觉和动效制作。",
         "buttons": [
           {
-            "title": "立即免费试用",
+            "title": "打开 Studio",
             "icon": "Zap",
             "url": "/studio",
             "target": "_self",
             "variant": "default"
           },
           {
-            "title": "看看效果示例",
+            "title": "查看分层案例",
             "icon": "BookOpenText",
-            "url": "/quicktest",
+            "url": "/image-to-layers",
             "target": "_self",
             "variant": "outline"
           }
@@ -91,9 +90,9 @@
       "introduce": {
         "block": "features-list",
         "id": "introduce",
-        "title": "将平面图片转换为类似 PSD 的可编辑图层",
+        "title": "把平面图片变成可编辑图层",
         "label": "核心功能",
-        "description": "Image Layered 使用专门的分层模型将平面图片拆成透明 RGBA 图层，再把选中元素交给高质量图像编辑模型，用提示词完成海报级重设计。",
+        "description": "Image Layered 将成品图拆成带透明度的栅格图层，让你检查并局部修改选中的对象，再导出 PSD 或 PNG 图层。",
         "image": {
           "src": "/imgs/features/001.jpeg",
           "alt": "introduce"
@@ -146,8 +145,8 @@
         "description": "省钱、省时、省力。一个人就是一个设计团队，搞定电商产品图、设计素材、社交媒体内容。",
         "items": [
           {
-            "title": "完全免费，无隐形收费",
-            "description": "注册即送10积分，每天完成签到还能领积分。大部分功能免费使用，付费功能也比外包设计便宜100倍。",
+            "title": "价格清楚，局部修改更可控",
+            "description": "上传和整理图层免费；AI 分层每次 5 积分，选中图层编辑消耗 3–4 积分，完成项目后的 PSD 和 PNG ZIP 导出不再扣积分。",
             "icon": "RiNextjsFill",
             "image": {
               "src": "/imgs/features/1.png",
@@ -345,8 +344,8 @@
         "description": "关于使用、收费、效果等问题的详细说明",
         "items": [
           {
-            "question": "这个工具真的免费吗？有没有隐形收费？",
-            "answer": "基础功能完全免费！注册就送10积分（够分2张图），每天签到还能领积分。大部分功能免费使用就够了，如果需要高频使用可以购买积分包，价格透明，无任何隐形收费。"
+            "question": "哪些功能免费，哪些功能消耗积分？",
+            "answer": "上传图片、整理图层，以及完成项目后的 PSD 和 PNG ZIP 导出都是免费的。AI 分层每次消耗 5 积分，选中图层的 AI 编辑消耗 3–4 积分；供应商失败的任务会退回额度。"
           },
           {
             "question": "我不懂设计，能用这个工具吗？",
@@ -354,11 +353,11 @@
           },
           {
             "question": "分层的准确率怎么样？复杂图片能处理吗？",
-            "answer": "我们的AI基于Qwen最新视觉模型，准确率很高。产品图、人像、素材图都能处理。对于特别复杂的图片，可以使用「深度分层」功能，AI会进行更细致的分析。"
+            "answer": "Seedream 5.0 Pro 会根据原图重建语义图层。商品图、人像、海报和 AI 作品都可以尝试；细碎头发、透明材质、重叠区域和小文字可能需要手动整理。"
           },
           {
             "question": "处理一张图需要多长时间？",
-            "answer": "通常3-5秒就能完成分层。具体时间取决于图片大小和复杂程度，一般不会超过10秒。比手动用PS抠图快了不知道多少倍。"
+            "answer": "处理时间取决于图片大小、复杂度和供应商队列。Studio 会显示任务状态，完成后再查看图层结果。"
           },
           {
             "question": "支持哪些图片格式？有大小限制吗？",
@@ -366,7 +365,7 @@
           },
           {
             "question": "分层后可以导出什么分辨率？",
-            "answer": "支持1K、2K、4K分辨率导出。免费用户可以导出原分辨率，付费用户可以使用AI增强导出高清大图，满足电商、印刷等高质量需求。"
+            "answer": "项目会保留源图片的画布尺寸。项目完成后可以导出多图层 PSD、透明 PNG ZIP 或合并后的图片，导出不额外消耗积分。"
           },
           {
             "question": "可以用于商业用途吗？",
@@ -381,10 +380,10 @@
       "cta": {
         "id": "cta",
         "title": "现在就开始，3步搞定图片编辑",
-        "description": "注册送10积分，足够你体验所有功能。不需要信用卡，随时可以取消。",
+        "description": "上传并查看工作流免费。准备运行 AI 分层或局部编辑时再购买积分；项目完成后的 PSD 和 PNG ZIP 导出不再收费。",
         "buttons": [
           {
-            "title": "立即免费试用",
+            "title": "打开 Studio",
             "url": "/studio",
             "target": "_self",
             "icon": "Zap"
@@ -414,6 +413,9 @@
         },
         "className": "bg-muted"
       }
-    }
+    },
+    "title": "图片转图层 — 拆图层并导出 PSD | Image Layered",
+    "description": "把一张平面图片拆成带透明度的图层，选中对象进行修改，再导出多图层 PSD 或 PNG ZIP。上传和整理图层免费，AI 操作按积分计费。",
+    "keywords": "图片转图层, 图片转 PSD, 图片拆层, 透明 PNG 图层, AI 图像分解"
   }
 }

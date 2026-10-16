@@ -1,7 +1,6 @@
 import { setRequestLocale } from 'next-intl/server';
 
 import { getMetadata } from '@/shared/lib/seo';
-import ImageLayeredSeoGuide from '@/shared/blocks/crooked/components/ImageLayeredSeoGuide';
 
 import LandingHeroExperience from './LandingHeroExperience';
 import SeoTopicLinks from './SeoTopicLinks';
@@ -22,10 +21,9 @@ export default async function LandingPage({
   setRequestLocale(locale);
 
   return (
-    <>
+    <main id="main-content" tabIndex={-1}>
       <LandingHeroExperience />
-      <ImageLayeredSeoGuide locale={locale} surface="home" />
-      {locale !== 'zh' && <SeoTopicLinks />}
-    </>
+      <SeoTopicLinks locale={locale} />
+    </main>
   );
 }

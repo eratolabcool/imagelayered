@@ -19,26 +19,27 @@ const WorkspaceSidebar = () => {
   const pathname = usePathname();
   const locale = (params?.locale as string) || 'en';
   const isZh = locale === 'zh';
+  const isKo = locale === 'ko';
   const [collapsed, setCollapsed] = useState(false);
 
   const items = [
     {
       href: `/${locale}/studio`,
-      label: isZh ? '分层工作区' : 'Layer workspace',
-      description: isZh ? '上传、拆分与编辑' : 'Upload, split, and edit',
+      label: isKo ? '레이어 작업 공간' : isZh ? '分层工作区' : 'Layer workspace',
+      description: isKo ? '업로드, 분리 및 편집' : isZh ? '上传、拆分与编辑' : 'Upload, split, and edit',
       icon: Layers3,
       exact: true,
     },
     {
       href: `/${locale}/settings/projects`,
-      label: isZh ? '我的项目' : 'My projects',
-      description: isZh ? '继续最近的设计' : 'Continue recent work',
+      label: isKo ? '내 프로젝트' : isZh ? '我的项目' : 'My projects',
+      description: isKo ? '최근 작업 이어하기' : isZh ? '继续最近的设计' : 'Continue recent work',
       icon: FolderClosed,
     },
     {
       href: `/${locale}/studio/guide`,
-      label: isZh ? '分层指南' : 'Layering guide',
-      description: isZh ? '获得更干净的图层' : 'Get cleaner layers',
+      label: isKo ? '분리 가이드' : isZh ? '分层指南' : 'Layering guide',
+      description: isKo ? '더 깔끔한 레이어 얻기' : isZh ? '获得更干净的图层' : 'Get cleaner layers',
       icon: BookOpen,
     },
   ];
@@ -49,8 +50,8 @@ const WorkspaceSidebar = () => {
         type="button"
         onClick={() => setCollapsed((value) => !value)}
         className="mb-3 ml-auto flex size-8 items-center justify-center rounded-lg text-[#77717f] outline-none hover:bg-white/[0.055] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
-        aria-label={collapsed ? (isZh ? '展开主侧栏' : 'Expand main sidebar') : (isZh ? '折叠主侧栏' : 'Collapse main sidebar')}
-        title={collapsed ? (isZh ? '展开主侧栏' : 'Expand main sidebar') : (isZh ? '折叠主侧栏' : 'Collapse main sidebar')}
+        aria-label={collapsed ? (isKo ? '사이드바 펼치기' : isZh ? '展开主侧栏' : 'Expand main sidebar') : (isKo ? '사이드바 접기' : isZh ? '折叠主侧栏' : 'Collapse main sidebar')}
+        title={collapsed ? (isKo ? '사이드바 펼치기' : isZh ? '展开主侧栏' : 'Expand main sidebar') : (isKo ? '사이드바 접기' : isZh ? '折叠主侧栏' : 'Collapse main sidebar')}
       >
         {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
       </button>
@@ -73,7 +74,7 @@ const WorkspaceSidebar = () => {
 
       <nav
         className="mt-7 space-y-1"
-        aria-label={isZh ? '工作区导航' : 'Workspace navigation'}
+        aria-label={isKo ? '작업 공간 탐색' : isZh ? '工作区导航' : 'Workspace navigation'}
       >
         {items.map((item) => {
           const active = item.exact
@@ -116,10 +117,10 @@ const WorkspaceSidebar = () => {
         <Link
           href={`/${locale}`}
           className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-[#77717f] transition-colors outline-none hover:bg-white/[0.05] hover:text-white focus-visible:ring-2 focus-visible:ring-[#ff6b96]"
-          title={isZh ? '返回网站首页' : 'Back to website'}
+          title={isKo ? '홈으로 돌아가기' : isZh ? '返回网站首页' : 'Back to website'}
         >
           <Home className="size-3.5" />
-          {!collapsed && (isZh ? '返回网站首页' : 'Back to website')}
+          {!collapsed && (isKo ? '홈으로 돌아가기' : isZh ? '返回网站首页' : 'Back to website')}
         </Link>
       </div>
     </aside>

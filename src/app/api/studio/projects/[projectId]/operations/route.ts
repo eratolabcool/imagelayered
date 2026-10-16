@@ -3,6 +3,7 @@ import {
   createOperationForActor,
   webAiDispatcher,
 } from '@/features/studio/server/operations';
+
 import { respData, respErr } from '@/shared/lib/resp';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,11 @@ export async function POST(
   try {
     const { projectId } = await params;
     const actor = await getStudioActor();
+    if (!actor.userId) {
+      return respErr(
+        'Please sign in and purchase credits to use AI layer features.'
+      );
+    }
     const body = await request.json();
     const ai = webAiDispatcher(
       { baseUrl: request.url, cookie: request.headers.get('cookie') },

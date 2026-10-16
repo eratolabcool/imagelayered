@@ -17,25 +17,25 @@ So the export story matters more than people give it credit for when they're com
 
 ## What export gives you
 
-Two paths, both in the [editor](/qwenimagelayered):
+Two paths, both in the [editor](/studio):
 
-**Individual layers as transparent PNGs.** Select any layer, download it. What you get is that element on transparency, at source resolution, positioned nowhere — a clean asset ready to drop into anything. This is the one that matters for cross-tool work.
+**Individual layers as transparent PNGs.** Select any layer, download it. What you get is that element on transparency, at the selected layer’s current export dimensions — a clean asset ready to drop into anything. This is the one that matters for cross-tool work.
 
-**The full composite as PNG.** Every visible layer rendered together, exactly as you see them on the canvas — positions, stacking, opacity, blend modes all applied. Use it when the image is finished and you just need the result.
+**The full composite as PNG.** Every visible layer rendered together, exactly as you see them on the canvas — positions, stacking, rotation and opacity applied. Use it when the image is finished and you just need the result.
 
 One detail worth knowing: composite export runs locally in your browser. It doesn't consume credits. Decomposition is the paid step; getting your result out is not, at any resolution the editor supports.
 
 ## The Photoshop round-trip
 
-Photoshop opens transparent PNGs natively, so the workflow is short: download the layers you need, drop them into a PSD, and they arrive as separate layers in the right order — select them all, and drag them into an open document.
+Photoshop opens transparent PNGs natively, so the workflow is short: download each layer you need, then place each PNG into your Photoshop document. Rebuild the stacking order and positions using the source image as a reference. Separate PNG files do not carry the Studio layer order or coordinates with them. Studio currently does not export a layered PSD.
 
-Where this earns its keep is precision work. Decomposition gives you structure in seconds; Photoshop gives you pixel-level control over the seams. The combination is stronger than either alone: you skip the hour of manual masking that would have created those layers, and keep the tools you'd have used to refine them anyway.
+Where this earns its keep is precision work. Decomposition gives you an initial layer structure; Photoshop gives you pixel-level control over the seams. The combination is stronger than either alone: you can reduce some of the manual masking needed to create those layers, and keep the tools you'd have used to refine them anyway.
 
 One habit: export every layer you might touch, not just the obvious ones. The background you didn't plan to edit is the one you'll want when the client asks for "just a small change" to it, and re-running decomposition to recover it costs credits the original run didn't.
 
 ## The Figma / Canva direction
 
-Same asset, different job. A separated subject layer dropped into Figma becomes a design component — reusable across frames with the layout rebuilt around it. In Canva, layers slot into templates for the social-size variants that every campaign eventually needs.
+Same asset, different job. A separated subject layer dropped into Figma can be placed into a frame and reused as an image — reusable across frames with the layout rebuilt around it. In Canva, layers slot into templates for the social-size variants that every campaign eventually needs.
 
 The pattern to internalize: decomposition output is *generic* material. Any tool that accepts a PNG accepts your layers, which means the browser editor is a front door, not a destination.
 
