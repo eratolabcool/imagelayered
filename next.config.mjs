@@ -35,7 +35,10 @@ const nextConfig = {
     unoptimized: false,
   },
   async redirects() {
-    return [];
+    return [
+      { source: '/png-to-layers', destination: '/image-to-layers', permanent: true },
+      { source: '/png-to-psd', destination: '/image-to-psd', permanent: true },
+    ];
   },
   async headers() {
     return [

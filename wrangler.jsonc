@@ -17,6 +17,9 @@
 			"service": "imagelayered"
 		}
 	],
+	"d1_databases": [
+		{ "binding": "DB", "database_name": "imagelayered-db", "database_id": "367ac902-97b9-4098-908c-a9ea81d99537" }
+	],
 	"images": {
 		// Enable image optimization
 		// see https://opennext.js.org/cloudflare/howtos/image
@@ -28,7 +31,7 @@
 		"NEXT_PUBLIC_APP_NAME": "Image Layered",
 		"NEXT_PUBLIC_THEME": "default",
 		"NEXT_PUBLIC_APPEARANCE": "dark",
-		"DATABASE_PROVIDER": "turso",
+		"DATABASE_PROVIDER": "d1",
 		"DB_SINGLETON_ENABLED": "true",
 		"DB_MAX_CONNECTIONS": "1"
 	}

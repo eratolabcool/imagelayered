@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { ToolLandingPage } from '../tool-pages';
 
 export const metadata: Metadata = {
-  title: 'Image to Layers — Separate Any Image into Editable Layers',
-  description: 'Turn a flat photo or AI image into semantic editable layers for local edits and PSD export.',
+  title: 'Image to Layers Free — Split PNG & JPG into Editable Layers | Image Layered',
+  description: 'Free image to layers tool: split any PNG, JPG or AI image into transparent, editable layers, then export a layered PSD or PNG ZIP. PNG to layers and image to PSD in your browser.',
   alternates: { canonical: '/image-to-layers' },
 };
 

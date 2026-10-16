@@ -22,8 +22,8 @@ export async function GET() {
     });
   } catch (error) {
     console.error('get ads.txt failed:', error);
-    return new NextResponse('', {
-      status: 200,
+    return new NextResponse('Not found', {
+      status: 404,
       headers: {
         'Content-Type': 'text/plain',
       },
